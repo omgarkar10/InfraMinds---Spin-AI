@@ -41,6 +41,14 @@ async def bhashini_translate(
     target_language: str = "en",
 ) -> dict[str, Any]:
     """Translate regional text to English via Bhashini NMT pipeline."""
+    if not CONFIG.bhashini_api_key or not CONFIG.bhashini_user_id:
+        return {
+            "original_text": text,
+            "english_translation": f"[Mock Bhashini Translation ({source_language}->{target_language})] {text}",
+            "source_language": source_language,
+            "target_language": target_language,
+        }
+
     payload = {
         "pipelineTasks": [
             {
@@ -78,6 +86,15 @@ async def bhashini_asr(
     source_language: str = "hi",
 ) -> dict[str, Any]:
     """Transcribe voice note via Bhashini ASR, then translate to English."""
+    if not CONFIG.bhashini_api_key or not CONFIG.bhashini_user_id:
+        transcribed = "[Mock Bhashini ASR Audio Transcription]"
+        return {
+            "original_text": transcribed,
+            "english_translation": transcribed,
+            "source_language": source_language,
+            "target_language": "en",
+        }
+
     payload = {
         "pipelineTasks": [
             {

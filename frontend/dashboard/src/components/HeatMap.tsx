@@ -18,20 +18,27 @@ interface HeatMapProps {
 
 export function HeatMap({ redZones, selectedDistrict, onZoneClick }: HeatMapProps) {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? "";
-  const { isLoaded } = useJsApiLoader({ googleMapsApiKey: apiKey, libraries: ["visualization"] });
+
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: apiKey,
+    libraries: ["visualization"],
+    version: "3.64"
+  });
 
   const filtered = selectedDistrict
     ? redZones.filter((z) => z.district === selectedDistrict)
     : redZones;
 
-  const heatmapData: google.maps.visualization.WeightedLocation[] = filtered.map((zone) => ({
-    location: new google.maps.LatLng(zone.lat, zone.lng),
-    weight: zone.density,
-  }));
-
+  // 1. Wait for Google Maps script to finish loading first
   if (!isLoaded) {
     return <div className="map-placeholder">Loading map…</div>;
   }
+
+  // 2. Safely create LatLng objects now that google.maps is loaded
+  const heatmapData = filtered.map((zone) => ({
+    location: new google.maps.LatLng(zone.lat, zone.lng),
+    weight: zone.density,
+  }));
 
   return (
     <GoogleMap
@@ -45,7 +52,7 @@ export function HeatMap({ redZones, selectedDistrict, onZoneClick }: HeatMapProp
         mapTypeControl: false,
         streetViewControl: false,
       }}
-      onClick={() => {}}
+      onClick={() => { }}
     >
       <HeatmapLayer
         data={heatmapData}
@@ -74,7 +81,6 @@ function ZoneMarker({
   zone: RedZone;
   onClick?: (zone: RedZone) => void;
 }) {
-  // Markers rendered via InfoWindow pattern omitted for brevity — heat layer is primary viz
   void zone;
   void onClick;
   return null;

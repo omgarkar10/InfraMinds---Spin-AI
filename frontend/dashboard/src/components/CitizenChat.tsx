@@ -14,7 +14,7 @@ export function CitizenChat({ apiUrl = "" }: CitizenChatProps) {
     { role: "bot", text: "What is the issue?" },
   ]);
   const [input, setInput] = useState("");
-  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  // Removed unused location state
   const [step, setStep] = useState<"issue" | "location" | "done">("issue");
   const [loading, setLoading] = useState(false);
 
@@ -26,7 +26,6 @@ export function CitizenChat({ apiUrl = "" }: CitizenChatProps) {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setLocation(loc);
         setMessages((m) => [
           ...m,
           { role: "bot", text: "Location captured. Submitting your grievance…" },

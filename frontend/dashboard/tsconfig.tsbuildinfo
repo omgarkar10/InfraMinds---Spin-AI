@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/budgetreallocationpanel.tsx","./src/components/citizenchat.tsx","./src/components/executivesummarypanel.tsx","./src/components/heatmap.tsx","./src/components/policydashboard.tsx","./src/hooks/usepolicydata.ts","./src/types/index.ts"],"version":"5.7.3"}
