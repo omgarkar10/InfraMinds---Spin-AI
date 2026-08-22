@@ -1,19 +1,21 @@
 import { useState } from "react";
+import { useLanguage } from "../../hooks/useLanguage";
 import { SectionBase } from "./SectionBase";
 import "./TransformationSection.css";
 
 export function TransformationSection() {
+  const { t } = useLanguage();
   const [activeStage, setActiveStage] = useState<number>(1);
   const [showDetailsModal, setShowDetailsModal] = useState<boolean>(false);
 
   return (
-    <SectionBase id="intelligence" number="02" label="FROM VOICE TO DATA">
+    <SectionBase id="intelligence" number="02" label={t.trans_label.toUpperCase()}>
       <div className="transform-layout">
         {/* Title */}
         <div className="transform-heading">
           <h2 className="editorial-h2">
-            What if every complaint<br />
-            <span className="problem-h2-highlight">became an infrastructure planning signal?</span>
+            {t.trans_h2_1}<br />
+            <span className="problem-h2-highlight">{t.trans_h2_2}</span>
           </h2>
           <p className="body-lg transform-subtitle">
             SPIN converts raw citizen voices into structured geospatial intelligence in five automated processing stages.
@@ -23,11 +25,11 @@ export function TransformationSection() {
         {/* Stage Selector Pills */}
         <div className="transform-stepper">
           {[
-            { id: 1, label: "01. RAW CITIZEN VOICE" },
+            { id: 1, label: `01. ${t.trans_stage_1_label}` },
             { id: 2, label: "02. BHASHINI TRANSLATION" },
-            { id: 3, label: "03. SEMANTIC PARSING" },
-            { id: 4, label: "04. GEOSPATIAL CORRELATION" },
-            { id: 5, label: "05. RED ZONE OUTPUT" },
+            { id: 3, label: `03. ${t.trans_stage_2_label}` },
+            { id: 4, label: `04. ${t.trans_stage_3_label}` },
+            { id: 5, label: `05. ${t.trans_stage_4_label}` },
           ].map((s) => (
             <button
               key={s.id}
@@ -44,14 +46,14 @@ export function TransformationSection() {
           {activeStage === 1 && (
             <div className="stage-content-grid">
               <div className="stage-info">
-                <span className="label-eyebrow tag-blue">STAGE 01 / INPUT SIGNALS</span>
+                <span className="label-eyebrow tag-blue">STAGE 01 / {t.trans_stage_1_label}</span>
                 <blockquote className="citizen-voice-quote">
-                  "Hamare area mein pichle 3 hafton se paani nahi aa raha."
+                  {t.trans_quote}
                 </blockquote>
                 <div className="meta-row">
-                  <span className="tag">Hindi (HI) Speech Waveform</span>
-                  <span className="tag">Cell Tower Location: Pune East</span>
-                  <span className="tag">WhatsApp Voice Note</span>
+                  {t.trans_stage_1_tags.map((tag, i) => (
+                    <span key={i} className="tag">{tag}</span>
+                  ))}
                 </div>
               </div>
               <div className="tech-explanation-box">
@@ -86,14 +88,15 @@ export function TransformationSection() {
           {activeStage === 3 && (
             <div className="stage-content-grid">
               <div className="stage-info">
-                <span className="label-eyebrow tag-navy">STAGE 03 / GEMINI SEMANTIC PARSER</span>
+                <span className="label-eyebrow tag-navy">STAGE 03 / {t.trans_stage_2_label}</span>
                 <table className="data-table">
                   <tbody>
-                    <tr><td>Domain</td><td>Water Supply / Municipal Grid</td></tr>
-                    <tr><td>Issue Type</td><td>Supply Disruption / Main Line Failure</td></tr>
-                    <tr><td>Severity Score</td><td><span className="num-orange font-bold">8.5 / 10 (Critical)</span></td></tr>
-                    <tr><td>Duration</td><td>21 Days (3 Weeks)</td></tr>
-                    <tr><td>Confidence</td><td>94.2% AI Model Certainty</td></tr>
+                    {t.trans_table_rows.map((row, i) => (
+                      <tr key={i}>
+                        <td>{row[0]}</td>
+                        <td>{i === 1 ? <span className="num-orange font-bold">{row[1]}</span> : row[1]}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
@@ -107,19 +110,19 @@ export function TransformationSection() {
           {activeStage === 4 && (
             <div className="stage-content-grid">
               <div className="stage-info">
-                <span className="label-eyebrow tag-geo">STAGE 04 / GEOSPATIAL CORRELATION</span>
+                <span className="label-eyebrow tag-geo">STAGE 04 / {t.trans_stage_3_label}</span>
                 <div className="spatial-metrics">
                   <div className="metric-box">
                     <span className="num-large num-orange">37</span>
-                    <span className="label-eyebrow">Similar Grievances</span>
+                    <span className="label-eyebrow">{t.trans_complaints}</span>
                   </div>
                   <div className="metric-box">
                     <span className="num-large">12 km²</span>
-                    <span className="label-eyebrow">Geographic Radius</span>
+                    <span className="label-eyebrow">{t.trans_cluster}</span>
                   </div>
                   <div className="metric-box">
                     <span className="num-large">4.2x</span>
-                    <span className="label-eyebrow">Above Baseline Density</span>
+                    <span className="label-eyebrow">{t.trans_identified}</span>
                   </div>
                 </div>
               </div>
@@ -133,12 +136,12 @@ export function TransformationSection() {
           {activeStage === 5 && (
             <div className="stage-content-grid">
               <div className="stage-info">
-                <span className="label-eyebrow tag-red">STAGE 05 / RED ZONE OUTPUT</span>
+                <span className="label-eyebrow tag-red">STAGE 05 / {t.trans_stage_4_label}</span>
                 <div className="redzone-banner">
-                  <strong className="redzone-title">🔴 RED ZONE FLAG: Pune East Water Grid Deficit</strong>
-                  <p>37 citizen complaints + PM Gati Shakti pipeline layer confirm major water main rupture on Segment W-402.</p>
+                  <strong className="redzone-title">🔴 {t.trans_red_zone}: {t.trans_spatial_tag}</strong>
+                  <p>{t.trans_pending}</p>
                   <div className="policy-rec-strip">
-                    <span>AI RECOMMENDATION: Prioritize ₹12 Cr pipeline replacement in Ward 14</span>
+                    <span>{t.trans_recommended}: {t.trans_action}</span>
                   </div>
                 </div>
               </div>

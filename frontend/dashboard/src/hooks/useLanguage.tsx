@@ -881,6 +881,14 @@ interface LanguageContextValue {
   setCountry: (code: CountryCode) => void;
 }
 
+const COUNTRY_TO_LANG: Record<CountryCode, string> = {
+  IN: "en",
+  BR: "pt",
+  RU: "ru",
+  CN: "zh-CN",
+  ZA: "zu",
+};
+
 const LanguageContext = createContext<LanguageContextValue>({
   country: COUNTRIES[0],
   t: TRANSLATIONS["IN"],
@@ -888,12 +896,44 @@ const LanguageContext = createContext<LanguageContextValue>({
 });
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [code, setCode] = useState<CountryCode>("IN");
-  const country = COUNTRIES.find((c) => c.code === code)!;
-  const t = TRANSLATIONS[code];
+  const [code, setCode] = useState<CountryCode>(() => {
+    const saved = localStorage.getItem("spin_selected_country");
+    return (saved as CountryCode) || "IN";
+  });
+
+  const country = COUNTRIES.find((c) => c.code === code) || COUNTRIES[0];
+  // Always use English for React state so Google Translate can cleanly translate the DOM
+  const t = TRANSLATIONS["IN"];
+
+  const setCountryHandler = (newCode: CountryCode) => {
+    setCode(newCode);
+    localStorage.setItem("spin_selected_country", newCode);
+    
+    const lang = COUNTRY_TO_LANG[newCode] || "en";
+
+    // Set Google Translate cookies
+    if (lang === "en") {
+      document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=" + window.location.hostname + "; path=/;";
+    } else {
+      document.cookie = `googtrans=/en/${lang}; path=/;`;
+      document.cookie = `googtrans=/en/${lang}; domain=${window.location.hostname}; path=/;`;
+    }
+
+    // Trigger select element if present
+    setTimeout(() => {
+      const select = document.querySelector(".goog-te-combo") as HTMLSelectElement | null;
+      if (select) {
+        select.value = lang;
+        select.dispatchEvent(new Event("change"));
+      } else {
+        window.location.reload();
+      }
+    }, 150);
+  };
 
   return (
-    <LanguageContext.Provider value={{ country, t, setCountry: setCode }}>
+    <LanguageContext.Provider value={{ country, t, setCountry: setCountryHandler }}>
       {children}
     </LanguageContext.Provider>
   );
@@ -902,3 +942,4 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 export function useLanguage() {
   return useContext(LanguageContext);
 }
+

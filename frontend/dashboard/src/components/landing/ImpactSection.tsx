@@ -1,82 +1,29 @@
+import { useLanguage } from "../../hooks/useLanguage";
 import { SectionBase } from "./SectionBase";
 import "./ImpactSection.css";
 
-interface ImpactLevel {
-  level: string;
-  badge: string;
-  before: string;
-  after: string;
-}
-
-const IMPACT_LEVELS: ImpactLevel[] = [
-  {
-    level: "Citizen Level",
-    badge: "Reporting Ease",
-    before: "Must navigate complex forms in English or official legalese.",
-    after: "Speaks or texts naturally in local dialect; gets automated progress updates.",
-  },
-  {
-    level: "Administrative Level",
-    badge: "Data Structuring",
-    before: "Scattered spreadsheets and unclassified complaints in siloed databases.",
-    after: "Automatically parsed intent, severity score, and assigned department.",
-  },
-  {
-    level: "Spatial Level",
-    badge: "Pattern Detection",
-    before: "Isolated complaints resolved individually without seeing surrounding area.",
-    after: "Red Zone clusters automatically highlighted over GIS infrastructure networks.",
-  },
-  {
-    level: "Policy Level",
-    badge: "Resource Prioritization",
-    before: "Budget allocations driven by arbitrary requests or squeaky-wheel noise.",
-    after: "Evidence-backed budget reallocation recommendations based on verified demand.",
-  },
-  {
-    level: "National Level",
-    badge: "Infrastructure Alignment",
-    before: "Disconnect between DPI investment and actual citizen service delivery.",
-    after: "Symbiotic alignment between citizen signals and public infrastructure planning.",
-  },
-];
-
 export function ImpactSection() {
+  const { t } = useLanguage();
+
   return (
-    <SectionBase id="impact" number="10" label="WHAT CHANGES">
+    <SectionBase id="impact" number="10" label={t.impact_label.toUpperCase()}>
       <div className="impact-heading">
         <h2 className="editorial-h2">
-          When citizen demand becomes visible,<br />
-          <span className="problem-h2-highlight">public decisions become precise.</span>
+          {t.impact_h2_1}<br />
+          <span className="problem-h2-highlight">{t.impact_h2_2}</span>
         </h2>
-        <p className="body-lg impact-subtitle">
-          Measurable system outcomes across five operational governance tiers.
-        </p>
-        <span className="demo-badge">[ DEMONSTRATION DATASET ]</span>
+        <span className="demo-badge">[ {t.impact_demo_badge} ]</span>
       </div>
 
-      <div className="impact-levels-grid">
-        {IMPACT_LEVELS.map((item) => (
-          <div key={item.level} className="impact-card">
-            <div className="impact-card-header">
-              <span className="label-eyebrow">{item.level}</span>
-              <span className="impact-pill">{item.badge}</span>
-            </div>
-
-            <div className="impact-comparison-box">
-              <div className="comp-row before">
-                <span className="comp-tag">TRADITIONAL:</span>
-                <p>{item.before}</p>
-              </div>
-              <div className="comp-row after">
-                <span className="comp-tag after">WITH SPIN:</span>
-                <p>{item.after}</p>
-              </div>
-            </div>
+      <div className="impact-levels-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', marginTop: '4rem' }}>
+        {t.impact_metrics.map((item, i) => (
+          <div key={i} className="impact-card" style={{ padding: '2rem', background: 'var(--surface-sunken)', border: '1px solid var(--border-light)', borderRadius: '1rem', textAlign: 'center' }}>
+            <div style={{ fontSize: '3rem', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>{item.value}</div>
+            <div className="label-eyebrow" style={{ color: 'var(--text-secondary)' }}>{item.label}</div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginTop: '0.5rem' }}>{item.sub}</div>
           </div>
         ))}
       </div>
     </SectionBase>
   );
 }
-

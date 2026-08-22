@@ -3,8 +3,8 @@ import { useLanguage, COUNTRIES, type CountryCode } from "../../hooks/useLanguag
 import "../navigation/Navbar.css";
 
 interface NavbarProps {
-  view: "landing" | "dashboard" | "citizen";
-  onViewChange: (view: "landing" | "dashboard" | "citizen") => void;
+  view: string;
+  onViewChange: (view: string) => void;
 }
 
 export function Navbar({ view, onViewChange }: NavbarProps) {
@@ -42,6 +42,8 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
     setLangOpen(false);
   };
 
+  const isCitizenView = view.startsWith("citizen");
+
   return (
     <header className="gov-header-wrapper">
       {/* Top Utility Bar (UX4G Government Standard) */}
@@ -50,7 +52,6 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
           <div className="gov-top-bar-left">
             <span className="gov-emblem-badge">🇮🇳 Government of India · Public Infrastructure Intelligence</span>
           </div>
-
 
           <div className="gov-top-bar-right">
             {/* Language / Country Selector */}
@@ -104,6 +105,12 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
 
             <a href="#accessibility" className="gov-top-link">Accessibility</a>
             <a href="#help" className="gov-top-link">Help</a>
+            <button
+              className="navbar-cta navbar-cta-primary"
+              onClick={() => onViewChange("staff-login")}
+            >
+              Staff Portal
+            </button>
           </div>
         </div>
       </div>
@@ -131,8 +138,8 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
           {/* Right Action CTAs */}
           <div className="navbar-actions">
             <button
-              className={`navbar-cta ${view === "citizen" ? "active" : ""}`}
-              onClick={() => onViewChange(view === "citizen" ? "landing" : "citizen")}
+              className={`navbar-cta ${isCitizenView ? "active" : ""}`}
+              onClick={() => onViewChange("citizen")}
             >
               Citizen Portal
             </button>

@@ -1,133 +1,504 @@
 /* =========================================================
-   SPIN — Citizen Chat Styles (Reskinned)
+   SPIN — Citizen & Staff Government Portal Styles
+   UX4G Inspired Government Design Tokens & Layouts
    ========================================================= */
 
-.citizen-chat {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
+.citizen-portal-container {
+  padding-top: calc(var(--nav-h) + 16px);
+  padding-bottom: 60px;
   background: var(--col-bg);
-  padding-top: var(--nav-h);
+  min-height: 100vh;
 }
 
-.citizen-header {
-  padding: var(--sp-lg) var(--sp-xl);
-  border-bottom: 1px solid var(--col-border);
+/* Header & Banner */
+.portal-header-bar {
+  background: var(--col-surface);
+  border-bottom: 1px solid var(--col-border-mid);
+  padding: 16px 0;
+  margin-bottom: 32px;
 }
 
-.citizen-header h1 {
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--col-text-muted);
+.portal-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
-.citizen-header p {
-  font-size: 13px;
-  color: var(--col-text-muted);
-  margin-top: 4px;
-}
-
-.chat-messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--sp-lg) var(--sp-xl);
+.portal-title-group {
   display: flex;
   flex-direction: column;
-  gap: var(--sp-md);
+  gap: 2px;
 }
 
-.chat-bubble {
-  max-width: 540px;
-  padding: var(--sp-md);
+.portal-org {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--col-orange);
+}
+
+.portal-heading {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--col-navy);
+  letter-spacing: -0.01em;
+}
+
+.portal-subtext {
   font-size: 14px;
-  line-height: 1.6;
-  border: 1px solid var(--col-border);
-}
-
-.chat-bubble.bot {
-  background: var(--col-panel);
   color: var(--col-text-mid);
-  border-left: 2px solid var(--col-orange);
-  align-self: flex-start;
 }
 
-.chat-bubble.user {
-  background: transparent;
-  color: var(--col-text);
-  border-color: var(--col-border-mid);
-  align-self: flex-end;
-  text-align: right;
-}
-
-.chat-input-row {
-  display: flex;
+/* User Account Badge */
+.user-badge {
+  display: inline-flex;
   align-items: center;
-  gap: var(--sp-sm);
-  padding: var(--sp-md) var(--sp-xl);
-  border-top: 1px solid var(--col-border);
-}
-
-.voice-btn {
-  background: transparent;
+  gap: 8px;
+  background: var(--col-panel);
   border: 1px solid var(--col-border-mid);
-  color: var(--col-text-muted);
-  width: 40px;
-  height: 40px;
-  cursor: pointer;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: border-color 0.2s;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--col-navy);
 }
 
-.voice-btn:hover {
+.user-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--col-green);
+}
+
+/* 2-Card Grid on Portal Home */
+.service-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.service-card {
+  background: var(--col-surface);
+  border: 1px solid var(--col-border-mid);
+  border-radius: 8px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.service-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
   border-color: var(--col-orange-line);
 }
 
-.chat-input {
-  flex: 1;
-  background: transparent;
+.service-card-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--col-orange);
+}
+
+.service-card-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--col-navy);
+}
+
+.service-card-desc {
+  font-size: 14px;
+  color: var(--col-text-mid);
+  line-height: 1.5;
+}
+
+.service-card-examples {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--col-text-muted);
+  background: var(--col-panel);
+  padding: 12px 16px;
+  border-radius: 6px;
+  border-left: 3px solid var(--col-navy);
+}
+
+.service-card-btn {
+  margin-top: auto;
+  align-self: flex-start;
+  background: var(--col-navy);
+  color: #FFFFFF;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  text-decoration: none;
+}
+
+.service-card-btn:hover {
+  background: #1a2d4a;
+}
+
+.service-card-btn-orange {
+  background: var(--col-orange);
+}
+
+.service-card-btn-orange:hover {
+  background: #d44d05;
+}
+
+/* Processing Stepper Box */
+.process-flow-box {
+  background: var(--col-surface);
   border: 1px solid var(--col-border-mid);
-  color: var(--col-text);
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+.process-stepper-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 16px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.process-step-node {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--col-panel);
+  border: 1px solid var(--col-border);
+  padding: 10px 14px;
+  border-radius: 6px;
+  min-width: 140px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--col-navy);
+  text-align: center;
+}
+
+.process-arrow {
+  color: var(--col-text-muted);
+  font-weight: bold;
+}
+
+/* Disclaimer Callout Box */
+.gov-disclaimer-callout {
+  background: var(--col-orange-dim);
+  border: 1px solid var(--col-orange-line);
+  border-left: 4px solid var(--col-orange);
+  padding: 14px 18px;
+  border-radius: 0 6px 6px 0;
+  font-size: 13px;
+  color: var(--col-navy);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Login Modal / Screen */
+.login-card {
+  max-width: 480px;
+  margin: 40px auto;
+  background: var(--col-surface);
+  border: 1px solid var(--col-border-strong);
+  border-radius: 8px;
+  padding: 32px;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--col-navy);
+}
+
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--col-border-strong);
+  border-radius: 6px;
   font-family: var(--font);
   font-size: 14px;
-  padding: 10px 14px;
+  color: var(--col-text);
+  background: var(--col-surface);
   outline: none;
   transition: border-color 0.2s;
 }
 
-.chat-input::placeholder {
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--col-orange);
+  box-shadow: 0 0 0 2px var(--col-orange-dim);
+}
+
+/* Form Multi-step Progress Indicator */
+.form-step-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--col-surface);
+  border: 1px solid var(--col-border-mid);
+  border-radius: 8px;
+  padding: 12px 20px;
+  margin-bottom: 24px;
+  overflow-x: auto;
+}
+
+.step-indicator-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--col-text-muted);
 }
 
-.chat-input:focus {
-  border-color: var(--col-orange-line);
-}
-
-.send-btn {
-  background: transparent;
-  border: 1px solid var(--col-orange-line);
+.step-indicator-item.active {
   color: var(--col-orange);
-  font-family: var(--font);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  padding: 10px 20px;
-  cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
 }
 
-.send-btn:hover:not(:disabled) {
-  background: var(--col-orange-dim);
+.step-indicator-item.completed {
+  color: var(--col-green);
+}
+
+.step-number-circle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--col-panel);
+  border: 1px solid var(--col-border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.step-indicator-item.active .step-number-circle {
+  background: var(--col-orange);
+  color: #FFFFFF;
   border-color: var(--col-orange);
 }
 
-.send-btn:disabled {
-  opacity: 0.4;
-  cursor: default;
+.step-indicator-item.completed .step-number-circle {
+  background: var(--col-green);
+  color: #FFFFFF;
+  border-color: var(--col-green);
+}
+
+/* Form Container Card */
+.form-card {
+  background: var(--col-surface);
+  border: 1px solid var(--col-border-mid);
+  border-radius: 8px;
+  padding: 32px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Location Status Indicator */
+.location-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.location-status-badge.verified {
+  background: var(--col-green-dim);
+  color: var(--col-green);
+  border: 1px solid rgba(22, 163, 74, 0.3);
+}
+
+.location-status-badge.required {
+  background: var(--col-red-dim);
+  color: var(--col-red);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+}
+
+/* AI Interpretation Box */
+.ai-review-card {
+  background: var(--col-panel);
+  border: 1px solid var(--col-border-strong);
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ai-review-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.ai-review-item {
+  background: var(--col-surface);
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--col-border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ai-review-item label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--col-text-muted);
+  text-transform: uppercase;
+}
+
+.ai-review-item span {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--col-navy);
+}
+
+/* Semantic Status Badges */
+.status-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.status-pill.SUBMITTED { background: var(--col-blue-dim); color: var(--col-blue); border: 1px solid rgba(2, 132, 199, 0.3); }
+.status-pill.UNDER_REVIEW { background: var(--col-amber-dim); color: var(--col-amber); border: 1px solid rgba(217, 119, 6, 0.3); }
+.status-pill.INSPECTION_SCHEDULED { background: var(--col-orange-dim); color: var(--col-orange); border: 1px solid var(--col-orange-line); }
+.status-pill.RESOLVED { background: var(--col-green-dim); color: var(--col-green); border: 1px solid rgba(22, 163, 74, 0.3); }
+.status-pill.REOPENED { background: var(--col-red-dim); color: var(--col-red); border: 1px solid rgba(220, 38, 38, 0.3); }
+
+/* Timeline UI */
+.grievance-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  padding-left: 24px;
+  margin-top: 16px;
+}
+
+.grievance-timeline::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 4px;
+  bottom: 4px;
+  width: 2px;
+  background: var(--col-border-strong);
+}
+
+.timeline-event-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.timeline-event-item::before {
+  content: '';
+  position: absolute;
+  left: -24px;
+  top: 4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--col-surface);
+  border: 2px solid var(--col-text-muted);
+}
+
+.timeline-event-item.completed::before {
+  background: var(--col-green);
+  border-color: var(--col-green);
+}
+
+.timeline-event-date {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--col-orange);
+}
+
+.timeline-event-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--col-navy);
+}
+
+.timeline-event-desc {
+  font-size: 13px;
+  color: var(--col-text-mid);
+}
+
+/* Staff Table & Cards */
+.staff-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.staff-table th {
+  background: var(--col-header-bg);
+  color: #FFFFFF;
+  padding: 12px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: left;
+}
+
+.staff-table td {
+  padding: 14px;
+  border-bottom: 1px solid var(--col-border);
+  font-size: 13px;
+  color: var(--col-text);
+  background: var(--col-surface);
+}
+
+.staff-table tr:hover td {
+  background: var(--col-panel);
+}
+
+@media (max-width: 900px) {
+  .service-cards-grid {
+    grid-template-columns: 1fr;
+  }
+  .ai-review-grid {
+    grid-template-columns: 1fr;
+  }
 }

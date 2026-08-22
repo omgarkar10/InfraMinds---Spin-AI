@@ -1,0 +1,149 @@
+/* =========================================================
+   SPIN — Staff Portal Grievance KPI Strip
+   Compact, institutional statistics bar with inline sparklines
+   ========================================================= */
+
+.grievance-kpi-bar-wrapper {
+  background: var(--col-surface);
+  border: 1px solid var(--col-border-mid);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.kpi-header-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--col-border);
+  padding-bottom: 8px;
+  margin-bottom: 14px;
+}
+
+.kpi-provenance-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.kpi-provenance-tag.demo {
+  background: var(--col-orange-dim);
+  color: var(--col-orange);
+  border: 1px solid var(--col-orange-line);
+}
+
+.kpi-provenance-tag.live {
+  background: var(--col-green-dim);
+  color: var(--col-green);
+  border: 1px solid rgba(22, 163, 74, 0.3);
+}
+
+/* 4-Column Grid Layout */
+.grievance-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.kpi-metric-card {
+  background: var(--col-panel);
+  border: 1px solid var(--col-border);
+  border-radius: 6px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 6px;
+  position: relative;
+  transition: border-color 0.2s;
+}
+
+.kpi-metric-card:hover {
+  border-color: var(--col-border-strong);
+}
+
+.kpi-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.kpi-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--col-text-muted);
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.kpi-sparkline {
+  width: 76px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+.kpi-card-middle {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.kpi-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--col-navy);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.kpi-trend {
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 1px 5px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.kpi-trend.trend-positive {
+  background: var(--col-green-dim);
+  color: var(--col-green);
+}
+
+.kpi-trend.trend-negative {
+  background: var(--col-red-dim);
+  color: var(--col-red);
+}
+
+.kpi-trend.trend-neutral {
+  background: var(--col-amber-dim);
+  color: var(--col-amber);
+}
+
+.kpi-caption {
+  font-size: 10.5px;
+  color: var(--col-text-muted);
+  line-height: 1.2;
+}
+
+/* Tablet Responsive */
+@media (max-width: 900px) {
+  .grievance-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Mobile Responsive */
+@media (max-width: 540px) {
+  .grievance-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
