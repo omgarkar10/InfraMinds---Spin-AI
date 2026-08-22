@@ -1,110 +1,141 @@
-/* Problem Section */
+/* =========================================================
+   SPIN — Section 01: The Problem (Editorial Diagram)
+   ========================================================= */
+
 .problem-layout {
-  display: grid;
-  grid-template-columns: 1fr 1.4fr;
-  gap: var(--sp-xl);
-  align-items: start;
-  margin-bottom: var(--sp-xl);
-}
-
-.problem-h2-dim {
-  color: var(--col-text-muted) !important;
-  margin-top: var(--sp-sm);
-}
-
-.problem-diagram {
   display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.problem-heading {
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.problem-h2-highlight {
+  color: var(--col-orange);
+  font-weight: 500;
+}
+
+.problem-subtitle {
+  color: var(--col-text-mid);
+}
+
+.problem-editorial-diagram {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
   align-items: center;
-  gap: 0;
-  border-top: 1px solid var(--col-border);
-  border-bottom: 1px solid var(--col-border);
-  padding: var(--sp-lg) 0;
+  gap: 16px;
+  margin-top: 16px;
 }
 
-.problem-col {
-  flex: 1;
+.diagram-card {
+  background: var(--col-surface);
+  border: 1px solid var(--col-border-mid);
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: var(--shadow-sm);
 }
 
-.problem-col-right {
-  text-align: right;
+.diagram-card.citizen-layer {
+  border-top: 3px solid var(--col-blue);
 }
 
-.problem-col-label {
-  margin-bottom: var(--sp-md);
+.diagram-card.fragmented-systems {
+  border-top: 3px solid var(--col-amber);
 }
 
-.problem-list {
+.diagram-card.decision-maker {
+  border-top: 3px solid var(--col-red);
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--col-navy);
+}
+
+.diagram-list {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-md);
-}
-
-.problem-item {
-  font-size: 14px;
-  color: var(--col-text-mid);
-  padding: var(--sp-sm) 0;
-  border-bottom: 1px solid var(--col-border);
-}
-
-.problem-col-right .problem-item {
-  padding-right: 0;
-}
-
-.problem-gap {
-  flex-shrink: 0;
-  display: flex;
-  justify-content: center;
-}
-
-.problem-gap-svg {
-  display: block;
-}
-
-/* Outcomes */
-.problem-outcomes {
-  border-top: 1px solid var(--col-border);
-  padding-top: var(--sp-lg);
-}
-
-.problem-outcomes-row {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-md);
-  margin-bottom: var(--sp-xl);
-  flex-wrap: wrap;
-}
-
-.problem-outcome-item {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-md);
-}
-
-.problem-outcome-slash {
-  color: var(--col-text-muted);
+  gap: 6px;
   font-size: 12px;
+  color: var(--col-text-mid);
 }
 
-.problem-result {
-  color: var(--col-text-mid) !important;
+.diagram-list li {
+  position: relative;
+  padding-left: 14px;
 }
 
-@media (max-width: 768px) {
-  .problem-layout {
+.diagram-list li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--col-orange);
+}
+
+.diagram-flow-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--col-text-muted);
+  font-size: 18px;
+}
+
+.arrow-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--col-text-muted);
+  white-space: nowrap;
+}
+
+.arrow-label.failure {
+  color: var(--col-red);
+}
+
+.break-icon {
+  color: var(--col-red);
+  font-weight: bold;
+}
+
+.failure-callout {
+  margin-top: 8px;
+  background: var(--col-red-dim);
+  border-left: 3px solid var(--col-red);
+  padding: 10px 12px;
+  border-radius: 0 4px 4px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.failure-eq {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--col-red);
+  text-transform: uppercase;
+}
+
+.failure-callout p {
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--col-text-mid);
+}
+
+@media (max-width: 900px) {
+  .problem-editorial-diagram {
     grid-template-columns: 1fr;
-  }
-
-  .problem-diagram {
-    flex-direction: column;
-    gap: var(--sp-md);
-  }
-
-  .problem-col-right {
-    text-align: left;
-  }
-
-  .problem-gap-svg {
-    transform: rotate(90deg);
   }
 }

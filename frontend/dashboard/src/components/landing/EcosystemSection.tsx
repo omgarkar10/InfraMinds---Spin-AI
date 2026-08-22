@@ -1,88 +1,94 @@
 import { SectionBase } from "./SectionBase";
 import "./EcosystemSection.css";
 
-const LAYERS = [
-  {
-    label: "CITIZEN SIGNALS",
-    items: ["Voice", "Text", "Images", "Location"],
-  },
-  {
-    label: "LANGUAGE & AI",
-    items: ["Bhashini — language detection", "Speech recognition (ASR)", "Translation", "Semantic parsing"],
-  },
-  {
-    label: "GOVERNMENT DATA",
-    items: ["CPGRAMS", "PM Gati Shakti", "Demographics", "Infrastructure layers"],
-  },
-  {
-    label: "POLICY INTELLIGENCE",
-    items: ["Red Zones", "Infrastructure gaps", "Priorities", "Recommendations"],
-  },
-];
+interface Layer {
+  title: string;
+  badge: "LIVE" | "CONNECTED" | "MOCK" | "DEMO DATA" | "SIMULATED";
+  badgeClass: string;
+  items: string[];
+  description: string;
+}
 
-const BHASHINI_FLOW = [
-  "Hindi voice",
-  "Bhashini",
-  "English grievance",
-  "AI analysis",
-  "Policy insight",
+const LAYERS: Layer[] = [
+  {
+    title: "CITIZEN SIGNAL LAYER",
+    badge: "LIVE",
+    badgeClass: "badge-green",
+    items: ["Natural Voice Audio", "WhatsApp / Web Intake", "GPS Metadata", "Photo Evidence"],
+    description: "Accepts citizen input across channels without requiring form filling.",
+  },
+  {
+    title: "MULTILINGUAL LANGUAGE LAYER",
+    badge: "CONNECTED",
+    badgeClass: "badge-blue",
+    items: ["Bhashini ASR Model", "Language Detection", "Automated Speech Translation", "Standard English JSON"],
+    description: "Transcribes and translates 22 Indian regional languages prior to analysis.",
+  },
+  {
+    title: "GOVERNANCE DATA INTEGRATION",
+    badge: "DEMO DATA",
+    badgeClass: "badge-amber",
+    items: ["CPGRAMS Grievances", "State Complaint Portals", "Municipal Service Tickets", "Department Records"],
+    description: "Harmonizes fragmented departmental complaint data into a unified schema.",
+  },
+  {
+    title: "GEOSPATIAL & INFRASTRUCTURE DATA",
+    badge: "CONNECTED",
+    badgeClass: "badge-blue",
+    items: ["PM Gati Shakti Maps", "Pipe & Road Layers", "Census Demographics", "Satellite Grid Overlay"],
+    description: "Overlays grievances directly onto physical infrastructure networks.",
+  },
+  {
+    title: "SPIN AI INTELLIGENCE LAYER",
+    badge: "LIVE",
+    badgeClass: "badge-orange",
+    items: ["Gemini Semantic Agent", "Density Clustering", "Red Zone Threshold Engine", "Evidence Synthesizer"],
+    description: "Processes signals to identify macro infrastructure demand patterns.",
+  },
+  {
+    title: "POLICY OUTPUT & GOVERNANCE",
+    badge: "SIMULATED",
+    badgeClass: "badge-gray",
+    items: ["Executive Summaries", "Red Zone Dashboards", "Budget Reallocations", "Citizen Updates"],
+    description: "Delivers evidence-backed recommendations for policymaker approval.",
+  },
 ];
 
 export function EcosystemSection() {
   return (
-    <SectionBase id="intelligence" number="04" label="Data Ecosystem">
-      <div className="ecosystem-heading reveal">
-        <h2 className="editorial-h2">One signal is useful.</h2>
-        <h2 className="editorial-h2 ecosystem-h2-dim">A connected signal is powerful.</h2>
+    <SectionBase id="intelligence" number="04" label="THE DATA ECOSYSTEM">
+      <div className="ecosystem-heading">
+        <h2 className="editorial-h2">
+          One signal is useful.<br />
+          <span className="problem-h2-highlight">A connected ecosystem is transformative.</span>
+        </h2>
+        <p className="body-lg ecosystem-subtitle">
+          SPIN integrates citizen input, multilingual AI, governance records, and spatial mapping into a single sovereign data architecture.
+        </p>
       </div>
 
-      {/* Layered architecture — vertical stack with arrows */}
-      <div className="ecosystem-layers reveal animate-reveal-delay-1">
-        {LAYERS.map((layer, i) => (
-          <div key={layer.label}>
-            <div className="ecosystem-layer">
-              <div className="ecosystem-layer-label">
-                <p className="label-orange">{layer.label}</p>
-              </div>
-              <div className="ecosystem-layer-items">
-                {layer.items.map((item) => (
-                  <span key={item} className="ecosystem-item">{item}</span>
+      {/* Layered Stack */}
+      <div className="ecosystem-stack">
+        {LAYERS.map((l, i) => (
+          <div key={l.title} className="layer-row-card">
+            <div className="layer-row-header">
+              <span className="layer-step-num">0{i + 1}</span>
+              <strong className="layer-title">{l.title}</strong>
+              <span className={`provenance-badge ${l.badgeClass}`}>{l.badge}</span>
+            </div>
+
+            <div className="layer-row-body">
+              <div className="layer-items-grid">
+                {l.items.map((item) => (
+                  <span key={item} className="layer-pill">{item}</span>
                 ))}
               </div>
+              <p className="layer-desc">{l.description}</p>
             </div>
-            {i < LAYERS.length - 1 && (
-              <div className="ecosystem-arrow" aria-hidden="true">
-                <div className="ecosystem-arrow-line" />
-                <span className="ecosystem-arrow-head">↓</span>
-              </div>
-            )}
           </div>
         ))}
-      </div>
-
-      {/* Bhashini callout — inline, not a card */}
-      <div className="ecosystem-bhashini reveal animate-reveal-delay-2">
-        <div className="divider" style={{ marginBottom: "var(--sp-xl)" }} />
-        <h3 className="editorial-h3 ecosystem-bhashini-heading">
-          Language should never be a barrier to governance.
-        </h3>
-        <p className="body-md ecosystem-bhashini-body">
-          SPIN accepts citizen input in any of 22 Indian languages. Bhashini provides
-          automatic detection, speech transcription and translation into English before
-          AI analysis. Every voice matters, regardless of language.
-        </p>
-        {/* Bhashini flow */}
-        <div className="ecosystem-bhashini-flow">
-          {BHASHINI_FLOW.map((node, i, arr) => (
-            <div key={node} style={{ display: "flex", alignItems: "center" }}>
-              <span className="ecosystem-flow-node">{node}</span>
-              {i < arr.length - 1 && (
-                <span className="ecosystem-flow-arrow" aria-hidden="true">→</span>
-              )}
-            </div>
-          ))}
-        </div>
       </div>
     </SectionBase>
   );
 }
+

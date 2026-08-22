@@ -8,34 +8,36 @@ export function Footer({ onViewChange }: FooterProps) {
   return (
     <footer className="site-footer">
       <div className="container footer-inner">
-        <div className="footer-statement">
-          <h2 className="editorial-h2 footer-h2">
-            Infrastructure should respond<br />to where people need it.
-          </h2>
+        <div className="footer-top">
+          <div className="footer-brand">
+            <span className="footer-wordmark">SPIN</span>
+            <span className="footer-descriptor">SYMBIOTIC PUBLIC INFRASTRUCTURE NETWORK</span>
+            <p className="footer-tagline">
+              Citizen signals → Multilingual AI → Spatial context → Policy action
+            </p>
+          </div>
+
+          <div className="footer-links-col">
+            <span className="label-eyebrow">NAVIGATION</span>
+            <button className="footer-link" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>Overview</button>
+            <button className="footer-link" onClick={() => onViewChange("citizen")}>Citizen Portal</button>
+            <button className="footer-link" onClick={() => onViewChange("dashboard")}>Policymaker Dashboard</button>
+          </div>
+
+          <div className="footer-links-col">
+            <span className="label-eyebrow">GOVERNANCE & DPI</span>
+            <span className="footer-text">Bhashini Multilingual AI</span>
+            <span className="footer-text">PM Gati Shakti GIS Overlay</span>
+            <span className="footer-text">CPGRAMS Data Integration</span>
+          </div>
         </div>
 
-        <div className="footer-identity">
-          <p className="footer-wordmark">SPIN</p>
-          <p className="footer-descriptor">Symbiotic Public Infrastructure Network</p>
-          <p className="footer-tagline label-eyebrow">
-            Citizen signals → AI intelligence → spatial context → policy action
-          </p>
-        </div>
-
-        <div className="footer-actions">
-          <button className="btn-outline" onClick={() => { window.scrollTo({ top: 0, behavior: "smooth" }); }}>
-            Explore Intelligence
-          </button>
-          <button className="btn-outline btn-outline-orange" onClick={() => onViewChange("dashboard")}>
-            View Dashboard
-          </button>
-        </div>
-
-        <div className="footer-meta">
-          <p className="footer-built">Built for Code for Communities 2 · Google for India</p>
-          <p className="footer-built">SPIN is a prototype. Demo data only.</p>
+        <div className="footer-bottom">
+          <p className="footer-built">Built for Google Code for Communities 2 · Hackathon Presentation Prototype</p>
+          <span className="provenance-tag">DEMONSTRATION SYSTEM · PROTOTYPE DATA ONLY</span>
         </div>
       </div>
     </footer>
   );
 }
+

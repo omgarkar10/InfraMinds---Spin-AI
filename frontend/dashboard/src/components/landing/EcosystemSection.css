@@ -1,111 +1,105 @@
-/* Ecosystem Section */
-.ecosystem-h2-dim {
-  color: var(--col-text-muted) !important;
-}
+/* =========================================================
+   SPIN — Section 04: Ecosystem Section (Data Architecture)
+   ========================================================= */
 
 .ecosystem-heading {
-  margin-bottom: var(--sp-xl);
-}
-
-.ecosystem-layers {
-  max-width: 700px;
-  margin-bottom: var(--sp-xl);
-}
-
-.ecosystem-layer {
-  display: grid;
-  grid-template-columns: 200px 1fr;
-  gap: var(--sp-lg);
-  align-items: start;
-  padding: var(--sp-md) 0;
-  border-top: 1px solid var(--col-border);
-}
-
-.ecosystem-layer:last-of-type {
-  border-bottom: 1px solid var(--col-border);
-}
-
-.ecosystem-layer-label {
-  padding-top: 2px;
-}
-
-.ecosystem-layer-items {
+  max-width: 800px;
+  margin-bottom: 32px;
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-sm);
-  align-items: center;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.ecosystem-item {
-  font-size: 13px;
+.ecosystem-subtitle {
   color: var(--col-text-mid);
 }
 
-.ecosystem-item::after {
-  content: " ·";
-  color: var(--col-text-muted);
+.ecosystem-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.ecosystem-item:last-child::after {
-  content: "";
+.layer-row-card {
+  background: var(--col-surface);
+  border: 1px solid var(--col-border-mid);
+  border-radius: 8px;
+  padding: 18px 24px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.ecosystem-arrow {
+.layer-row-header {
   display: flex;
   align-items: center;
-  gap: var(--sp-sm);
-  padding: 6px 0 6px 8px;
+  gap: 14px;
+  border-bottom: 1px solid var(--col-border);
+  padding-bottom: 8px;
 }
 
-.ecosystem-arrow-line {
-  display: none;
-}
-
-.ecosystem-arrow-head {
-  font-size: 14px;
-  color: var(--col-text-muted);
-  padding-left: 8px;
-}
-
-/* Bhashini */
-.ecosystem-bhashini-heading {
-  margin-bottom: var(--sp-md);
-  max-width: 580px;
-}
-
-.ecosystem-bhashini-body {
-  max-width: 580px;
-  margin-bottom: var(--sp-lg);
-}
-
-.ecosystem-bhashini-flow {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0;
-}
-
-.ecosystem-flow-node {
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  color: var(--col-text-muted);
-  padding: 4px 0;
-}
-
-.ecosystem-flow-arrow {
-  padding: 0 var(--sp-sm);
-  color: var(--col-text-muted);
-  font-size: 12px;
-}
-
-.ecosystem-flow-node:nth-child(3) {
+.layer-step-num {
+  font-size: 11px;
+  font-weight: 700;
   color: var(--col-orange);
+  font-variant-numeric: tabular-nums;
 }
 
-@media (max-width: 600px) {
-  .ecosystem-layer {
+.layer-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--col-navy);
+  flex: 1;
+}
+
+.provenance-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.provenance-badge.badge-green { background: var(--col-green-dim); color: var(--col-green); border: 1px solid rgba(22,163,74,0.3); }
+.provenance-badge.badge-blue  { background: var(--col-blue-dim); color: var(--col-blue); border: 1px solid rgba(2,132,199,0.3); }
+.provenance-badge.badge-amber { background: var(--col-amber-dim); color: var(--col-amber); border: 1px solid rgba(217,119,6,0.3); }
+.provenance-badge.badge-orange{ background: var(--col-orange-dim); color: var(--col-orange); border: 1px solid var(--col-orange-line); }
+.provenance-badge.badge-gray  { background: var(--col-panel); color: var(--col-text-muted); border: 1px solid var(--col-border-mid); }
+
+.layer-row-body {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 20px;
+  align-items: center;
+}
+
+.layer-items-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.layer-pill {
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--col-panel);
+  border: 1px solid var(--col-border-mid);
+  padding: 4px 10px;
+  border-radius: 4px;
+  color: var(--col-text);
+}
+
+.layer-desc {
+  font-size: 12px;
+  color: var(--col-text-mid);
+  line-height: 1.45;
+}
+
+@media (max-width: 900px) {
+  .layer-row-body {
     grid-template-columns: 1fr;
-    gap: var(--sp-sm);
   }
 }

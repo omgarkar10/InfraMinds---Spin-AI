@@ -1,0 +1,100 @@
+/* =========================================================
+   SPIN — Feedback Loop Section
+   ========================================================= */
+
+.loop-heading {
+  max-width: 800px;
+  margin-bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.loop-subtitle {
+  color: var(--col-text-mid);
+}
+
+.loop-flow-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.loop-step-card {
+  background: var(--col-surface);
+  border: 1px solid var(--col-border-mid);
+  border-radius: 8px;
+  padding: 20px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: var(--shadow-sm);
+}
+
+.loop-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.step-num {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--col-orange);
+}
+
+.actor-badge {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.actor-badge.badge-blue  { background: var(--col-blue-dim); color: var(--col-blue); }
+.actor-badge.badge-orange{ background: var(--col-orange-dim); color: var(--col-orange); }
+.actor-badge.badge-red   { background: var(--col-red-dim); color: var(--col-red); }
+.actor-badge.badge-navy  { background: var(--col-panel); color: var(--col-navy); }
+.actor-badge.badge-amber { background: var(--col-amber-dim); color: var(--col-amber); }
+.actor-badge.badge-green { background: var(--col-green-dim); color: var(--col-green); }
+
+.loop-step-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--col-navy);
+}
+
+.loop-step-desc {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--col-text-mid);
+}
+
+.loop-connect-arrow {
+  position: absolute;
+  right: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  background: var(--col-surface);
+  border: 1px solid var(--col-border-mid);
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--col-text-muted);
+}
+
+@media (max-width: 900px) {
+  .loop-flow-grid {
+    grid-template-columns: 1fr;
+  }
+  .loop-connect-arrow {
+    display: none;
+  }
+}

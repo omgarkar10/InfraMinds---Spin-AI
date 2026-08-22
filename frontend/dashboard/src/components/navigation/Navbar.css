@@ -1,128 +1,333 @@
 /* =========================================================
-   SPIN — Navbar Styles
+   SPIN — UX4G Government Navbar & Top Utility Bar
    ========================================================= */
 
-.navbar {
+.gov-header-wrapper {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 100;
-  background: rgba(11, 12, 15, 0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Top Utility Bar (Government Standard) ── */
+.gov-top-bar {
+  background: var(--col-header-bg);
+  color: var(--col-header-text);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  height: 32px;
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+}
+
+.gov-top-bar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.gov-top-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.gov-emblem-badge {
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Right utility links */
+.gov-top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.gov-top-link {
+  color: rgba(255, 255, 255, 0.65);
+  text-decoration: none;
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  transition: color 0.2s;
+}
+
+.gov-top-link:hover {
+  color: #FFFFFF;
+}
+
+/* ── Main Navbar ── */
+.navbar {
+  background: rgba(255, 255, 255, 0.97);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
   border-bottom: 1px solid var(--col-border);
-  height: var(--nav-h);
+  height: 56px;
+  display: flex;
+  align-items: center;
+  transition: box-shadow 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .navbar-inner {
-  max-width: var(--max-w);
-  margin: 0 auto;
-  padding: 0 var(--sp-lg);
-  height: 100%;
   display: flex;
   align-items: center;
-  gap: var(--sp-xl);
+  justify-content: space-between;
+  width: 100%;
+  gap: 20px;
 }
 
-/* Logo */
+/* ── Logo ── */
 .navbar-logo {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1px;
+  align-items: center;
+  gap: 12px;
   background: none;
   border: none;
   cursor: pointer;
   padding: 0;
+  text-align: left;
   flex-shrink: 0;
+  transition: opacity 0.2s;
+}
+
+.navbar-logo:hover {
+  opacity: 0.85;
 }
 
 .navbar-wordmark {
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  color: var(--col-text);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--col-navy);
   line-height: 1;
+  position: relative;
+}
+
+/* Subtle orange underline accent on the wordmark */
+.navbar-wordmark::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--col-orange);
+  border-radius: 1px;
+}
+
+.navbar-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .navbar-descriptor {
-  font-size: 7.5px;
-  font-weight: 400;
+  font-size: 9px;
+  font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--col-text-muted);
-  line-height: 1;
+  color: var(--col-text-mid);
+  line-height: 1.2;
 }
 
-/* Links */
+/* ── Navigation Links ── */
 .navbar-links {
   display: flex;
   align-items: center;
-  gap: var(--sp-lg);
-  flex: 1;
-  justify-content: center;
+  gap: 6px;
 }
 
 .navbar-link {
   background: none;
   border: none;
   font-family: var(--font);
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--col-text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--col-text-mid);
   cursor: pointer;
-  padding: 0;
-  letter-spacing: 0.02em;
-  transition: color 0.2s;
+  padding: 6px 10px;
+  letter-spacing: 0.01em;
+  border-radius: 6px;
+  transition: color 0.2s, background 0.2s;
   white-space: nowrap;
+  position: relative;
 }
 
 .navbar-link:hover {
-  color: var(--col-text);
+  color: var(--col-navy);
+  background: var(--col-panel);
 }
 
-/* Actions */
+/* ── Right Action CTAs ── */
 .navbar-actions {
   display: flex;
   align-items: center;
-  gap: var(--sp-sm);
+  gap: 10px;
   flex-shrink: 0;
 }
 
 .navbar-cta {
-  background: none;
-  border: 1px solid var(--col-border-mid);
+  background: transparent;
+  border: 1.5px solid var(--col-border-strong);
+  color: var(--col-text);
+  padding: 7px 16px;
+  border-radius: 6px;
   font-family: var(--font);
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  color: var(--col-text-muted);
-  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
   cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
+  transition: all 0.2s var(--ease);
   white-space: nowrap;
 }
 
-.navbar-cta:hover,
+.navbar-cta:hover {
+  border-color: var(--col-navy);
+  background: var(--col-panel);
+  color: var(--col-navy);
+}
+
 .navbar-cta.active {
-  border-color: var(--col-border-mid);
-  color: var(--col-text);
+  border-color: var(--col-navy);
+  background: var(--col-navy);
+  color: #FFFFFF;
 }
 
 .navbar-cta-primary {
-  border-color: var(--col-orange-line);
-  color: var(--col-orange);
+  background: var(--col-navy);
+  color: #FFFFFF;
+  border-color: var(--col-navy);
 }
 
-.navbar-cta-primary:hover,
-.navbar-cta-primary.active {
-  border-color: var(--col-orange);
+.navbar-cta-primary:hover {
+  background: #1a2d4a;
+  border-color: #1a2d4a;
+}
+
+/* ── Language Dropdown in Top Bar ── */
+.navbar-lang-wrapper {
+  position: relative;
+}
+
+.navbar-lang-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: #FFFFFF;
+  font-family: var(--font);
+  font-size: 11px;
+  padding: 2px 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.navbar-lang-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.navbar-lang-chevron {
+  font-size: 9px;
+  opacity: 0.7;
+}
+
+.navbar-lang-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+}
+
+.navbar-lang-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 1002;
+  background: var(--col-surface);
+  border: 1px solid var(--col-border-strong);
+  border-radius: 8px;
+  width: 240px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+  padding: 6px 0;
+}
+
+.navbar-lang-header {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--col-border);
+}
+
+.navbar-lang-sub {
+  display: block;
+  font-size: 10px;
+  color: var(--col-text-muted);
+  margin-top: 2px;
+}
+
+.navbar-lang-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: none;
+  border: none;
+  font-family: var(--font);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.navbar-lang-option:hover {
+  background: var(--col-panel);
+}
+
+.navbar-lang-option.active {
   background: var(--col-orange-dim);
-  color: var(--col-orange);
 }
 
-/* Hamburger */
+.navbar-lang-option-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.navbar-lang-option-country {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--col-text);
+}
+
+.navbar-lang-option-lang {
+  font-size: 10px;
+  color: var(--col-text-muted);
+}
+
+.navbar-lang-option-badge {
+  font-size: 9px;
+  padding: 1px 5px;
+  border: 1px solid var(--col-border-mid);
+  border-radius: 3px;
+  color: var(--col-text-muted);
+}
+
+.navbar-lang-option-check {
+  color: var(--col-orange);
+  font-weight: 700;
+}
+
+.navbar-lang-footer {
+  padding: 8px 14px;
+  border-top: 1px solid var(--col-border);
+}
+
+/* ── Mobile Hamburger ── */
 .navbar-hamburger {
   display: none;
   flex-direction: column;
@@ -130,63 +335,72 @@
   background: none;
   border: none;
   cursor: pointer;
-  padding: 4px;
-  margin-left: auto;
+  padding: 6px;
 }
 
 .ham-line {
-  display: block;
   width: 20px;
-  height: 1px;
-  background: var(--col-text-mid);
-  transition: transform 0.2s, opacity 0.2s;
+  height: 2px;
+  background: var(--col-navy);
+  border-radius: 1px;
+  transition: transform 0.25s ease, opacity 0.2s;
 }
 
-.ham-line.open:first-child { transform: rotate(45deg) translate(3px, 3px); }
-.ham-line.open:last-child  { transform: rotate(-45deg) translate(3px, -3px); }
+.ham-line.open:first-child {
+  transform: rotate(45deg) translate(3px, 3px);
+}
 
-/* Mobile menu */
+.ham-line.open:last-child {
+  transform: rotate(-45deg) translate(3px, -3px);
+}
+
 .navbar-mobile-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--col-surface);
+  border-bottom: 1px solid var(--col-border-strong);
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
-  border-top: 1px solid var(--col-border);
-  background: var(--col-bg);
-  padding: var(--sp-md) 0;
+  gap: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 .navbar-mobile-link {
   background: none;
   border: none;
   font-family: var(--font);
-  font-size: 13px;
-  color: var(--col-text-mid);
-  padding: 10px var(--sp-lg);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--col-text);
   text-align: left;
-  cursor: pointer;
+  padding: 10px 0;
   border-bottom: 1px solid var(--col-border);
-  letter-spacing: 0.02em;
+  cursor: pointer;
   transition: color 0.2s;
 }
 
-.navbar-mobile-link:hover { color: var(--col-text); }
+.navbar-mobile-link:hover {
+  color: var(--col-navy);
+}
 
 .navbar-mobile-cta {
   color: var(--col-orange);
+  font-weight: 600;
   border-bottom: none;
+  margin-top: 4px;
 }
 
-/* Responsive */
 @media (max-width: 900px) {
-  .navbar-links,
+  .navbar-links {
+    display: none;
+  }
   .navbar-actions {
     display: none;
   }
-
   .navbar-hamburger {
     display: flex;
-  }
-
-  .navbar {
-    height: auto;
   }
 }

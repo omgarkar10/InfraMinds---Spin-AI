@@ -1,81 +1,69 @@
 import { SectionBase } from "./SectionBase";
 import "./ProblemSection.css";
 
-const CITIZEN = ["Voice", "Text", "Images", "Local languages", "GPS location"];
-const GOVERNMENT = ["CPGRAMS", "Infrastructure records", "PM Gati Shakti", "Demographics", "Planning data"];
-const OUTCOMES = ["FRAGMENTED SIGNALS", "SILOED SYSTEMS", "REACTIVE DECISIONS"];
-
 export function ProblemSection() {
   return (
-    <SectionBase id="how-it-works" number="01" label="The Problem">
+    <SectionBase id="how-it-works" number="01" label="THE PROBLEM">
       <div className="problem-layout">
-        {/* Heading */}
-        <div className="problem-heading reveal">
+        {/* Title */}
+        <div className="problem-heading">
           <h2 className="editorial-h2">
-            The problem isn't<br />a lack of data.
+            The problem isn't a lack of data.<br />
+            <span className="problem-h2-highlight">It's disconnected data.</span>
           </h2>
-          <h2 className="editorial-h2 problem-h2-dim">
-            It's disconnected data.
-          </h2>
+          <p className="body-lg problem-subtitle">
+            A grievance may be successfully registered and resolved individually, yet hundreds of similar grievances may remain invisible as a larger infrastructure pattern. This is the gap SPIN addresses.
+          </p>
         </div>
 
-        {/* Disconnected systems diagram */}
-        <div className="problem-diagram reveal animate-reveal-delay-1">
-          <div className="problem-col">
-            <p className="label-eyebrow problem-col-label">Citizen Signals</p>
-            <ul className="problem-list">
-              {CITIZEN.map((item) => (
-                <li key={item} className="problem-item">{item}</li>
-              ))}
+        {/* Editorial Diagram Flow */}
+        <div className="problem-editorial-diagram">
+          {/* Left: Citizen Layer */}
+          <div className="diagram-card citizen-layer">
+            <span className="label-eyebrow">01 / CITIZEN INPUT SIGNALS</span>
+            <strong className="card-title">Scattered Citizen Voices</strong>
+            <ul className="diagram-list">
+              <li>Voice messages & local dialects</li>
+              <li>WhatsApp & web text complaints</li>
+              <li>Photo evidence & cell tower location</li>
+              <li>CPGRAMS individual registrations</li>
             </ul>
           </div>
 
-          {/* Gap — lines stop short */}
-          <div className="problem-gap" aria-hidden="true">
-            <svg width="120" height="200" viewBox="0 0 120 200" fill="none" className="problem-gap-svg">
-              {[0.2, 0.4, 0.6, 0.8].map((y, i) => (
-                <line key={i}
-                  x1="0" y1={y * 200}
-                  x2="52" y2={y * 200}
-                  stroke="rgba(255,255,255,0.12)" strokeWidth="1" strokeDasharray="4 3"
-                />
-              ))}
-              {[0.25, 0.5, 0.75].map((y, i) => (
-                <line key={`r${i}`}
-                  x1="68" y1={y * 200}
-                  x2="120" y2={y * 200}
-                  stroke="rgba(255,255,255,0.12)" strokeWidth="1" strokeDasharray="4 3"
-                />
-              ))}
-              <text x="60" y="104" textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize="18">✕</text>
-            </svg>
+          <div className="diagram-flow-arrow">
+            <span>↓</span>
+            <span className="arrow-label">FRAGMENTATION GAP</span>
           </div>
 
-          <div className="problem-col problem-col-right">
-            <p className="label-eyebrow problem-col-label">Government Systems</p>
-            <ul className="problem-list">
-              {GOVERNMENT.map((item) => (
-                <li key={item} className="problem-item">{item}</li>
-              ))}
+          {/* Middle: Siloed Systems */}
+          <div className="diagram-card fragmented-systems">
+            <span className="label-eyebrow">02 / SILOED DEPARTMENTS</span>
+            <strong className="card-title">Disconnected Infrastructure Systems</strong>
+            <ul className="diagram-list">
+              <li>CPGRAMS grievance database</li>
+              <li>State & municipal complaint portals</li>
+              <li>Public works department spreadsheets</li>
+              <li>Isolated GIS maps & census grids</li>
             </ul>
           </div>
-        </div>
-      </div>
 
-      {/* Outcome row */}
-      <div className="problem-outcomes reveal animate-reveal-delay-2">
-        <div className="problem-outcomes-row">
-          {OUTCOMES.map((o, i) => (
-            <div key={o} className="problem-outcome-item">
-              <span className="label-orange">{o}</span>
-              {i < OUTCOMES.length - 1 && <span className="problem-outcome-slash">/</span>}
+          <div className="diagram-flow-arrow break">
+            <span className="break-icon">✕</span>
+            <span className="arrow-label failure">RESPONSE GAP</span>
+          </div>
+
+          {/* Right: Policymaker Disconnect */}
+          <div className="diagram-card decision-maker">
+            <span className="label-eyebrow">03 / DECISION MAKER GAP</span>
+            <strong className="card-title">Reactive Infrastructure Planning</strong>
+            <div className="failure-callout">
+              <span className="failure-eq">Citizen Demand ≠ Infrastructure Planning</span>
+              <p>Individual complaints get closed, but systemic pipe breaks, road failures, and power deficits remain unaddressed.</p>
             </div>
-          ))}
+          </div>
         </div>
-        <p className="editorial-h3 problem-result reveal animate-reveal-delay-3">
-          Misaligned infrastructure investment.
-        </p>
       </div>
     </SectionBase>
   );
 }
+

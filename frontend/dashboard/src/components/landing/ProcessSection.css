@@ -1,85 +1,117 @@
-/* Process Section */
+/* =========================================================
+   SPIN — Section 03: Process Section (6 Stages)
+   ========================================================= */
+
 .process-heading {
-  margin-bottom: var(--sp-xl);
-}
-
-.process-stages {
+  max-width: 800px;
+  margin-bottom: 32px;
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: 12px;
 }
 
-.process-stage {
+.process-subtitle {
+  color: var(--col-text-mid);
+}
+
+.process-grid {
   display: grid;
-  grid-template-columns: 56px 1fr;
-  gap: var(--sp-lg);
-  position: relative;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
 }
 
-.process-stage-num {
+.process-card {
+  background: var(--col-surface);
+  border: 1px solid var(--col-border-mid);
+  border-radius: 8px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding-top: var(--sp-md);
-  position: relative;
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
 }
 
-.process-stage-content {
-  padding: var(--sp-md) 0 var(--sp-xl) 0;
-  border-bottom: 1px solid var(--col-border);
+.process-card.hitl-border {
+  border-left: 4px solid var(--col-orange);
 }
 
-.process-stage:last-child .process-stage-content {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.process-stage-title-row {
+.process-card-header {
   display: flex;
   align-items: center;
-  gap: var(--sp-md);
-  margin-bottom: var(--sp-sm);
+  gap: 12px;
+  border-bottom: 1px solid var(--col-border);
+  padding-bottom: 10px;
 }
 
-.process-stage-title {
-  font-size: 20px;
-  font-weight: 500;
-  color: var(--col-text);
-  letter-spacing: -0.01em;
+.process-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--col-navy);
+  flex: 1;
 }
 
-.process-stage-desc {
-  max-width: 600px;
+.process-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-/* HITL stage — orange left border */
-.process-stage:nth-child(3) .process-stage-content {
-  border-left: 2px solid var(--col-orange);
-  padding-left: var(--sp-md);
-  margin-left: calc(-1 * var(--sp-md));
-  background: var(--col-orange-dim);
-  padding-top: var(--sp-md);
+.io-row {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px;
+  align-items: baseline;
 }
 
-/* Connector line on left side */
-.process-connector {
-  position: absolute;
-  left: 21px;
-  top: 42px;
-  bottom: 0;
-  width: 1px;
-  z-index: 0;
+.io-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-align: center;
+  text-transform: uppercase;
 }
 
-.process-connector-line {
-  width: 1px;
-  height: 100%;
-  background: var(--col-border);
+.io-tag.input   { background: var(--col-blue-dim); color: var(--col-blue); }
+.io-tag.process { background: var(--col-panel); color: var(--col-navy); }
+.io-tag.output  { background: var(--col-orange-dim); color: var(--col-orange); }
+
+.io-text {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--col-text-mid);
 }
 
-@media (max-width: 600px) {
-  .process-stage {
-    grid-template-columns: 40px 1fr;
-    gap: var(--sp-md);
+.io-text.bold {
+  color: var(--col-navy);
+  font-weight: 600;
+}
+
+.process-card-why {
+  background: var(--col-panel);
+  padding: 10px 14px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.why-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--col-text-muted);
+}
+
+.why-text {
+  font-size: 11.5px;
+  font-style: italic;
+  color: var(--col-text-mid);
+}
+
+@media (max-width: 900px) {
+  .process-grid {
+    grid-template-columns: 1fr;
   }
 }
