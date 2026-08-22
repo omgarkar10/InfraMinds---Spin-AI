@@ -3,8 +3,8 @@ import type { BudgetAllocation, InfrastructureDomain } from "../types";
 
 const DEFAULT_ALLOCATIONS: BudgetAllocation[] = [
   { domain: "Water", current_cr: 120, proposed_cr: 120 },
-  { domain: "Road", current_cr: 200, proposed_cr: 200 },
-  { domain: "Power", current_cr: 85, proposed_cr: 85 },
+  { domain: "Road",  current_cr: 200, proposed_cr: 200 },
+  { domain: "Power", current_cr: 85,  proposed_cr: 85  },
 ];
 
 interface BudgetReallocationPanelProps {
@@ -18,7 +18,7 @@ export function BudgetReallocationPanel({
 }: BudgetReallocationPanelProps) {
   const [allocations, setAllocations] = useState<BudgetAllocation[]>(() =>
     DEFAULT_ALLOCATIONS.map((a) =>
-      a.domain === redZoneDomain ? { ...a, proposed_cr: a.current_cr + 30 } : a
+      a.domain === redZoneDomain ? { ...a, proposed_cr: a.current_cr + 12 } : a
     )
   );
   const [submitting, setSubmitting] = useState(false);
@@ -42,44 +42,61 @@ export function BudgetReallocationPanel({
 
   return (
     <aside className="panel budget-panel">
-      <h2>Budget Reallocation</h2>
+      <h2>BUDGET REALLOCATION</h2>
+
       {redZoneDomain && (
         <p className="red-zone-hint">
-          Red Zone detected: <strong>{redZoneDomain}</strong> — consider increasing allocation.
+          SPIN Signal: <strong>{redZoneDomain}</strong> demand significantly elevated
+          in identified zones.
         </p>
       )}
 
+      <p className="spin-signal-note">
+        Adjustments below are AI-generated recommendations.
+        Final approval remains with the policymaker.
+      </p>
+
       <div className="slider-list">
-        {allocations.map((item) => (
-          <div key={item.domain} className="slider-row">
-            <div className="slider-header">
-              <span>{item.domain}</span>
-              <span className="budget-value">₹{item.proposed_cr} Cr</span>
+        {allocations.map((item) => {
+          const delta = item.proposed_cr - item.current_cr;
+          return (
+            <div key={item.domain} className="slider-row">
+              <div className="slider-header">
+                <span>{item.domain}</span>
+                <span className="budget-value">₹{item.proposed_cr} Cr</span>
+              </div>
+              <input
+                type="range"
+                min={10}
+                max={400}
+                step={5}
+                value={item.proposed_cr}
+                onChange={(e) => updateProposed(item.domain, Number(e.target.value))}
+                className="budget-slider"
+                disabled={approved}
+              />
+              <span className={`budget-delta ${delta > 0 ? "positive" : ""}`}>
+                {delta >= 0 ? "+" : ""}{delta} Cr from current ₹{item.current_cr} Cr
+              </span>
             </div>
-            <input
-              type="range"
-              min={10}
-              max={400}
-              step={5}
-              value={item.proposed_cr}
-              onChange={(e) => updateProposed(item.domain, Number(e.target.value))}
-              className="budget-slider"
-            />
-            <span className="budget-delta">
-              {item.proposed_cr - item.current_cr >= 0 ? "+" : ""}
-              {item.proposed_cr - item.current_cr} Cr from current
-            </span>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <button
-        className="approve-btn"
+        className={`approve-btn${approved ? " approved" : ""}`}
         onClick={handleApprove}
         disabled={submitting || approved}
       >
-        {approved ? "✓ Approved — Citizens Notified" : submitting ? "Processing…" : "One-Click Approve"}
+        {approved
+          ? "✓ Submitted — Awaiting Policymaker Sign-Off"
+          : submitting
+          ? "Submitting…"
+          : "Submit Recommendation for Approval"}
       </button>
+      {!approved && (
+        <p className="approval-note">AI RECOMMENDS. HUMANS REMAIN ACCOUNTABLE.</p>
+      )}
     </aside>
   );
 }

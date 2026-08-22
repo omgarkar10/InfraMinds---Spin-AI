@@ -1,0 +1,50 @@
+/* Impact Section */
+.impact-heading {
+  margin-bottom: var(--sp-xl);
+}
+
+.impact-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0;
+  border-top: 1px solid var(--col-border);
+  border-bottom: 1px solid var(--col-border);
+}
+
+.impact-metric {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-sm);
+  padding: var(--sp-lg) var(--sp-md);
+  border-right: 1px solid var(--col-border);
+}
+
+.impact-metric:last-child {
+  border-right: none;
+}
+
+.impact-metric-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--col-text-mid);
+  letter-spacing: 0.02em;
+}
+
+.impact-metric-sub {
+  font-size: 10px;
+  color: var(--col-text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 900px) {
+  .impact-metrics {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .impact-metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+}

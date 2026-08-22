@@ -9,8 +9,8 @@ export function ExecutiveSummaryPanel({ summary, loading }: ExecutiveSummaryPane
   if (loading) {
     return (
       <aside className="panel executive-panel">
-        <h2>Executive Summary</h2>
-        <p className="muted">Generating AI summary…</p>
+        <h2>INTELLIGENCE SUMMARY</h2>
+        <p className="summary-text">Generating analysis…</p>
       </aside>
     );
   }
@@ -18,8 +18,8 @@ export function ExecutiveSummaryPanel({ summary, loading }: ExecutiveSummaryPane
   if (!summary) {
     return (
       <aside className="panel executive-panel">
-        <h2>Executive Summary</h2>
-        <p className="muted">No data available.</p>
+        <h2>INTELLIGENCE SUMMARY</h2>
+        <p className="summary-text">No data available.</p>
       </aside>
     );
   }
@@ -28,11 +28,11 @@ export function ExecutiveSummaryPanel({ summary, loading }: ExecutiveSummaryPane
 
   return (
     <aside className="panel executive-panel">
-      <h2>Executive Summary</h2>
+      <h2>INTELLIGENCE SUMMARY</h2>
       <p className="summary-text">{summary.executive_summary}</p>
 
       <div className="stat-grid">
-        <StatCard label="Total Complaints" value={stats.total_complaints.toLocaleString()} />
+        <StatCard label="Total Signals" value={stats.total_complaints.toLocaleString()} />
         <StatCard label="Top Domain" value={stats.top_domain} />
         <StatCard label="Avg Severity" value={stats.avg_severity.toFixed(1)} />
         <StatCard label="Red Zones" value={String(stats.red_zone_count)} accent />

@@ -1,0 +1,475 @@
+/* =========================================================
+   SPIN — Editorial Design System
+   Dark civic intelligence platform
+   Base: #0B0C0F  Surface: #111318  Panel: #15171C
+   Accent: #F36B32 (infrastructure orange)
+   ========================================================= */
+
+/* ── Reset & Base ─────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Colors */
+  --col-bg:           #0B0C0F;
+  --col-surface:      #111318;
+  --col-panel:        #15171C;
+  --col-border:       rgba(255, 255, 255, 0.07);
+  --col-border-mid:   rgba(255, 255, 255, 0.12);
+  --col-orange:       #F36B32;
+  --col-orange-dim:   rgba(243, 107, 50, 0.15);
+  --col-orange-line:  rgba(243, 107, 50, 0.35);
+  --col-text:         rgba(255, 255, 255, 0.92);
+  --col-text-mid:     rgba(255, 255, 255, 0.55);
+  --col-text-muted:   rgba(255, 255, 255, 0.35);
+  --col-green:        #4CAF6F;
+  --col-red:          #C0392B;
+
+  /* Typography */
+  --font:             'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Spacing */
+  --sp-xs:  4px;
+  --sp-sm:  8px;
+  --sp-md:  16px;
+  --sp-lg:  32px;
+  --sp-xl:  64px;
+  --sp-2xl: 96px;
+  --sp-3xl: 140px;
+
+  /* Layout */
+  --max-w:  1280px;
+  --nav-h:  56px;
+
+  /* Transitions */
+  --ease:   cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  font-family: var(--font);
+  background-color: var(--col-bg);
+  color: var(--col-text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ── Typography Utilities ─────────────────────────────── */
+.label-eyebrow {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--col-text-muted);
+}
+
+.label-orange {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--col-orange);
+}
+
+.section-number {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--col-text-muted);
+}
+
+.editorial-h1 {
+  font-size: clamp(44px, 6vw, 88px);
+  font-weight: 300;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: var(--col-text);
+}
+
+.editorial-h2 {
+  font-size: clamp(36px, 4.5vw, 68px);
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--col-text);
+}
+
+.editorial-h3 {
+  font-size: clamp(22px, 2.5vw, 34px);
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--col-text);
+}
+
+.body-lg {
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.7;
+  color: var(--col-text-mid);
+}
+
+.body-md {
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.65;
+  color: var(--col-text-mid);
+}
+
+.body-sm {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--col-text-muted);
+}
+
+.mono {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+/* ── Layout Utilities ─────────────────────────────────── */
+.container {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 var(--sp-lg);
+}
+
+.section {
+  padding: var(--sp-3xl) 0;
+  border-bottom: 1px solid var(--col-border);
+}
+
+.section:last-of-type {
+  border-bottom: none;
+}
+
+.divider {
+  width: 100%;
+  height: 1px;
+  background: var(--col-border);
+}
+
+.divider-orange {
+  width: 32px;
+  height: 1px;
+  background: var(--col-orange);
+}
+
+/* ── Section Header Pattern ───────────────────────────── */
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-md);
+  margin-bottom: var(--sp-xl);
+  padding-bottom: var(--sp-md);
+  border-bottom: 1px solid var(--col-border);
+}
+
+/* ── Thin Left Border Accent ──────────────────────────── */
+.accent-left {
+  border-left: 2px solid var(--col-orange);
+  padding-left: var(--sp-md);
+}
+
+.accent-left-dim {
+  border-left: 1px solid var(--col-border-mid);
+  padding-left: var(--sp-md);
+}
+
+/* ── Corner Frame ─────────────────────────────────────── */
+.corner-frame {
+  position: relative;
+}
+
+.corner-frame::before,
+.corner-frame::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-color: var(--col-border-mid);
+  border-style: solid;
+}
+
+.corner-frame::before {
+  top: 0;
+  left: 0;
+  border-width: 1px 0 0 1px;
+}
+
+.corner-frame::after {
+  bottom: 0;
+  right: 0;
+  border-width: 0 1px 1px 0;
+}
+
+/* ── Data Display ─────────────────────────────────────── */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table td {
+  padding: var(--sp-sm) 0;
+  border-bottom: 1px solid var(--col-border);
+  font-size: 14px;
+}
+
+.data-table td:first-child {
+  color: var(--col-text-muted);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding-right: var(--sp-lg);
+  width: 140px;
+}
+
+.data-table td:last-child {
+  color: var(--col-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.num-large {
+  font-size: clamp(40px, 5vw, 72px);
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  color: var(--col-text);
+  line-height: 1;
+}
+
+.num-orange {
+  color: var(--col-orange);
+}
+
+/* ── Pipeline Arrow Strip ─────────────────────────────── */
+.pipeline-strip {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.pipeline-node {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--col-text-muted);
+  white-space: nowrap;
+  padding: var(--sp-xs) var(--sp-sm);
+  transition: color 0.2s var(--ease);
+}
+
+.pipeline-node.active {
+  color: var(--col-orange);
+}
+
+.pipeline-arrow {
+  width: 32px;
+  height: 1px;
+  background: var(--col-border-mid);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.pipeline-arrow::after {
+  content: '';
+  position: absolute;
+  right: -2px;
+  top: -3px;
+  width: 0;
+  height: 0;
+  border-left: 5px solid var(--col-border-mid);
+  border-top: 3px solid transparent;
+  border-bottom: 3px solid transparent;
+}
+
+/* ── Buttons ──────────────────────────────────────────── */
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  padding: 10px 20px;
+  border: 1px solid var(--col-border-mid);
+  background: transparent;
+  color: var(--col-text-mid);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s var(--ease), color 0.2s var(--ease);
+  text-decoration: none;
+}
+
+.btn-outline:hover {
+  border-color: var(--col-orange);
+  color: var(--col-orange);
+}
+
+.btn-outline-orange {
+  border-color: var(--col-orange-line);
+  color: var(--col-orange);
+}
+
+.btn-outline-orange:hover {
+  border-color: var(--col-orange);
+  background: var(--col-orange-dim);
+}
+
+/* ── Animations ───────────────────────────────────────── */
+@keyframes fadeReveal {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes drawLine {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dotPulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50%       { opacity: 1;   transform: scale(1.2); }
+}
+
+@keyframes lineGrow {
+  from { stroke-dashoffset: 200; }
+  to   { stroke-dashoffset: 0; }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.animate-reveal {
+  animation: fadeReveal 0.7s var(--ease) both;
+}
+
+.animate-reveal-delay-1 { animation-delay: 0.1s; }
+.animate-reveal-delay-2 { animation-delay: 0.25s; }
+.animate-reveal-delay-3 { animation-delay: 0.4s; }
+.animate-reveal-delay-4 { animation-delay: 0.55s; }
+
+/* ── Scroll Reveal (JS-triggered) ────────────────────── */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.75s var(--ease), transform 0.75s var(--ease);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Tags & Status Indicators ────────────────────────── */
+.tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border: 1px solid var(--col-border-mid);
+  color: var(--col-text-muted);
+}
+
+.tag-orange {
+  border-color: var(--col-orange-line);
+  color: var(--col-orange);
+}
+
+.tag-red {
+  border-color: rgba(192, 57, 43, 0.4);
+  color: var(--col-red);
+}
+
+.tag-green {
+  border-color: rgba(76, 175, 111, 0.4);
+  color: var(--col-green);
+}
+
+.status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--col-green);
+  animation: dotPulse 2.5s ease-in-out infinite;
+}
+
+/* ── HITL Checkpoint ──────────────────────────────────── */
+.hitl-badge {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--col-orange);
+  border: 1px solid var(--col-orange-line);
+  padding: 2px 7px;
+  display: inline-block;
+}
+
+/* ── Disclaimer ───────────────────────────────────────── */
+.disclaimer {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--col-text-muted);
+  border-left: 2px solid var(--col-border-mid);
+  padding-left: var(--sp-sm);
+}
+
+/* ── Demo Badge ───────────────────────────────────────── */
+.demo-badge {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--col-orange);
+  border: 1px solid var(--col-orange-line);
+  padding: 3px 10px;
+  display: inline-block;
+  margin-bottom: var(--sp-lg);
+}
+
+/* ── Responsive ───────────────────────────────────────── */
+@media (max-width: 768px) {
+  :root {
+    --sp-xl:  40px;
+    --sp-2xl: 60px;
+    --sp-3xl: 80px;
+  }
+
+  .container {
+    padding: 0 var(--sp-md);
+  }
+}

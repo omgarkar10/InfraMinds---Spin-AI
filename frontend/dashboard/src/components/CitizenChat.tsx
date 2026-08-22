@@ -66,6 +66,15 @@ export function CitizenChat({ apiUrl = "" }: CitizenChatProps) {
             "Grievance registered. You will be notified when action is taken.",
         },
       ]);
+    } catch (err) {
+      console.warn("Backend pipeline offline, mock response returned:", err);
+      setMessages((m) => [
+        ...m,
+        {
+          role: "bot",
+          text: "Grievance recorded locally (Demo Mode). Start backend server for full AI agent pipeline.",
+        },
+      ]);
     } finally {
       setLoading(false);
     }

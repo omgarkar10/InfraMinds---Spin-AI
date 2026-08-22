@@ -1,0 +1,187 @@
+/* Transformation Section — Centrepiece */
+.transform-intro {
+  margin-bottom: var(--sp-xl);
+}
+
+/* Stage labels row */
+.transform-stage-labels {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  margin-bottom: 0;
+  border-top: 1px solid var(--col-border);
+  border-bottom: 1px solid var(--col-border);
+}
+
+.transform-stage-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: var(--sp-md);
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--col-border);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.3s;
+  position: relative;
+}
+
+.transform-stage-btn:last-child {
+  border-right: none;
+}
+
+.transform-stage-btn.active {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.transform-stage-num {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: var(--col-text-muted);
+}
+
+.transform-stage-btn.active .transform-stage-num,
+.transform-stage-btn.current .transform-stage-num {
+  color: var(--col-orange);
+}
+
+.transform-stage-lbl {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--col-text-muted);
+}
+
+.transform-stage-btn.current .transform-stage-lbl {
+  color: var(--col-text-mid);
+}
+
+/* Progress line at bottom of active stage */
+.transform-stage-line {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--col-orange);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s var(--ease);
+}
+
+.transform-stage-btn.current .transform-stage-line {
+  transform: scaleX(1);
+}
+
+/* Stage content */
+.transform-content {
+  position: relative;
+  min-height: 260px;
+  padding: var(--sp-xl) 0;
+  border-bottom: 1px solid var(--col-border);
+}
+
+.transform-stage-content {
+  display: none;
+  animation: fadeReveal 0.5s var(--ease) both;
+}
+
+.transform-stage-content.visible {
+  display: block;
+}
+
+/* Stage 01 — Raw Signal */
+.transform-quote {
+  font-size: clamp(22px, 3vw, 38px);
+  font-weight: 300;
+  font-style: normal;
+  line-height: 1.4;
+  color: var(--col-text);
+  letter-spacing: -0.01em;
+  max-width: 700px;
+  margin-bottom: var(--sp-lg);
+  border-left: 2px solid var(--col-orange);
+  padding-left: var(--sp-lg);
+}
+
+.transform-tag-row {
+  display: flex;
+  gap: var(--sp-sm);
+  flex-wrap: wrap;
+}
+
+/* Stage 02 — table */
+.transform-table {
+  max-width: 500px;
+}
+
+/* Stage 03 — Spatial */
+.transform-spatial {
+  max-width: 700px;
+}
+
+.transform-spatial-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sp-md);
+  flex-wrap: wrap;
+}
+
+.transform-spatial-node {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.transform-spatial-arrow {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.transform-red-zone-label {
+  font-size: clamp(18px, 2.5vw, 28px) !important;
+  color: var(--col-red) !important;
+}
+
+/* Stage 04 — Policy */
+.transform-policy {
+  max-width: 600px;
+}
+
+/* Replay */
+.transform-replay {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--sp-md);
+}
+
+.transform-replay-btn {
+  background: none;
+  border: none;
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: var(--col-text-muted);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.transform-replay-btn:hover {
+  color: var(--col-orange);
+}
+
+@media (max-width: 768px) {
+  .transform-stage-labels {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .transform-stage-btn {
+    border-bottom: 1px solid var(--col-border);
+  }
+}

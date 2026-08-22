@@ -35,8 +35,11 @@ export function PolicyDashboard() {
     <div className="dashboard">
       <header className="dashboard-header">
         <div>
-          <h1>SPIN</h1>
-          <p className="subtitle">Symbiotic Public Infrastructure Network — Policymaker View</p>
+          <h1>POLICYMAKER / LIVE INTELLIGENCE</h1>
+        </div>
+        <div className="dashboard-status">
+          <span className="status-dot" />
+          SYSTEM OPERATIONAL
         </div>
         <div className="header-controls">
           <select
@@ -46,12 +49,11 @@ export function PolicyDashboard() {
               refresh(e.target.value || undefined);
             }}
             className="district-select"
+            aria-label="Filter by district"
           >
             <option value="">All Districts</option>
             {districts.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
+              <option key={d} value={d}>{d}</option>
             ))}
           </select>
           <button className="refresh-btn" onClick={() => refresh(districtFilter || undefined)}>
@@ -60,7 +62,11 @@ export function PolicyDashboard() {
         </div>
       </header>
 
-      {error && <div className="error-banner">{error}</div>}
+      {error && (
+        <div className="error-banner" role="alert">
+          {error}
+        </div>
+      )}
 
       <main className="dashboard-main">
         <section className="map-section">

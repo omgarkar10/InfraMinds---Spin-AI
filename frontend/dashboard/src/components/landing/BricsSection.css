@@ -1,0 +1,93 @@
+/* BRICS Section */
+.brics-layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: var(--sp-xl);
+  align-items: start;
+}
+
+.brics-h2-dim {
+  color: var(--col-text-muted) !important;
+}
+
+.brics-body {
+  max-width: 480px;
+  margin-top: var(--sp-lg);
+  margin-bottom: var(--sp-xl);
+}
+
+.brics-countries {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid var(--col-border);
+}
+
+.brics-country {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--sp-sm) 0;
+  border-bottom: 1px solid var(--col-border);
+}
+
+.brics-country-name {
+  font-size: 14px;
+  color: var(--col-text-mid);
+}
+
+.brics-country-active .brics-country-name {
+  color: var(--col-text);
+  font-weight: 500;
+}
+
+/* Architecture stack */
+.brics-arch {
+  border: 1px solid var(--col-border);
+  padding: var(--sp-lg);
+  margin-bottom: var(--sp-md);
+}
+
+.brics-arch-layer {
+  padding: var(--sp-md) 0;
+  border-bottom: 1px solid var(--col-border);
+}
+
+.brics-arch-layer:last-of-type {
+  border-bottom: none;
+}
+
+.brics-arch-connector {
+  font-size: 20px;
+  color: var(--col-text-muted);
+  text-align: center;
+  padding: var(--sp-sm) 0;
+  line-height: 1;
+}
+
+.brics-arch-result {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+  padding-top: var(--sp-md);
+  border-top: 1px solid var(--col-border);
+  margin-top: var(--sp-md);
+}
+
+.brics-arch-equals {
+  font-size: 20px;
+  color: var(--col-orange);
+  font-weight: 300;
+}
+
+.brics-arch-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-sm);
+}
+
+@media (max-width: 900px) {
+  .brics-layout {
+    grid-template-columns: 1fr;
+  }
+}

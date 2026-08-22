@@ -1,0 +1,129 @@
+/* Agents Section */
+.agents-heading {
+  margin-bottom: var(--sp-xl);
+}
+
+.agents-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.agents-row {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: var(--sp-lg);
+  padding-bottom: var(--sp-xl);
+  border-bottom: 1px solid var(--col-border);
+  margin-bottom: 0;
+}
+
+.agents-row:last-child {
+  border-bottom: none;
+}
+
+.agents-row-hitl {
+  border-left: 2px solid var(--col-orange);
+  padding-left: var(--sp-md);
+  margin-left: -18px;
+  background: var(--col-orange-dim);
+  padding-top: var(--sp-md);
+  padding-right: var(--sp-md);
+}
+
+.agents-row-num {
+  padding-top: var(--sp-sm);
+}
+
+.agents-row-body {
+  padding: var(--sp-md) 0;
+}
+
+.agents-row-hitl .agents-row-body {
+  padding-top: 0;
+}
+
+.agents-row-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+  margin-bottom: var(--sp-sm);
+}
+
+.agents-name {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--col-text);
+  letter-spacing: -0.01em;
+}
+
+.agents-role {
+  margin-bottom: var(--sp-md);
+  max-width: 560px;
+}
+
+.agents-io {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--col-bg);
+  border: 1px solid var(--col-border);
+  padding: var(--sp-md);
+  max-width: 580px;
+}
+
+.agents-row-hitl .agents-io {
+  background: rgba(11, 12, 15, 0.6);
+}
+
+.agents-io-row {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: var(--sp-md);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--col-border);
+}
+
+.agents-io-row:last-child {
+  border-bottom: none;
+}
+
+.agents-io-label {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--col-text-muted);
+  padding-top: 2px;
+}
+
+.agents-io-value {
+  font-size: 13px;
+  color: var(--col-text-mid);
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.agents-output {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--col-orange);
+  letter-spacing: 0.04em;
+}
+
+.agents-footer {
+  margin-top: var(--sp-xl);
+  padding-top: var(--sp-lg);
+  border-top: 1px solid var(--col-border);
+}
+
+@media (max-width: 600px) {
+  .agents-row {
+    grid-template-columns: 40px 1fr;
+    gap: var(--sp-md);
+  }
+
+  .agents-row-hitl {
+    margin-left: -14px;
+  }
+}
