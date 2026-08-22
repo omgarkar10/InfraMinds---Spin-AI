@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { VoiceInput } from "./VoiceInput";
 
 interface CitizenChatProps {
   apiUrl?: string;
@@ -109,10 +110,8 @@ export function CitizenChat({ apiUrl = "" }: CitizenChatProps) {
         {loading && <div className="chat-bubble bot">Processing…</div>}
       </div>
 
-      <div className="chat-input-row">
-        <button className="voice-btn" title="Voice recording (via Bhashini ASR)">
-          🎤
-        </button>
+      <div className="chat-input-row flex items-center gap-2">
+        <VoiceInput onTextCaptured={(text) => setInput(text)} language="hi-IN" />
         <input
           type="text"
           value={input}

@@ -13,10 +13,6 @@ from pydantic import BaseModel, Field
 from spin_agents.tools.bhashini import bhashini_asr, bhashini_translate
 from spin_agents.tools.bigquery import query_red_zones, query_weekly_summary
 from spin_agents.runner import run_pipeline
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from translate_service import translate_to_english
 
 app = FastAPI(title="SPIN Citizen Edge API", version="1.0.0")
 
@@ -55,24 +51,10 @@ class PipelineRequest(BaseModel):
     media_url: str | None = None
     run_adk: bool = True
 
-class TranslateRequest(BaseModel):
-    text: str
-
 
 @app.get("/health")
 async def health():
     return {"status": "ok", "service": "spin-citizen-edge"}
-
-
-@app.post("/api/translate")
-async def translate_text(payload: TranslateRequest):
-    """Translates text to English using Google Cloud Translate."""
-    result = translate_to_english(payload.text)
-    return {
-        "original_text": payload.text,
-        "english_translation": result.get("translated_text", payload.text),
-        "source_language": result.get("source_language", "unknown")
-    }
 
 
 @app.post("/webhook/citizen")
