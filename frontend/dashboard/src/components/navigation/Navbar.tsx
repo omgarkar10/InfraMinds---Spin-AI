@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLanguage, COUNTRIES, type CountryCode } from "../../hooks/useLanguage";
 import "../navigation/Navbar.css";
 
 interface NavbarProps {
@@ -6,16 +7,19 @@ interface NavbarProps {
   onViewChange: (view: "landing" | "dashboard" | "citizen") => void;
 }
 
-const SECTIONS = [
-  { id: "overview",      label: "Overview" },
-  { id: "how-it-works", label: "How It Works" },
-  { id: "intelligence",  label: "Intelligence" },
-  { id: "architecture", label: "Architecture" },
-  { id: "impact",       label: "Impact" },
-];
-
 export function Navbar({ view, onViewChange }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
+  const { country, setCountry } = useLanguage();
+
+  const SECTIONS = [
+    { id: "overview",      label: "Overview"             },
+    { id: "how-it-works", label: "How SPIN Works"       },
+    { id: "intelligence",  label: "Data & AI"            },
+    { id: "spatial",       label: "Spatial Intelligence" },
+    { id: "architecture", label: "Global Architecture"  },
+    { id: "live",          label: "Live Intelligence"    },
+  ];
 
   const scrollTo = (id: string) => {
     if (view !== "landing") {
@@ -24,68 +28,148 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
         document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
       }, 100);
     } else {
-      document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+      if (id === "live") {
+        onViewChange("dashboard");
+      } else {
+        document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+      }
     }
     setMenuOpen(false);
   };
 
+  const handleSelectCountry = (code: CountryCode) => {
+    setCountry(code);
+    setLangOpen(false);
+  };
+
   return (
-    <nav className="navbar">
-      <div className="navbar-inner">
-        {/* Logo */}
-        <button className="navbar-logo" onClick={() => { onViewChange("landing"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
-          <span className="navbar-wordmark">SPIN</span>
-          <span className="navbar-descriptor">Symbiotic Public Infrastructure Network</span>
-        </button>
+    <header className="gov-header-wrapper">
+      {/* Top Utility Bar (UX4G Government Standard) */}
+      <div className="gov-top-bar">
+        <div className="gov-top-bar-inner container">
+          <div className="gov-top-bar-left">
+            <span className="gov-emblem-badge">🇮🇳 Government of India · Public Infrastructure Intelligence</span>
+          </div>
 
-        {/* Desktop links */}
-        <div className="navbar-links">
-          {SECTIONS.map((s) => (
-            <button key={s.id} className="navbar-link" onClick={() => scrollTo(s.id)}>
-              {s.label}
-            </button>
-          ))}
+
+          <div className="gov-top-bar-right">
+            {/* Language / Country Selector */}
+            <div className="navbar-lang-wrapper">
+              <button
+                className="navbar-lang-btn"
+                onClick={() => { setLangOpen(!langOpen); setMenuOpen(false); }}
+                aria-label="Select country language"
+                aria-expanded={langOpen}
+              >
+                <span className="navbar-lang-flag">{country.flag}</span>
+                <span className="navbar-lang-code">{country.languageNative}</span>
+                <span className="navbar-lang-chevron" aria-hidden="true">▾</span>
+              </button>
+
+              {langOpen && (
+                <>
+                  <div className="navbar-lang-backdrop" onClick={() => setLangOpen(false)} />
+                  <div className="navbar-lang-dropdown" role="menu">
+                    <div className="navbar-lang-header">
+                      <span className="label-eyebrow">Select Region / Language</span>
+                      <span className="navbar-lang-sub">Language support — prototype</span>
+                    </div>
+                    {COUNTRIES.map((c) => (
+                      <button
+                        key={c.code}
+                        className={`navbar-lang-option ${c.code === country.code ? "active" : ""}`}
+                        onClick={() => handleSelectCountry(c.code)}
+                        role="menuitem"
+                      >
+                        <span className="navbar-lang-option-flag">{c.flag}</span>
+                        <div className="navbar-lang-option-text">
+                          <span className="navbar-lang-option-country">{c.name}</span>
+                          <span className="navbar-lang-option-lang">{c.languageNative}</span>
+                        </div>
+                        {c.status === "proposed" && (
+                          <span className="navbar-lang-option-badge">Proposed</span>
+                        )}
+                        {c.code === country.code && (
+                          <span className="navbar-lang-option-check">✓</span>
+                        )}
+                      </button>
+                    ))}
+                    <div className="navbar-lang-footer">
+                      <span className="disclaimer">PROPOSED ARCHITECTURE · UI DEMO ONLY</span>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <a href="#accessibility" className="gov-top-link">Accessibility</a>
+            <a href="#help" className="gov-top-link">Help</a>
+          </div>
         </div>
-
-        {/* CTA */}
-        <div className="navbar-actions">
-          <button
-            className={`navbar-cta ${view === "citizen" ? "active" : ""}`}
-            onClick={() => onViewChange(view === "citizen" ? "landing" : "citizen")}
-          >
-            Citizen
-          </button>
-          <button
-            className={`navbar-cta navbar-cta-primary ${view === "dashboard" ? "active" : ""}`}
-            onClick={() => onViewChange(view === "dashboard" ? "landing" : "dashboard")}
-          >
-            Dashboard →
-          </button>
-        </div>
-
-        {/* Mobile hamburger */}
-        <button className="navbar-hamburger" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
-          <span className={`ham-line ${menuOpen ? "open" : ""}`} />
-          <span className={`ham-line ${menuOpen ? "open" : ""}`} />
-        </button>
       </div>
 
-      {/* Mobile menu */}
-      {menuOpen && (
-        <div className="navbar-mobile-menu">
-          {SECTIONS.map((s) => (
-            <button key={s.id} className="navbar-mobile-link" onClick={() => scrollTo(s.id)}>
-              {s.label}
-            </button>
-          ))}
-          <button className="navbar-mobile-link" onClick={() => { onViewChange("citizen"); setMenuOpen(false); }}>
-            Citizen Interface
+      {/* Main Header */}
+      <nav className="navbar">
+        <div className="navbar-inner container">
+          {/* Logo */}
+          <button className="navbar-logo" onClick={() => { onViewChange("landing"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+            <span className="navbar-wordmark">SPIN</span>
+            <div className="navbar-title-group">
+              <span className="navbar-descriptor">SYMBIOTIC PUBLIC INFRASTRUCTURE NETWORK</span>
+            </div>
           </button>
-          <button className="navbar-mobile-link navbar-mobile-cta" onClick={() => { onViewChange("dashboard"); setMenuOpen(false); }}>
-            Enter Dashboard →
+
+          {/* Desktop Links */}
+          <div className="navbar-links">
+            {SECTIONS.map((s) => (
+              <button key={s.id} className="navbar-link" onClick={() => scrollTo(s.id)}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Right Action CTAs */}
+          <div className="navbar-actions">
+            <button
+              className={`navbar-cta ${view === "citizen" ? "active" : ""}`}
+              onClick={() => onViewChange(view === "citizen" ? "landing" : "citizen")}
+            >
+              Citizen Portal
+            </button>
+            <button
+              className={`navbar-cta navbar-cta-primary ${view === "dashboard" ? "active" : ""}`}
+              onClick={() => onViewChange(view === "dashboard" ? "landing" : "dashboard")}
+            >
+              Policymaker Dashboard
+            </button>
+          </div>
+
+          {/* Mobile Hamburger */}
+          <button className="navbar-hamburger" onClick={() => { setMenuOpen(!menuOpen); setLangOpen(false); }} aria-label="Menu">
+            <span className={`ham-line ${menuOpen ? "open" : ""}`} />
+            <span className={`ham-line ${menuOpen ? "open" : ""}`} />
           </button>
         </div>
-      )}
-    </nav>
+
+        {/* Mobile menu */}
+        {menuOpen && (
+          <div className="navbar-mobile-menu">
+            {SECTIONS.map((s) => (
+              <button key={s.id} className="navbar-mobile-link" onClick={() => scrollTo(s.id)}>
+                {s.label}
+              </button>
+            ))}
+
+            <button className="navbar-mobile-link" onClick={() => { onViewChange("citizen"); setMenuOpen(false); }}>
+              Citizen Portal
+            </button>
+            <button className="navbar-mobile-link navbar-mobile-cta" onClick={() => { onViewChange("dashboard"); setMenuOpen(false); }}>
+              Policymaker Dashboard
+            </button>
+          </div>
+        )}
+      </nav>
+    </header>
   );
 }
+

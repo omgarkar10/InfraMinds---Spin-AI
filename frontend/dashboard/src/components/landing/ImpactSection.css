@@ -1,50 +1,84 @@
-/* Impact Section */
+/* =========================================================
+   SPIN — Section 10: Impact Section (System Outcomes)
+   ========================================================= */
+
 .impact-heading {
-  margin-bottom: var(--sp-xl);
-}
-
-.impact-metrics {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 0;
-  border-top: 1px solid var(--col-border);
-  border-bottom: 1px solid var(--col-border);
-}
-
-.impact-metric {
+  max-width: 800px;
+  margin-bottom: 32px;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-sm);
-  padding: var(--sp-lg) var(--sp-md);
-  border-right: 1px solid var(--col-border);
+  gap: 12px;
 }
 
-.impact-metric:last-child {
-  border-right: none;
-}
-
-.impact-metric-label {
-  font-size: 12px;
-  font-weight: 500;
+.impact-subtitle {
   color: var(--col-text-mid);
-  letter-spacing: 0.02em;
 }
 
-.impact-metric-sub {
+.impact-levels-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.impact-card {
+  background: var(--col-surface);
+  border: 1px solid var(--col-border-mid);
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.impact-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--col-border);
+  padding-bottom: 8px;
+}
+
+.impact-pill {
   font-size: 10px;
+  font-weight: 600;
+  color: var(--col-navy);
+  background: var(--col-panel);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.impact-comparison-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.comp-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12.5px;
+}
+
+.comp-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   color: var(--col-text-muted);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+}
+
+.comp-tag.after {
+  color: var(--col-orange);
+}
+
+.comp-row.after p {
+  color: var(--col-navy);
+  font-weight: 500;
 }
 
 @media (max-width: 900px) {
-  .impact-metrics {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 600px) {
-  .impact-metrics {
-    grid-template-columns: 1fr 1fr;
+  .impact-levels-grid {
+    grid-template-columns: 1fr;
   }
 }

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { VoiceInput } from "./VoiceInput";
 
 interface CitizenChatProps {
   apiUrl?: string;
@@ -18,6 +17,28 @@ export function CitizenChat({ apiUrl = "" }: CitizenChatProps) {
   // Removed unused location state
   const [step, setStep] = useState<"issue" | "location" | "done">("issue");
   const [loading, setLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+
+  const toggleListen = () => {
+    if (isListening) return;
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Voice recognition is not supported in this browser. Please use Chrome or Safari.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.lang = ""; // Let the browser detect or use default
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.onstart = () => setIsListening(true);
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInput((prev) => prev + (prev ? " " : "") + transcript);
+    };
+    recognition.onerror = (e: any) => console.error("Speech recognition error", e);
+    recognition.onend = () => setIsListening(false);
+    recognition.start();
+  };
 
   const requestLocation = (issueText: string) => {
     if (!navigator.geolocation) {
@@ -47,7 +68,7 @@ export function CitizenChat({ apiUrl = "" }: CitizenChatProps) {
         body: JSON.stringify({
           user_id: `citizen-${Date.now()}`,
           text: issueText,
-          source_language: "hi",
+          source_language: "auto",
           location: loc,
         }),
       });
@@ -110,8 +131,15 @@ export function CitizenChat({ apiUrl = "" }: CitizenChatProps) {
         {loading && <div className="chat-bubble bot">Processing…</div>}
       </div>
 
-      <div className="chat-input-row flex items-center gap-2">
-        <VoiceInput onTextCaptured={(text) => setInput(text)} language="hi-IN" />
+      <div className="chat-input-row">
+        <button 
+          className="voice-btn" 
+          title="Voice recording (via Browser ASR)"
+          onClick={toggleListen}
+          style={{ color: isListening ? "var(--col-red)" : "inherit" }}
+        >
+          {isListening ? "🔴" : "🎤"}
+        </button>
         <input
           type="text"
           value={input}

@@ -1,79 +1,96 @@
-/* Predictive Section */
+/* =========================================================
+   SPIN — Section 07/08: Predictive Governance Comparison
+   ========================================================= */
+
 .predictive-heading {
-  margin-bottom: var(--sp-xl);
-}
-
-.predictive-comparison {
-  display: grid;
-  grid-template-columns: 1fr 1px 1fr;
-  gap: var(--sp-xl);
-  align-items: start;
-}
-
-.predictive-col-label {
-  margin-bottom: var(--sp-lg);
-}
-
-.predictive-list {
-  list-style: none;
+  max-width: 800px;
+  margin-bottom: 32px;
   display: flex;
   flex-direction: column;
-  gap: 0;
-  margin-bottom: var(--sp-lg);
+  gap: 12px;
 }
 
-.predictive-item {
-  padding: var(--sp-sm) 0;
-  border-bottom: 1px solid var(--col-border);
-  font-size: 14px;
+.predictive-subtitle {
   color: var(--col-text-mid);
 }
 
-.predictive-item-dim {
+.predictive-table-wrapper {
+  background: var(--col-surface);
+  border: 1px solid var(--col-border-mid);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.comparison-table th {
+  padding: 14px 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-align: left;
+}
+
+.comparison-table th.col-trad {
+  background: var(--col-panel);
   color: var(--col-text-muted);
+  border-right: 1px solid var(--col-border);
 }
 
-.predictive-item-orange {
-  color: var(--col-orange);
-  font-weight: 500;
-  letter-spacing: 0.02em;
+.comparison-table th.col-spin {
+  background: var(--col-header-bg);
+  color: #FFFFFF;
 }
 
-.predictive-outcome {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--col-text);
-  letter-spacing: 0.02em;
+.comparison-table td {
+  padding: 24px 20px;
+  vertical-align: top;
 }
 
-.predictive-outcome-dim {
-  color: var(--col-text-muted);
+.cell-trad {
+  border-right: 1px solid var(--col-border);
+  background: var(--col-surface);
 }
 
-.predictive-divider {
+.cell-spin {
+  background: rgba(232, 89, 12, 0.02);
+}
+
+.paradigm-list {
+  list-style: none;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--col-text-mid);
 }
 
-.predictive-divider-line {
-  width: 1px;
-  height: 100%;
-  background: var(--col-border);
+.paradigm-list.spin li {
+  color: var(--col-navy);
+  font-weight: 500;
 }
 
-@media (max-width: 768px) {
-  .predictive-comparison {
-    grid-template-columns: 1fr;
-    gap: var(--sp-lg);
-  }
+.paradigm-tag {
+  display: inline-block;
+  margin-top: 16px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 4px 10px;
+  border-radius: 4px;
+}
 
-  .predictive-divider {
-    height: 1px;
-    width: 100%;
-  }
+.paradigm-tag.trad {
+  background: var(--col-panel);
+  color: var(--col-text-muted);
+}
 
-  .predictive-divider-line {
-    width: 100%;
-    height: 1px;
-  }
+.paradigm-tag.spin {
+  background: var(--col-orange-dim);
+  color: var(--col-orange);
+  border: 1px solid var(--col-orange-line);
 }

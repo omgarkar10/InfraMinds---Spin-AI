@@ -1,73 +1,120 @@
 import { SectionBase } from "./SectionBase";
 import "./ProcessSection.css";
 
-const STAGES = [
+interface Stage {
+  num: string;
+  title: string;
+  hitl?: boolean;
+  input: string;
+  process: string;
+  output: string;
+  why: string;
+}
+
+const SIX_STAGES: Stage[] = [
   {
     num: "01",
-    title: "Citizen Input",
-    desc: "Text, voice, images in any local language via WhatsApp, Telegram, or web.",
+    title: "Citizen Input Intake",
     hitl: false,
+    input: "Text, natural voice audio, photo evidence, or cell tower location via WhatsApp / web.",
+    process: "Normalizes incoming payload, assigns unique tracking ID, extracts raw audio/text metadata.",
+    output: "Raw Unverified Grievance Packet",
+    why: "Ensures citizens can express complaints effortlessly without needing to navigate complex municipal forms.",
   },
   {
     num: "02",
-    title: "Language Processing",
-    desc: "Bhashini detects language, transcribes speech, and translates to English for AI analysis. 22 Indian languages supported.",
+    title: "Language & Signal Processing",
     hitl: false,
+    input: "Unstructured grievance in regional Indian dialects (Hindi, Marathi, Tamil, Bengali, etc.).",
+    process: "Bhashini ASR transcribes voice to text; machine translation converts to standard English for AI analysis.",
+    output: "Standardized Multilingual Text Payload",
+    why: "Language diversity must never prevent a citizen's grievance from reaching infrastructure planners.",
   },
   {
     num: "03",
-    title: "Location Verification",
-    desc: "Human-in-the-loop gate confirms geographic context. If GPS is absent, the citizen is asked to provide a landmark.",
+    title: "Location Verification (HITL Gate)",
     hitl: true,
+    input: "Complaint payload with coarse location metadata or missing coordinates.",
+    process: "Human operator confirms landmark / GPS coordinates before allowing automated workflow to proceed.",
+    output: "Validated Spatial Signal with GIS Point",
+    why: "Prevents garbage-in garbage-out GIS errors by requiring human/citizen validation whenever location confidence is low.",
   },
   {
     num: "04",
     title: "Semantic Understanding",
-    desc: "Gemini agent extracts domain, classifies intent, and scores severity.",
     hitl: false,
+    input: "Validated English text of the citizen grievance.",
+    process: "Gemini agent extracts entity (water pipe, pothole, transformer), assesses severity (0–10), and calculates urgency.",
+    output: "Structured Grievance JSON (Domain, Severity, Urgency)",
+    why: "Converts subjective human text into quantitative parameters that algorithms can query and analyze at scale.",
   },
   {
     num: "05",
     title: "Geospatial Correlation",
-    desc: "Complaint is matched to infrastructure layers, demographics, and PM Gati Shakti planning data.",
     hitl: false,
+    input: "Structured grievance JSON + GIS coordinate point.",
+    process: "Correlates complaint with PM Gati Shakti infrastructure maps, demographic layers, and spatial density thresholds.",
+    output: "Clustered Demand Map & Red Zone Alert Flag",
+    why: "Identifies systemic failure zones where hundreds of complaints overlap on the exact same infrastructure asset.",
   },
   {
     num: "06",
-    title: "Policy Action",
-    desc: "Red Zone identification, executive summary, and budget recommendation are surfaced for policymaker review.",
+    title: "Policy Intelligence Output",
     hitl: false,
+    input: "Verified Red Zone alert + infrastructure gap evidence.",
+    process: "Generates executive summary, priority ranking, and evidence-backed budget reallocation recommendations.",
+    output: "Policymaker Executive Brief & Budget Recommendation",
+    why: "Empowers department heads to allocate public funds with objective data evidence rather than ad-hoc estimates.",
   },
 ];
 
 export function ProcessSection() {
   return (
-    <SectionBase id="architecture" number="03" label="The System">
-      <div className="process-heading reveal">
-        <h2 className="editorial-h2">Six stages.<br />One coherent pipeline.</h2>
+    <SectionBase id="how-it-works" number="03" label="HOW SPIN WORKS">
+      <div className="process-heading">
+        <h2 className="editorial-h2">
+          Six stages.<br />
+          <span className="problem-h2-highlight">One coherent, transparent pipeline.</span>
+        </h2>
+        <p className="body-lg process-subtitle">
+          Every stage takes structured inputs, executes transparent processing, produces audit-logged outputs, and serves a clear governance purpose.
+        </p>
       </div>
 
-      <div className="process-stages">
-        {STAGES.map((s, i) => (
-          <div key={s.num} className="process-stage reveal" style={{ transitionDelay: `${i * 0.07}s` }}>
-            <div className="process-stage-num">
+      <div className="process-grid">
+        {SIX_STAGES.map((s) => (
+          <div key={s.num} className={`process-card ${s.hitl ? "hitl-border" : ""}`}>
+            <div className="process-card-header">
               <span className="section-number">{s.num}</span>
+              <h3 className="process-card-title">{s.title}</h3>
+              {s.hitl && <span className="hitl-badge">HITL GATE</span>}
             </div>
-            <div className="process-stage-content">
-              <div className="process-stage-title-row">
-                <h3 className="process-stage-title">{s.title}</h3>
-                {s.hitl && <span className="hitl-badge">HUMAN CHECKPOINT</span>}
+
+            <div className="process-card-body">
+              <div className="io-row">
+                <span className="io-tag input">INPUT</span>
+                <p className="io-text">{s.input}</p>
               </div>
-              <p className="body-md process-stage-desc">{s.desc}</p>
+
+              <div className="io-row">
+                <span className="io-tag process">PROCESS</span>
+                <p className="io-text">{s.process}</p>
+              </div>
+
+              <div className="io-row">
+                <span className="io-tag output">OUTPUT</span>
+                <p className="io-text bold">{s.output}</p>
+              </div>
             </div>
-            {i < STAGES.length - 1 && (
-              <div className="process-connector" aria-hidden="true">
-                <div className="process-connector-line" />
-              </div>
-            )}
+
+            <div className="process-card-why">
+              <span className="why-label">WHY THIS MATTERS:</span>
+              <p className="why-text">"{s.why}"</p>
+            </div>
           </div>
         ))}
       </div>
     </SectionBase>
   );
 }
+

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { BudgetAllocation, InfrastructureDomain } from "../types";
+import { useLanguage } from "../hooks/useLanguage";
 
 const DEFAULT_ALLOCATIONS: BudgetAllocation[] = [
   { domain: "Water", current_cr: 120, proposed_cr: 120 },
@@ -16,6 +17,7 @@ export function BudgetReallocationPanel({
   onApprove,
   redZoneDomain,
 }: BudgetReallocationPanelProps) {
+  const { t } = useLanguage();
   const [allocations, setAllocations] = useState<BudgetAllocation[]>(() =>
     DEFAULT_ALLOCATIONS.map((a) =>
       a.domain === redZoneDomain ? { ...a, proposed_cr: a.current_cr + 12 } : a
@@ -42,18 +44,16 @@ export function BudgetReallocationPanel({
 
   return (
     <aside className="panel budget-panel">
-      <h2>BUDGET REALLOCATION</h2>
+      <h2>{t.dash_budget_title}</h2>
 
       {redZoneDomain && (
         <p className="red-zone-hint">
-          SPIN Signal: <strong>{redZoneDomain}</strong> demand significantly elevated
-          in identified zones.
+          SPIN Signal: <strong>{redZoneDomain}</strong> demand elevated in identified zones.
         </p>
       )}
 
       <p className="spin-signal-note">
-        Adjustments below are AI-generated recommendations.
-        Final approval remains with the policymaker.
+        Adjustments below are AI-generated recommendations. Final approval remains with policymakers.
       </p>
 
       <div className="slider-list">
@@ -95,7 +95,7 @@ export function BudgetReallocationPanel({
           : "Submit Recommendation for Approval"}
       </button>
       {!approved && (
-        <p className="approval-note">AI RECOMMENDS. HUMANS REMAIN ACCOUNTABLE.</p>
+        <p className="approval-note">{t.trans_disclaimer}</p>
       )}
     </aside>
   );

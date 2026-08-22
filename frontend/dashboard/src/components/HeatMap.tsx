@@ -2,12 +2,16 @@ import { GoogleMap, HeatmapLayer, useJsApiLoader } from "@react-google-maps/api"
 import type { RedZone } from "../types";
 
 const MAP_CENTER = { lat: 20.5937, lng: 78.9629 }; // India centroid
-const DARK_MAP_STYLE: google.maps.MapTypeStyle[] = [
-  { elementType: "geometry", stylers: [{ color: "#1d1d2e" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#8ec3b9" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#1a1a2e" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#2c2c3e" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#0e1626" }] },
+
+const LIGHT_MAP_STYLE: google.maps.MapTypeStyle[] = [
+  { elementType: "geometry", stylers: [{ color: "#F8FAFC" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#334155" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#FFFFFF" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#FFFFFF" }] },
+  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#CBD5E1" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#BAE6FD" }] },
+  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#0284C7" }] },
+  { featureType: "administrative", elementType: "geometry.stroke", stylers: [{ color: "#94A3B8" }] },
 ];
 
 interface HeatMapProps {
@@ -29,12 +33,10 @@ export function HeatMap({ redZones, selectedDistrict, onZoneClick }: HeatMapProp
     ? redZones.filter((z) => z.district === selectedDistrict)
     : redZones;
 
-  // 1. Wait for Google Maps script to finish loading first
   if (!isLoaded) {
-    return <div className="map-placeholder">Loading map…</div>;
+    return <div className="map-placeholder">Loading GIS Infrastructure Map…</div>;
   }
 
-  // 2. Safely create LatLng objects now that google.maps is loaded
   const heatmapData = filtered.map((zone) => ({
     location: new google.maps.LatLng(zone.lat, zone.lng),
     weight: zone.density,
@@ -46,7 +48,7 @@ export function HeatMap({ redZones, selectedDistrict, onZoneClick }: HeatMapProp
       center={filtered[0] ? { lat: filtered[0].lat, lng: filtered[0].lng } : MAP_CENTER}
       zoom={filtered.length === 1 ? 11 : 5}
       options={{
-        styles: DARK_MAP_STYLE,
+        styles: LIGHT_MAP_STYLE,
         disableDefaultUI: false,
         zoomControl: true,
         mapTypeControl: false,
@@ -57,13 +59,13 @@ export function HeatMap({ redZones, selectedDistrict, onZoneClick }: HeatMapProp
       <HeatmapLayer
         data={heatmapData}
         options={{
-          radius: 40,
-          opacity: 0.75,
+          radius: 45,
+          opacity: 0.85,
           gradient: [
-            "rgba(0, 255, 255, 0)",
-            "rgba(255, 200, 0, 0.5)",
-            "rgba(255, 80, 0, 0.8)",
-            "rgba(255, 0, 0, 1)",
+            "rgba(2, 132, 199, 0)",
+            "rgba(217, 119, 6, 0.6)",
+            "rgba(232, 89, 12, 0.85)",
+            "rgba(220, 38, 38, 1)",
           ],
         }}
       />
@@ -84,4 +86,4 @@ function ZoneMarker({
   void zone;
   void onClick;
   return null;
-}
+}

@@ -1,105 +1,215 @@
-/* Geospatial Section */
-.geo-layout {
+/* =========================================================
+   SPIN — Section 06: Geospatial Section (Red Zones)
+   ========================================================= */
+
+.geo-heading {
+  max-width: 800px;
+  margin-bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.geo-subtitle {
+  color: var(--col-text-mid);
+}
+
+.geo-grid {
   display: grid;
-  grid-template-columns: 1fr 320px;
-  grid-template-rows: auto auto;
-  gap: var(--sp-xl);
+  grid-template-columns: 1fr 450px;
+  gap: 24px;
   align-items: start;
 }
 
-.geo-heading {
-  grid-column: 1;
-  grid-row: 1;
+.redzone-spec-card {
+  background: var(--col-surface);
+  border: 1px solid var(--col-border-mid);
+  border-radius: 8px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: var(--shadow-sm);
 }
 
-.geo-visual {
-  grid-column: 2;
-  grid-row: 1 / 3;
-  border: 1px solid var(--col-border);
-  padding: var(--sp-sm);
+.redzone-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--col-border);
+  padding-bottom: 10px;
+}
+
+.tag-red-badge {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--col-red);
+}
+
+.provenance-tag {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--col-text-muted);
+}
+
+.redzone-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.stat-box {
+  background: var(--col-panel);
+  padding: 12px;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-text {
+  font-size: 14px;
+  color: var(--col-navy);
+}
+
+.stat-text.bold { font-weight: 700; }
+.stat-text.red-text { color: var(--col-red); font-weight: 700; }
+
+/* AI Recommendation Box */
+.ai-rec-box {
+  background: var(--col-orange-dim);
+  border: 1px solid var(--col-orange-line);
+  border-radius: 6px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rec-heading {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--col-navy);
+}
+
+.rec-amount {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--col-orange);
+}
+
+.status-pending {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--col-amber);
+  text-transform: uppercase;
+}
+
+/* Why Zone Evidence List */
+.why-zone-evidence {
+  background: var(--col-panel);
+  border-left: 3px solid var(--col-navy);
+  padding: 16px;
+  border-radius: 0 6px 6px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.evidence-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--col-text-mid);
+}
+
+.evidence-list li {
+  position: relative;
+  padding-left: 14px;
+  line-height: 1.45;
+}
+
+.evidence-list li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--col-orange);
+  font-weight: bold;
+}
+
+/* Right Map Visual Representation */
+.geo-map-visual {
+  background: var(--col-surface);
+  border: 1px solid var(--col-border-mid);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+}
+
+.visual-header {
+  padding: 12px 16px;
+  background: var(--col-header-bg);
+  color: #FFFFFF;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.map-placeholder-graphic {
+  height: 380px;
+  background: #F8FAFC;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: relative;
 }
 
-.geo-map {
-  width: 100%;
-  height: auto;
-  display: block;
-}
-
-/* Dot pulse animation */
-.geo-dot-pulse {
-  animation: dotPulse 2.5s ease-in-out infinite;
-}
-
-.geo-pulse-ring {
-  animation: dotPulse 2.5s ease-in-out infinite 0.5s;
-}
-
-/* Red Zone data */
-.geo-redzone {
-  grid-column: 1;
-  grid-row: 2;
-}
-
-.geo-redzone-header {
-  margin-bottom: var(--sp-md);
-}
-
-.geo-redzone-def {
-  max-width: 500px;
-  margin-bottom: var(--sp-lg);
-  padding-left: var(--sp-md);
-  border-left: 1px solid var(--col-border-mid);
-}
-
-.geo-redzone-data {
+.redzone-cluster-circle {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: rgba(220, 38, 38, 0.12);
+  border: 2px dashed rgba(220, 38, 38, 0.6);
   display: flex;
   flex-direction: column;
-  gap: 0;
-  border-top: 1px solid var(--col-border);
-  margin-bottom: var(--sp-lg);
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  position: relative;
 }
 
-.geo-data-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  padding: var(--sp-sm) 0;
-  border-bottom: 1px solid var(--col-border);
+.cluster-ping {
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  animation: dotPulse 2s infinite;
 }
 
-.geo-data-value {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--col-text);
-  font-variant-numeric: tabular-nums;
+.cluster-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--col-red);
+  letter-spacing: 0.08em;
 }
 
-.geo-recommendation {
-  padding-top: var(--sp-md);
-  border-top: 1px solid var(--col-border);
-}
-
-.geo-rec-text {
-  font-size: 14px;
-  color: var(--col-text-mid);
-  line-height: 1.8;
-  margin-top: var(--sp-sm);
+.cluster-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--col-navy);
 }
 
 @media (max-width: 900px) {
-  .geo-layout {
+  .geo-grid {
     grid-template-columns: 1fr;
-    grid-template-rows: auto;
   }
-
-  .geo-visual {
-    grid-column: 1;
-    grid-row: 2;
-    max-width: 320px;
-  }
-
-  .geo-redzone {
-    grid-row: 3;
+  .redzone-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

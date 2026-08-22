@@ -5,9 +5,9 @@ const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
 const MOCK_SUMMARY: DashboardSummary = {
   executive_summary:
-    "4,200 verified complaints in Pune over the last 7 days. Water infrastructure dominates grievance volume. 14 Red Zone clusters require immediate policy action.",
+    "4,200 verified complaints in Sector 4 over the last 7 days. Water infrastructure dominates grievance volume. 14 Red Zone clusters require immediate policy action.",
   weekly_stats: {
-    district: "Pune",
+    district: "Sector 4",
     total_complaints: 4200,
     top_domain: "Water",
     avg_severity: 7.2,
@@ -17,9 +17,9 @@ const MOCK_SUMMARY: DashboardSummary = {
 };
 
 const MOCK_RED_ZONES: RedZone[] = [
-  { lat: 18.5204, lng: 73.8567, density: 420, domain: "Water", district: "Pune" },
-  { lat: 19.0760, lng: 72.8777, density: 380, domain: "Road", district: "Mumbai" },
-  { lat: 28.6139, lng: 77.2090, density: 510, domain: "Power", district: "Delhi" },
+  { lat: 18.5204, lng: 73.8567, density: 420, domain: "Water", district: "Sector 4" },
+  { lat: 19.0760, lng: 72.8777, density: 380, domain: "Road", district: "Sector 2" },
+  { lat: 28.6139, lng: 77.2090, density: 510, domain: "Power", district: "Sector 3" },
 ];
 
 export function usePolicyData() {
@@ -51,7 +51,7 @@ export function usePolicyData() {
           : MOCK_SUMMARY.executive_summary,
         weekly_stats: {
           ...MOCK_SUMMARY.weekly_stats,
-          district: district || "Pune",
+          district: district || "Sector 4",
         },
       });
       setRedZones(MOCK_RED_ZONES);

@@ -1,4 +1,5 @@
 import type { DashboardSummary } from "../types";
+import { useLanguage } from "../hooks/useLanguage";
 
 interface ExecutiveSummaryPanelProps {
   summary: DashboardSummary | null;
@@ -6,11 +7,13 @@ interface ExecutiveSummaryPanelProps {
 }
 
 export function ExecutiveSummaryPanel({ summary, loading }: ExecutiveSummaryPanelProps) {
+  const { t } = useLanguage();
+
   if (loading) {
     return (
       <aside className="panel executive-panel">
-        <h2>INTELLIGENCE SUMMARY</h2>
-        <p className="summary-text">Generating analysis…</p>
+        <h2>{t.dash_summary_title}</h2>
+        <p className="summary-text">...</p>
       </aside>
     );
   }
@@ -18,7 +21,7 @@ export function ExecutiveSummaryPanel({ summary, loading }: ExecutiveSummaryPane
   if (!summary) {
     return (
       <aside className="panel executive-panel">
-        <h2>INTELLIGENCE SUMMARY</h2>
+        <h2>{t.dash_summary_title}</h2>
         <p className="summary-text">No data available.</p>
       </aside>
     );
@@ -28,14 +31,14 @@ export function ExecutiveSummaryPanel({ summary, loading }: ExecutiveSummaryPane
 
   return (
     <aside className="panel executive-panel">
-      <h2>INTELLIGENCE SUMMARY</h2>
+      <h2>{t.dash_summary_title}</h2>
       <p className="summary-text">{summary.executive_summary}</p>
 
       <div className="stat-grid">
-        <StatCard label="Total Signals" value={stats.total_complaints.toLocaleString()} />
-        <StatCard label="Top Domain" value={stats.top_domain} />
-        <StatCard label="Avg Severity" value={stats.avg_severity.toFixed(1)} />
-        <StatCard label="Red Zones" value={String(stats.red_zone_count)} accent />
+        <StatCard label={t.dash_signals} value={stats.total_complaints.toLocaleString()} />
+        <StatCard label={t.dash_top_domain} value={stats.top_domain} />
+        <StatCard label={t.dash_avg_severity} value={stats.avg_severity.toFixed(1)} />
+        <StatCard label={t.dash_red_zones} value={String(stats.red_zone_count)} accent />
       </div>
     </aside>
   );

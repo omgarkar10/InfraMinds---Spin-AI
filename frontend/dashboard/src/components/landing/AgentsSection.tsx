@@ -1,116 +1,159 @@
 import { SectionBase } from "./SectionBase";
 import "./AgentsSection.css";
 
-const AGENTS = [
+interface AgentSpec {
+  num: string;
+  name: string;
+  role: string;
+  input: string;
+  process: string;
+  output: string;
+  hitl?: boolean;
+}
+
+const AGENT_PIPELINE: AgentSpec[] = [
   {
     num: "01",
-    name: "Root Agent",
-    role: "Orchestrates the full pipeline workflow.",
-    input: null,
-    process: null,
-    output: null,
-    hitl: false,
+    name: "Root Orchestrator Agent",
+    role: "Orchestrates full agent pipeline execution, state transitions, and error recovery.",
+    input: "Trigger event (New citizen message, schedule trigger, or API call)",
+    process: "DAG task scheduling, agent state management, error handling",
+    output: "Pipeline Execution State & Audit Log",
   },
   {
     num: "02",
     name: "Chatbot Intake Agent",
-    role: "Receives and normalizes citizen input.",
-    input: "Citizen message — any format, any language",
-    process: null,
-    output: "Normalized intake payload",
-    hitl: false,
+    role: "Receives raw citizen input via messaging webhooks and normalizes intake payloads.",
+    input: "Citizen voice note, text message, photo, or GPS metadata",
+    process: "Channel intake normalization, Bhashini ASR triggering, media extraction",
+    output: "Normalized Unverified Intake Payload",
   },
   {
     num: "03",
-    name: "HITL Location Gate",
-    role: "Human verifies that sufficient location data exists before the pipeline continues.",
-    input: "Intake payload",
-    process: "Human confirms location context",
-    output: "Location-confirmed complaint — or citizen prompt for GPS",
+    name: "HITL Location Gate Agent",
     hitl: true,
+    role: "Human-in-the-loop checkpoint ensuring location context is verified before analysis.",
+    input: "Normalized Intake Payload with low location confidence (<80%)",
+    process: "Operator landmark confirmation or automated SMS landmark prompt to citizen",
+    output: "Validated Spatial Signal JSON",
   },
   {
     num: "04",
     name: "Semantic Parsing Agent",
-    role: "Understands the complaint in depth.",
-    input: '"The road outside our school has been broken for months."',
-    process: "Entity extraction · Intent classification · Severity scoring",
-    output: "ROAD / PUBLIC WORKS / HIGH",
-    hitl: false,
+    role: "Converts natural language into structured infrastructure intelligence.",
+    input: "Translated English grievance text",
+    process: "Entity extraction, infrastructure domain categorization, severity scoring (0–10)",
+    output: "Structured Grievance JSON Payload",
   },
   {
     num: "05",
     name: "Geospatial Correlation Agent",
-    role: "Connects complaint with spatial and infrastructure data.",
-    input: "Structured grievance + confirmed location",
-    process: "Spatial join with infrastructure, demographics, PM Gati Shakti layers",
-    output: "Cluster coordinates, Red Zone flag, infrastructure context",
-    hitl: false,
+    role: "Connects structured grievances with GIS infrastructure layers and demographic grids.",
+    input: "Structured Grievance JSON + GIS coordinates",
+    process: "Spatial join with PM Gati Shakti layers, density clustering algorithm",
+    output: "Clustered Demand Map & Red Zone Alert Flag",
   },
   {
     num: "06",
     name: "Policy Dashboard Agent",
-    role: "Converts analysis into actionable policy intelligence.",
-    input: "Cluster analysis",
-    process: null,
-    output: "Executive summary · Budget recommendation · Red Zone map",
-    hitl: false,
+    role: "Synthesizes geospatial clusters into actionable policy briefs for human decision makers.",
+    input: "Red Zone spatial cluster data + department budget allocations",
+    process: "Executive summary generation, priority ranking, budget diff modeling",
+    output: "Executive Brief & Recommended Budget Reallocation",
   },
 ];
 
 export function AgentsSection() {
   return (
-    <SectionBase id="architecture" number="05" label="The AI Pipeline">
-      <div className="agents-heading reveal">
-        <h2 className="editorial-h2">Five stages.<br />One intelligence pipeline.</h2>
+    <SectionBase id="architecture" number="05" label="THE AI AGENT ARCHITECTURE">
+      <div className="agents-heading">
+        <h2 className="editorial-h2">
+          Modular software agents.<br />
+          <span className="problem-h2-highlight">Decoupled, deterministic, and auditable.</span>
+        </h2>
+        <p className="body-lg agents-subtitle">
+          SPIN uses a multi-agent software architecture where each agent performs a single dedicated function within the pipeline.
+        </p>
       </div>
 
-      <div className="agents-list">
-        {AGENTS.map((agent, i) => (
-          <div
-            key={agent.num}
-            className={`agents-row reveal ${agent.hitl ? "agents-row-hitl" : ""}`}
-            style={{ transitionDelay: `${i * 0.06}s` }}
-          >
-            <div className="agents-row-num">
-              <span className="section-number">{agent.num}</span>
+      {/* Agent Specifications Grid */}
+      <div className="agents-spec-grid">
+        {AGENT_PIPELINE.map((agent) => (
+          <div key={agent.num} className={`agent-card ${agent.hitl ? "hitl-card" : ""}`}>
+            <div className="agent-card-header">
+              <span className="agent-num">{agent.num}</span>
+              <h3 className="agent-name">{agent.name}</h3>
+              {agent.hitl && <span className="hitl-badge">HUMAN GATEWAY</span>}
             </div>
-            <div className="agents-row-body">
-              <div className="agents-row-header">
-                <h3 className="agents-name">{agent.name}</h3>
-                {agent.hitl && <span className="hitl-badge">HUMAN CHECKPOINT</span>}
+
+            <p className="agent-role font-medium">{agent.role}</p>
+
+            <div className="agent-io-specs">
+              <div className="io-spec-row">
+                <span className="io-spec-label">ROLE:</span>
+                <span className="io-spec-val">{agent.role}</span>
               </div>
-              <p className="body-md agents-role">{agent.role}</p>
-              {(agent.input || agent.process || agent.output) && (
-                <div className="agents-io">
-                  {agent.input && (
-                    <div className="agents-io-row">
-                      <span className="agents-io-label">INPUT</span>
-                      <span className="agents-io-value">{agent.input}</span>
-                    </div>
-                  )}
-                  {agent.process && (
-                    <div className="agents-io-row">
-                      <span className="agents-io-label">PROCESS</span>
-                      <span className="agents-io-value">{agent.process}</span>
-                    </div>
-                  )}
-                  {agent.output && (
-                    <div className="agents-io-row">
-                      <span className="agents-io-label">OUTPUT</span>
-                      <span className={`agents-io-value ${agent.hitl ? "" : "agents-output"}`}>{agent.output}</span>
-                    </div>
-                  )}
-                </div>
-              )}
+              <div className="io-spec-row">
+                <span className="io-spec-label">INPUT:</span>
+                <span className="io-spec-val">{agent.input}</span>
+              </div>
+              <div className="io-spec-row">
+                <span className="io-spec-label">PROCESS:</span>
+                <span className="io-spec-val">{agent.process}</span>
+              </div>
+              <div className="io-spec-row">
+                <span className="io-spec-label">OUTPUT:</span>
+                <span className="io-spec-val highlight">{agent.output}</span>
+              </div>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="agents-footer reveal">
-        <p className="disclaimer">AI RECOMMENDS. HUMANS REMAIN ACCOUNTABLE.</p>
+      {/* DEDICATED HUMAN-IN-THE-LOOP (HITL) FEATURE BLOCK */}
+      <div className="hitl-feature-block">
+        <div className="hitl-block-header">
+          <span className="label-eyebrow tag-orange">RESPONSIBLE AI GOVERNANCE</span>
+          <h3 className="editorial-h3">AI DOES NOT MAKE EVERY DECISION.</h3>
+          <p className="body-md">
+            If location, severity or evidence is insufficient, SPIN pauses automated processing and requests human/citizen confirmation.
+          </p>
+        </div>
+
+        {/* HITL Flow Visual */}
+        <div className="hitl-flow-visual">
+          <div className="hitl-flow-step">
+            <span className="step-tag">AI ENGINE</span>
+            <strong>Intake Processing</strong>
+          </div>
+
+          <span className="hitl-flow-arrow">→</span>
+
+          <div className="hitl-flow-step warning">
+            <span className="step-tag warning">UNCERTAINTY DETECTED</span>
+            <strong>Location Confidence &lt;80%</strong>
+          </div>
+
+          <span className="hitl-flow-arrow">→</span>
+
+          <div className="hitl-flow-step human">
+            <span className="step-tag human">HUMAN REVIEW</span>
+            <strong>Operator Confirm / SMS Landmark</strong>
+          </div>
+
+          <span className="hitl-flow-arrow">→</span>
+
+          <div className="hitl-flow-step success">
+            <span className="step-tag success">CONFIRMED SIGNAL</span>
+            <strong>Pipeline Resumes</strong>
+          </div>
+        </div>
+
+        <div className="hitl-footer-note">
+          <span className="disclaimer">HUMAN-IN-THE-LOOP GATEWAY ENFORCES ACCOUNTABILITY AT ALL TIMES</span>
+        </div>
       </div>
     </SectionBase>
   );
 }
+

@@ -3,98 +3,85 @@ import "./GeospatialSection.css";
 
 export function GeospatialSection() {
   return (
-    <SectionBase id="intelligence" number="06" label="Geospatial Intelligence">
+    <SectionBase id="spatial" number="06" label="FROM COMPLAINTS TO RED ZONES">
       <div className="geo-layout">
-        {/* Heading */}
-        <div className="geo-heading reveal">
+        {/* Title */}
+        <div className="geo-heading">
           <h2 className="editorial-h2">
-            From individual complaints<br />to geographic patterns.
+            From individual complaints<br />
+            <span className="problem-h2-highlight">to geographic infrastructure red zones.</span>
           </h2>
-        </div>
-
-        {/* India map SVG + clustering animation */}
-        <div className="geo-visual reveal animate-reveal-delay-1">
-          <svg
-            viewBox="0 0 500 560"
-            className="geo-map"
-            aria-label="Simplified map of India showing complaint clusters"
-          >
-            {/* India outline - simplified */}
-            <path
-              d="M210 25 L240 15 L275 20 L310 40 L340 65 L360 90 L375 125 L390 160 L400 190 L390 225 L410 260 L415 290 L400 325 L380 360 L360 390 L325 425 L300 450 L275 475 L260 499 L250 510 L240 499 L220 460 L200 425 L175 390 L150 350 L125 310 L110 275 L100 240 L110 200 L125 165 L140 130 L155 100 L170 70 L190 45 Z"
-              fill="rgba(255,255,255,0.015)"
-              stroke="rgba(255,255,255,0.07)"
-              strokeWidth="1"
-            />
-
-            {/* Complaint dots */}
-            <g className="geo-dots">
-              {/* Pune cluster - main */}
-              <circle cx="260" cy="300" r="5" fill="rgba(192,57,43,0.8)" className="geo-dot-pulse" />
-              <circle cx="265" cy="308" r="3" fill="rgba(192,57,43,0.5)" />
-              <circle cx="255" cy="295" r="3" fill="rgba(192,57,43,0.5)" />
-              <circle cx="270" cy="294" r="2.5" fill="rgba(192,57,43,0.4)" />
-              <circle cx="251" cy="310" r="2.5" fill="rgba(192,57,43,0.4)" />
-              {/* Pulse ring */}
-              <circle cx="260" cy="300" r="14" fill="none" stroke="rgba(192,57,43,0.25)" strokeWidth="1" className="geo-pulse-ring" />
-
-              {/* Mumbai */}
-              <circle cx="248" cy="318" r="3" fill="rgba(255,255,255,0.35)" />
-              <circle cx="252" cy="325" r="2" fill="rgba(255,255,255,0.25)" />
-
-              {/* Delhi */}
-              <circle cx="270" cy="100" r="3" fill="rgba(76,175,111,0.5)" />
-              <circle cx="265" cy="108" r="2" fill="rgba(76,175,111,0.35)" />
-
-              {/* Hyderabad */}
-              <circle cx="290" cy="335" r="3" fill="rgba(255,255,255,0.3)" />
-
-              {/* Bangalore */}
-              <circle cx="268" cy="390" r="2.5" fill="rgba(255,255,255,0.25)" />
-            </g>
-
-            {/* Cluster label annotation */}
-            <g className="geo-annotation">
-              <line x1="280" y1="295" x2="330" y2="265" stroke="rgba(192,57,43,0.35)" strokeWidth="0.75" />
-              <text x="335" y="260" fill="rgba(192,57,43,0.8)" fontSize="8" fontFamily="Inter, sans-serif" fontWeight="500" letterSpacing="0.08em">PUNE EAST</text>
-              <text x="335" y="272" fill="rgba(192,57,43,0.6)" fontSize="7" fontFamily="Inter, sans-serif" letterSpacing="0.06em">HIGH COMPLAINT DENSITY</text>
-            </g>
-          </svg>
-        </div>
-
-        {/* Red Zone definition */}
-        <div className="geo-redzone reveal animate-reveal-delay-2">
-          <div className="geo-redzone-header">
-            <span className="tag tag-red">RED ZONE</span>
-          </div>
-          <p className="geo-redzone-def body-md">
-            A geographic area where citizen complaints are unusually concentrated
-            and indicate a potential infrastructure or service gap.
+          <p className="body-lg geo-subtitle">
+            SPIN aggregates scattered citizen signals to calculate cluster density and highlight high-demand Red Zones.
           </p>
-          <div className="geo-redzone-data">
-            {[
-              ["LOCATION", "Pune East"],
-              ["DOMAIN", "Water"],
-              ["SIGNALS", "2,431"],
-              ["DEMAND", "High"],
-              ["RESPONSE", "Low"],
-            ].map(([k, v]) => (
-              <div key={k} className="geo-data-row">
-                <span className="label-eyebrow">{k}</span>
-                <span className="geo-data-value">{v}</span>
+        </div>
+
+        <div className="geo-grid">
+          {/* Left Column: Red Zone Breakdown Card */}
+          <div className="redzone-spec-card">
+            <div className="redzone-card-header">
+              <span className="tag-red-badge">🔴 RED ZONE ALERT</span>
+              <span className="provenance-tag">PUNE EAST / WARD 14</span>
+            </div>
+
+            <div className="redzone-stats-grid">
+              <div className="stat-box">
+                <span className="label-eyebrow">GRIEVANCES</span>
+                <span className="num-large num-orange">37</span>
               </div>
-            ))}
+              <div className="stat-box">
+                <span className="label-eyebrow">CLUSTER AREA</span>
+                <span className="num-large">12 km²</span>
+              </div>
+              <div className="stat-box">
+                <span className="label-eyebrow">DOMAIN</span>
+                <span className="stat-text bold">Water</span>
+              </div>
+              <div className="stat-box">
+                <span className="label-eyebrow">SEVERITY</span>
+                <span className="stat-text red-text">HIGH (8.5/10)</span>
+              </div>
+            </div>
+
+            {/* AI Recommendation */}
+            <div className="ai-rec-box">
+              <span className="label-eyebrow tag-orange">AI POLICY RECOMMENDATION</span>
+              <h4 className="rec-heading">"Prioritize water network assessment & main pipeline replacement on Segment W-402."</h4>
+              <span className="rec-amount">Budget Allocation: ₹12 Cr</span>
+              <span className="status-pending">● Awaiting Human Approval</span>
+            </div>
+
+            {/* WHY THIS ZONE? Evidence Points */}
+            <div className="why-zone-evidence">
+              <span className="label-eyebrow">WHY THIS ZONE? (EMPIRICAL EVIDENCE BACKBONE)</span>
+              <ul className="evidence-list">
+                <li><strong>Density Threshold:</strong> Grievance density reached 3.1 complaints/km² (Baseline: 0.8/km²).</li>
+                <li><strong>Infrastructure Asset Correlation:</strong> 84% of complaints pinpoint main line W-402 rupture.</li>
+                <li><strong>Service Gap Duration:</strong> Unresolved duration average spans 21 consecutive days.</li>
+                <li><strong>Demographic Impact:</strong> Affects over 14,000 residents including 2 primary public schools.</li>
+              </ul>
+            </div>
           </div>
-          <div className="geo-recommendation">
-            <p className="label-eyebrow" style={{ marginBottom: "var(--sp-xs)" }}>Recommended action</p>
-            <p className="geo-rec-text">
-              → Prioritize water network inspection and service restoration.<br />
-              Increase allocation by <span className="num-orange">₹12 Cr</span>
-              <span className="disclaimer" style={{ display: "inline-block", marginLeft: "var(--sp-sm)", verticalAlign: "middle" }}>AI RECOMMENDATION — PENDING APPROVAL</span>
-            </p>
+
+          {/* Right Column: Visual Map Context Representation */}
+          <div className="geo-map-visual">
+            <div className="visual-header">
+              <span className="label-eyebrow">SPATIAL CLUSTERING OVERLAY</span>
+              <span className="provenance-tag">PM GATI SHAKTI GIS</span>
+            </div>
+            <div className="map-placeholder-graphic">
+              <div className="graphic-grid">
+                <div className="redzone-cluster-circle">
+                  <span className="cluster-ping" />
+                  <span className="cluster-label">RED ZONE #402</span>
+                  <span className="cluster-count">37 Signals</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </SectionBase>
   );
 }
+
