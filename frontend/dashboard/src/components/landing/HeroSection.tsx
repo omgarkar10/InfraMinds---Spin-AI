@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useLanguage } from "../../hooks/useLanguage";
 import "./HeroSection.css";
 
 interface HeroSectionProps {
@@ -7,6 +8,7 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ onViewChange, onOpenDemoModal }: HeroSectionProps) {
+  const { t } = useLanguage();
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -140,16 +142,16 @@ export function HeroSection({ onViewChange, onOpenDemoModal }: HeroSectionProps)
         {/* Left Column: Hero Overview & Judge Presentation Matrix */}
         <div className="hero-left">
           <div className="hero-eyebrow-group">
-            <span className="label-eyebrow tag-navy">DIGITAL PUBLIC INFRASTRUCTURE × AI</span>
+            <span className="label-eyebrow tag-navy">{t.hero_eyebrow}</span>
             <span className="demo-badge-subtle">PROTOTYPE DEMONSTRATION</span>
           </div>
 
           <h1 className="editorial-h1 hero-headline">
-            Turning citizen signals into infrastructure intelligence.
+            {t.hero_headline_1} <span className="text-highlight">{t.hero_headline_2}</span>
           </h1>
 
           <p className="body-lg hero-supporting-text">
-            SPIN connects citizen grievances, multilingual AI, geospatial data, and government infrastructure systems to identify where public demand is highest — and where policy action is needed.
+            {t.hero_body}
           </p>
 
           {/* Action CTAs */}
@@ -160,51 +162,18 @@ export function HeroSection({ onViewChange, onOpenDemoModal }: HeroSectionProps)
               </button>
             )}
             <button className="hero-btn-secondary" onClick={() => onViewChange?.("dashboard")}>
-              Open Live Intelligence →
+              {t.enter_dashboard}
             </button>
           </div>
 
           {/* Pipeline flow strip */}
           <div className="pipeline-strip hero-pipeline" role="list">
-            {["Citizen Signal", "AI Understanding", "Geospatial Context", "Policy Action"].map((node, i, arr) => (
+            {[t.pipeline_citizen, t.pipeline_ai, t.pipeline_geo, t.pipeline_policy].map((node, i, arr) => (
               <div key={node} className="pipeline-item">
                 <span className="pipeline-node">{node}</span>
                 {i < arr.length - 1 && <span className="pipeline-arrow" aria-hidden="true" />}
               </div>
             ))}
-          </div>
-
-          {/* HACKATHON PRESENTATION MODE: First Viewport 6-Question Matrix */}
-          <div className="judge-matrix">
-            <div className="judge-matrix-header">
-              <span className="label-eyebrow">FIRST-VIEWPORT SYSTEM SUMMARY (FOR JUDGES & VISITORS)</span>
-            </div>
-            <div className="judge-grid">
-              <div className="judge-card">
-                <strong className="judge-q">1. WHAT IS SPIN?</strong>
-                <p className="judge-a">AI-driven infrastructure intelligence network combining DPI, Bhashini, & geospatial analytics.</p>
-              </div>
-              <div className="judge-card">
-                <strong className="judge-q">2. WHAT PROBLEM DOES IT SOLVE?</strong>
-                <p className="judge-a">Resolves fragmented grievance data so isolated complaints reveal macro infrastructure gaps.</p>
-              </div>
-              <div className="judge-card">
-                <strong className="judge-q">3. WHAT DATA ENTERS?</strong>
-                <p className="judge-a">Multilingual citizen voice, text, photo evidence, GPS metadata, and CPGRAMS records.</p>
-              </div>
-              <div className="judge-card">
-                <strong className="judge-q">4. WHAT DOES AI DO?</strong>
-                <p className="judge-a">Translates local speech, extracts entities/severity, overlays GIS, and flags Red Zones.</p>
-              </div>
-              <div className="judge-card">
-                <strong className="judge-q">5. WHAT COMES OUT?</strong>
-                <p className="judge-a">High-priority Red Zone maps & evidence-backed budget reallocation recommendations.</p>
-              </div>
-              <div className="judge-card">
-                <strong className="judge-q">6. WHO USES THE OUTPUT?</strong>
-                <p className="judge-a">District decision-makers, policymakers, and public works department heads.</p>
-              </div>
-            </div>
           </div>
         </div>
 
@@ -230,6 +199,39 @@ export function HeroSection({ onViewChange, onOpenDemoModal }: HeroSectionProps)
                 <span className="legend-item"><span className="dot green" /> Policy Intervention</span>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* HACKATHON PRESENTATION MODE: First Viewport 6-Question Matrix — Full Width */}
+      <div className="judge-matrix container">
+        <div className="judge-matrix-header">
+          <span className="label-eyebrow">FIRST-VIEWPORT SYSTEM SUMMARY (FOR JUDGES & VISITORS)</span>
+        </div>
+        <div className="judge-grid">
+          <div className="judge-card">
+            <strong className="judge-q">1. WHAT IS SPIN?</strong>
+            <p className="judge-a">AI-driven infrastructure intelligence network combining DPI, Bhashini, & geospatial analytics.</p>
+          </div>
+          <div className="judge-card">
+            <strong className="judge-q">2. WHAT PROBLEM DOES IT SOLVE?</strong>
+            <p className="judge-a">Resolves fragmented grievance data so isolated complaints reveal macro infrastructure gaps.</p>
+          </div>
+          <div className="judge-card">
+            <strong className="judge-q">3. WHAT DATA ENTERS?</strong>
+            <p className="judge-a">Multilingual citizen voice, text, photo evidence, GPS metadata, and CPGRAMS records.</p>
+          </div>
+          <div className="judge-card">
+            <strong className="judge-q">4. WHAT DOES AI DO?</strong>
+            <p className="judge-a">Translates local speech, extracts entities/severity, overlays GIS, and flags Red Zones.</p>
+          </div>
+          <div className="judge-card">
+            <strong className="judge-q">5. WHAT COMES OUT?</strong>
+            <p className="judge-a">High-priority Red Zone maps & evidence-backed budget reallocation recommendations.</p>
+          </div>
+          <div className="judge-card">
+            <strong className="judge-q">6. WHO USES THE OUTPUT?</strong>
+            <p className="judge-a">District decision-makers, policymakers, and public works department heads.</p>
           </div>
         </div>
       </div>

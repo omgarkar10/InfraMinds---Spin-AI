@@ -1,84 +1,22 @@
+import { useLanguage } from "../../hooks/useLanguage";
 import { SectionBase } from "./SectionBase";
 import "./AgentsSection.css";
 
-interface AgentSpec {
-  num: string;
-  name: string;
-  role: string;
-  input: string;
-  process: string;
-  output: string;
-  hitl?: boolean;
-}
-
-const AGENT_PIPELINE: AgentSpec[] = [
-  {
-    num: "01",
-    name: "Root Orchestrator Agent",
-    role: "Orchestrates full agent pipeline execution, state transitions, and error recovery.",
-    input: "Trigger event (New citizen message, schedule trigger, or API call)",
-    process: "DAG task scheduling, agent state management, error handling",
-    output: "Pipeline Execution State & Audit Log",
-  },
-  {
-    num: "02",
-    name: "Chatbot Intake Agent",
-    role: "Receives raw citizen input via messaging webhooks and normalizes intake payloads.",
-    input: "Citizen voice note, text message, photo, or GPS metadata",
-    process: "Channel intake normalization, Bhashini ASR triggering, media extraction",
-    output: "Normalized Unverified Intake Payload",
-  },
-  {
-    num: "03",
-    name: "HITL Location Gate Agent",
-    hitl: true,
-    role: "Human-in-the-loop checkpoint ensuring location context is verified before analysis.",
-    input: "Normalized Intake Payload with low location confidence (<80%)",
-    process: "Operator landmark confirmation or automated SMS landmark prompt to citizen",
-    output: "Validated Spatial Signal JSON",
-  },
-  {
-    num: "04",
-    name: "Semantic Parsing Agent",
-    role: "Converts natural language into structured infrastructure intelligence.",
-    input: "Translated English grievance text",
-    process: "Entity extraction, infrastructure domain categorization, severity scoring (0–10)",
-    output: "Structured Grievance JSON Payload",
-  },
-  {
-    num: "05",
-    name: "Geospatial Correlation Agent",
-    role: "Connects structured grievances with GIS infrastructure layers and demographic grids.",
-    input: "Structured Grievance JSON + GIS coordinates",
-    process: "Spatial join with PM Gati Shakti layers, density clustering algorithm",
-    output: "Clustered Demand Map & Red Zone Alert Flag",
-  },
-  {
-    num: "06",
-    name: "Policy Dashboard Agent",
-    role: "Synthesizes geospatial clusters into actionable policy briefs for human decision makers.",
-    input: "Red Zone spatial cluster data + department budget allocations",
-    process: "Executive summary generation, priority ranking, budget diff modeling",
-    output: "Executive Brief & Recommended Budget Reallocation",
-  },
-];
-
 export function AgentsSection() {
+  const { t } = useLanguage();
+
   return (
-    <SectionBase id="architecture" number="05" label="THE AI AGENT ARCHITECTURE">
+    <SectionBase id="architecture" number="05" label={t.agents_label.toUpperCase()}>
       <div className="agents-heading">
         <h2 className="editorial-h2">
-          Modular software agents.<br />
-          <span className="problem-h2-highlight">Decoupled, deterministic, and auditable.</span>
+          {t.agents_h2_1}<br />
+          <span className="problem-h2-highlight">{t.agents_h2_2}</span>
         </h2>
-        <p className="body-lg agents-subtitle">
-          SPIN uses a multi-agent software architecture where each agent performs a single dedicated function within the pipeline.
-        </p>
       </div>
 
       {/* Agent Specifications Grid */}
       <div className="agents-spec-grid">
-        {AGENT_PIPELINE.map((agent) => (
+        {t.agents_list.map((agent) => (
           <div key={agent.num} className={`agent-card ${agent.hitl ? "hitl-card" : ""}`}>
             <div className="agent-card-header">
               <span className="agent-num">{agent.num}</span>
@@ -89,22 +27,24 @@ export function AgentsSection() {
             <p className="agent-role font-medium">{agent.role}</p>
 
             <div className="agent-io-specs">
-              <div className="io-spec-row">
-                <span className="io-spec-label">ROLE:</span>
-                <span className="io-spec-val">{agent.role}</span>
-              </div>
-              <div className="io-spec-row">
-                <span className="io-spec-label">INPUT:</span>
-                <span className="io-spec-val">{agent.input}</span>
-              </div>
-              <div className="io-spec-row">
-                <span className="io-spec-label">PROCESS:</span>
-                <span className="io-spec-val">{agent.process}</span>
-              </div>
-              <div className="io-spec-row">
-                <span className="io-spec-label">OUTPUT:</span>
-                <span className="io-spec-val highlight">{agent.output}</span>
-              </div>
+              {agent.input && (
+                <div className="io-spec-row">
+                  <span className="io-spec-label">INPUT:</span>
+                  <span className="io-spec-val">{agent.input}</span>
+                </div>
+              )}
+              {agent.process && (
+                <div className="io-spec-row">
+                  <span className="io-spec-label">PROCESS:</span>
+                  <span className="io-spec-val">{agent.process}</span>
+                </div>
+              )}
+              {agent.output && (
+                <div className="io-spec-row">
+                  <span className="io-spec-label">OUTPUT:</span>
+                  <span className="io-spec-val highlight">{agent.output}</span>
+                </div>
+              )}
             </div>
           </div>
         ))}
@@ -150,10 +90,9 @@ export function AgentsSection() {
         </div>
 
         <div className="hitl-footer-note">
-          <span className="disclaimer">HUMAN-IN-THE-LOOP GATEWAY ENFORCES ACCOUNTABILITY AT ALL TIMES</span>
+          <span className="disclaimer">{t.agents_disclaimer}</span>
         </div>
       </div>
     </SectionBase>
   );
 }
-
