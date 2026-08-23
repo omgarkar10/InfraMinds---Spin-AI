@@ -3,7 +3,6 @@ import "./HeroSection.css";
 
 interface HeroSectionProps {
   onViewChange?: (view: "landing" | "dashboard" | "citizen" | "citizen-raise" | "citizen-track") => void;
-  onOpenDemoModal?: () => void;
 }
 
 export function HeroSection({ onViewChange }: HeroSectionProps) {

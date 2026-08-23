@@ -1,6 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../../styles/citizen.css";
-import { getStoredGrievances, updateStaffDecision, updateGrievanceStatus } from "../../services/grievanceService";
+import {
+  getStaffGrievances,
+  getStaffGrievanceById,
+  updateStaffDecision,
+  updateGrievanceStatus,
+} from "../../services/grievanceService";
 import type { StaffUser, Grievance, GrievanceStatus } from "../../types";
 
 import { GrievanceKPIBar } from "./GrievanceKPIBar";
@@ -11,23 +16,50 @@ interface StaffDashboardProps {
 }
 
 export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate }) => {
-  const [grievances, setGrievances] = useState<Grievance[]>(getStoredGrievances());
+  const [grievances, setGrievances] = useState<Grievance[]>(getStaffGrievances(user));
   const [selectedGrievance, setSelectedGrievance] = useState<Grievance | null>(null);
   const [staffNote, setStaffNote] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [authError, setAuthError] = useState<string>("");
+
+  useEffect(() => {
+    // Whenever logged in user changes, reload department-scoped grievances
+    refreshData();
+  }, [user.id, user.department, user.role]);
 
   const refreshData = () => {
-    const list = getStoredGrievances();
+    const list = getStaffGrievances(user);
     setGrievances(list);
     if (selectedGrievance) {
-      const updated = list.find((g) => g.id === selectedGrievance.id);
-      if (updated) setSelectedGrievance(updated);
+      const authorized = getStaffGrievanceById(selectedGrievance.id, user);
+      if (authorized) {
+        setSelectedGrievance(authorized);
+      } else {
+        setSelectedGrievance(null);
+      }
+    }
+  };
+
+  const handleOpenDossier = (g: Grievance) => {
+    const authorized = getStaffGrievanceById(g.id, user);
+    if (authorized) {
+      setSelectedGrievance(authorized);
+      setAuthError("");
+    } else {
+      setAuthError(`Access Denied: Grievance ${g.id} belongs to a different department.`);
     }
   };
 
   const handleDecision = (decision: "ACCEPTED" | "MODIFIED" | "REJECTED") => {
     if (!selectedGrievance) return;
+    const authorized = getStaffGrievanceById(selectedGrievance.id, user);
+    if (!authorized) {
+      setAuthError("Access Denied: Unauthorized modification attempt.");
+      setSelectedGrievance(null);
+      return;
+    }
     updateStaffDecision(selectedGrievance.id, decision, staffNote || `Officer ${decision.toLowerCase()} recommendation.`);
     setStaffNote("");
     refreshData();
@@ -35,6 +67,12 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
 
   const handleStatusChange = (newStatus: GrievanceStatus) => {
     if (!selectedGrievance) return;
+    const authorized = getStaffGrievanceById(selectedGrievance.id, user);
+    if (!authorized) {
+      setAuthError("Access Denied: Unauthorized status change attempt.");
+      setSelectedGrievance(null);
+      return;
+    }
     updateGrievanceStatus(selectedGrievance.id, newStatus, staffNote || `Officer changed status to ${newStatus}.`);
     setStaffNote("");
     refreshData();
@@ -43,14 +81,25 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
   const filteredGrievances = grievances.filter((g) => {
     if (statusFilter && g.status !== statusFilter) return false;
     if (categoryFilter && g.category !== categoryFilter) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const matchId = g.id.toLowerCase().includes(q);
+      const matchDesc = g.description.toLowerCase().includes(q);
+      const matchLoc = (g.location.address || "").toLowerCase().includes(q) || (g.location.district || "").toLowerCase().includes(q);
+      if (!matchId && !matchDesc && !matchLoc) return false;
+    }
     return true;
   });
 
+  // Calculate statistics STRICTLY from department-scoped grievances
   const activeCount = grievances.filter((g) => g.status !== "RESOLVED").length;
   const criticalCount = grievances.filter((g) => g.severity === "Critical" || g.severity === "High").length;
   const pendingCount = grievances.filter((g) => g.decisionStatus === "PENDING" || !g.decisionStatus).length;
   const resolvedCount = grievances.filter((g) => g.status === "RESOLVED").length;
   const escalatedCount = grievances.filter((g) => g.status === "REOPENED").length;
+
+  // Extract unique categories present in department queue for filter
+  const uniqueCategories = Array.from(new Set(grievances.map((g) => g.category)));
 
   return (
     <div className="citizen-portal-container">
@@ -80,10 +129,17 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
       </div>
 
       <div className="container">
-        {/* NEW GRIEVANCE KPI BAR */}
+        {authError && (
+          <div style={{ background: "#ffe6e6", border: "1px solid red", color: "red", padding: "10px 14px", borderRadius: "6px", marginBottom: "16px", fontSize: "13px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span>🚫 {authError}</span>
+            <button style={{ border: "none", background: "transparent", color: "red", cursor: "pointer", fontWeight: "bold" }} onClick={() => setAuthError("")}>✕</button>
+          </div>
+        )}
+
+        {/* DEPARTMENT-SCOPED KPI BAR */}
         <GrievanceKPIBar grievances={grievances} />
 
-        {/* KPI Overview Cards */}
+        {/* KPI Overview Cards (Strictly Department Scoped) */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "12px", marginBottom: "24px" }}>
           <div className="stat-card">
             <span className="stat-label">ACTIVE GRIEVANCES</span>
@@ -107,37 +163,33 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
           </div>
         </div>
 
-        {/* RED ZONE ALERTS PANEL */}
-        <div className="process-flow-box" style={{ borderLeft: "4px solid var(--col-red)", marginBottom: "24px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span className="tag-red" style={{ fontSize: "10px" }}>🔴 RED ZONE ALERT DETECTED</span>
-              <strong style={{ color: "var(--col-navy)", fontSize: "15px" }}>PUNE EAST — WATER SUPPLY NETWORK GAP</strong>
-            </div>
-            <button className="btn-outline btn-outline-orange" style={{ fontSize: "11px" }} onClick={() => onNavigate("dashboard")}>
-              View Spatial Intelligence Map →
-            </button>
-          </div>
-
-          <p className="body-sm" style={{ marginTop: "6px", color: "var(--col-text-mid)" }}>
-            High grievance density (37 complaints, 12 km² cluster) + High severity (8.5/10) + Infrastructure response gap detected on Main Segment W-402.
-          </p>
-        </div>
-
         {/* Filter Controls & Grievance Queue Table */}
         <div className="form-card" style={{ padding: "20px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "12px" }}>
             <div>
               <span className="label-eyebrow">DEPARTMENT QUEUE</span>
-              <h2 className="portal-heading" style={{ fontSize: "18px" }}>Grievance Processing Queue</h2>
+              <h2 className="portal-heading" style={{ fontSize: "18px" }}>
+                {user.department} Queue ({filteredGrievances.length})
+              </h2>
             </div>
 
-            <div style={{ display: "flex", gap: "12px" }}>
+            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Search ID or description..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ width: "180px", padding: "6px 10px", fontSize: "12px" }}
+              />
+
               <select className="form-select" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} style={{ width: "160px" }}>
                 <option value="">All Categories</option>
-                <option value="Water Supply">Water Supply</option>
-                <option value="Roads & Potholes">Roads & Potholes</option>
-                <option value="Electricity">Electricity</option>
+                {uniqueCategories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
               </select>
 
               <select className="form-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ width: "160px" }}>
@@ -145,7 +197,9 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
                 <option value="SUBMITTED">Submitted</option>
                 <option value="UNDER_REVIEW">Under Review</option>
                 <option value="INSPECTION_SCHEDULED">Inspection Scheduled</option>
+                <option value="ACTION_TAKEN">Action Taken</option>
                 <option value="RESOLVED">Resolved</option>
+                <option value="REOPENED">Reopened</option>
               </select>
             </div>
           </div>
@@ -164,26 +218,43 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
               </tr>
             </thead>
             <tbody>
-              {filteredGrievances.map((g) => (
-                <tr key={g.id}>
-                  <td className="mono" style={{ fontWeight: "700" }}>{g.id}</td>
-                  <td>{g.category}</td>
-                  <td>{g.location.district} ({g.location.address})</td>
-                  <td><span style={{ color: "var(--col-red)", fontWeight: "700" }}>{g.severity}</span></td>
-                  <td>{g.createdAt}</td>
-                  <td><span className={`status-pill ${g.status}`}>{g.status.replace(/_/g, " ")}</span></td>
-                  <td>{g.assignedTo}</td>
-                  <td>
-                    <button
-                      className="service-card-btn"
-                      style={{ padding: "4px 10px", fontSize: "11px" }}
-                      onClick={() => setSelectedGrievance(g)}
-                    >
-                      Open Dossier →
-                    </button>
+              {filteredGrievances.length > 0 ? (
+                filteredGrievances.map((g) => (
+                  <tr key={g.id}>
+                    <td className="mono" style={{ fontWeight: "700" }}>{g.id}</td>
+                    <td>{g.category}</td>
+                    <td>{g.location.district} ({g.location.address})</td>
+                    <td>
+                      <span style={{ color: g.severity === "Critical" || g.severity === "High" ? "var(--col-red)" : "var(--col-navy)", fontWeight: "700" }}>
+                        {g.severity}
+                      </span>
+                    </td>
+                    <td>{g.createdAt}</td>
+                    <td><span className={`status-pill ${g.status}`}>{g.status.replace(/_/g, " ")}</span></td>
+                    <td>{g.assignedTo}</td>
+                    <td>
+                      <button
+                        className="service-card-btn"
+                        style={{ padding: "4px 10px", fontSize: "11px" }}
+                        onClick={() => handleOpenDossier(g)}
+                      >
+                        Open Dossier →
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={8} style={{ textAlign: "center", padding: "40px 20px", color: "var(--col-text-muted)" }}>
+                    <div style={{ fontSize: "15px", fontWeight: "600", color: "var(--col-navy)" }}>
+                      No grievances assigned to your department.
+                    </div>
+                    <div style={{ fontSize: "12px", marginTop: "4px", color: "var(--col-text-mid)" }}>
+                      Grievances submitted for <strong>{user.department}</strong> will automatically populate in this queue.
+                    </div>
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
@@ -198,7 +269,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
                 <span className="label-eyebrow">STAFF REVIEW DOSSIER</span>
                 <h2 className="portal-heading" style={{ fontSize: "22px" }}>{selectedGrievance.id}</h2>
                 <p className="portal-subtext" style={{ fontSize: "14px", color: "var(--col-navy)" }}>
-                  {selectedGrievance.category} — {selectedGrievance.issueType} ({selectedGrievance.location.district})
+                  {selectedGrievance.category} — {selectedGrievance.issueType} ({selectedGrievance.location.district}) · Dept: <strong>{selectedGrievance.department}</strong>
                 </p>
               </div>
 
@@ -212,7 +283,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
               <span className="label-eyebrow">CITIZEN COMPLAINT & EVIDENCE</span>
               <p className="body-md" style={{ color: "var(--col-navy)" }}>"{selectedGrievance.description}"</p>
               <div style={{ fontSize: "12px", color: "var(--col-text-mid)" }}>
-                <strong>Complainant:</strong> Citizen (Identity Protected)
+                <strong>Complainant:</strong> {selectedGrievance.citizenName || "Citizen"} ({selectedGrievance.citizenPhone || "Identity Protected"})
                 <br />
                 <strong>Address:</strong> {selectedGrievance.location.address || selectedGrievance.location.district}
               </div>
@@ -222,21 +293,20 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
             <div className="process-flow-box" style={{ background: "var(--col-orange-dim)", border: "1px solid var(--col-orange-line)", padding: "16px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span className="label-orange">SPIN AI RECOMMENDATION</span>
-                <span className="location-status-badge verified">CONFIDENCE 94%</span>
+                <span className="location-status-badge verified">CONFIDENCE {selectedGrievance.aiAnalysis?.confidence || 94}%</span>
               </div>
 
               <h4 style={{ fontSize: "16px", color: "var(--col-navy)", margin: "6px 0" }}>
-                "Prioritize field inspection and main pipeline assessment in Sector 4 Zone X."
+                "{selectedGrievance.aiAnalysis?.reasoning || "Prioritize field inspection and departmental action."}"
               </h4>
 
               <div style={{ background: "var(--col-surface)", padding: "12px", borderRadius: "6px", fontSize: "12px", margin: "8px 0" }}>
                 <strong>EMPIRICAL EVIDENCE BACKBONE (WHY?):</strong>
                 <ul style={{ listStyle: "none", paddingLeft: "4px", marginTop: "4px", display: "flex", flexDirection: "column", gap: "2px" }}>
-                  <li>• 37 related water grievances in 12 km² cluster</li>
-                  <li>• 3-week persistence duration</li>
-                  <li>• High severity score (8.5 / 10)</li>
-                  <li>• Nearby public school & 14,000 residents impacted</li>
-                  <li>• No recent municipal resolution recorded</li>
+                  <li>• {selectedGrievance.aiAnalysis?.nearbyGrievances || 24} related grievances in cluster</li>
+                  <li>• Department: {selectedGrievance.department}</li>
+                  <li>• Severity Level: {selectedGrievance.severity}</li>
+                  <li>• Location: {selectedGrievance.location.address || selectedGrievance.location.district}</li>
                 </ul>
               </div>
 

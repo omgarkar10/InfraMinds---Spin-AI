@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "../../styles/citizen.css";
 import { saveGrievance } from "../../services/grievanceService";
+import { getDepartmentForCategory } from "../../utils/departmentConfig";
 import type {
   CitizenUser,
   Grievance,
@@ -74,6 +75,18 @@ const CATEGORY_ISSUE_MAP: Record<GrievanceCategory, string[]> = {
     "Footpath blockage",
     "Encroachment on public land",
     "Broken bridge/culvert guardrail",
+  ],
+  "Healthcare & Hospitals": [
+    "Hospital staff shortage",
+    "Medicine/service unavailability",
+    "Unsanitary hospital environment",
+    "Emergency ambulance delay",
+  ],
+  "Public Safety & Law Enforcement": [
+    "Traffic signal not working",
+    "Illegal encroachment",
+    "Nuisance/noise complaint",
+    "Public safety hazard",
   ],
   Other: ["Other public infrastructure grievance"],
 };
@@ -313,7 +326,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
         reasoning: `Spatial correlation detected 37 similar ${(category || "other").toLowerCase()} grievances within a 12 km² cluster near ${location.district || "Unknown"}.`,
       },
       status: "SUBMITTED",
-      department: `${location.district || "Local"} Municipal ${category || "General"} Department`,
+      department: getDepartmentForCategory(category || "Other"),
       assignedTo: "Chief Engineer (Infrastructure)",
       createdAt: new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }),
       updatedAt: new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }),

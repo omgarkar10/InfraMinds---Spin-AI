@@ -6,7 +6,7 @@ import json
 import os
 import uuid
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -14,6 +14,7 @@ from spin_agents.tools.bhashini import bhashini_asr, bhashini_translate
 from spin_agents.tools.bigquery import query_red_zones, query_weekly_summary
 from spin_agents.runner import run_pipeline
 from spin_agents.auth import router as auth_router
+from spin_agents.config_routes import router as config_router
 from spin_agents.db import Base, engine
 import sys
 import os
@@ -31,6 +32,7 @@ async def on_startup():
     await init_db()
 
 app.include_router(auth_router)
+app.include_router(config_router)
 
 app.add_middleware(
     CORSMiddleware,
