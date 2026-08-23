@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { useLanguage, COUNTRIES, type CountryCode } from "../../hooks/useLanguage";
+import { AccessibilityModal } from "../common/AccessibilityModal";
+import { HelpModal } from "../common/HelpModal";
 import "../navigation/Navbar.css";
 
 interface NavbarProps {
@@ -10,7 +12,8 @@ interface NavbarProps {
 export function Navbar({ view, onViewChange }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
-  const [languageQuery, setLanguageQuery] = useState("");
+  const [accessibilityOpen, setAccessibilityOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const { country, setCountry } = useLanguage();
 
   const filteredCountries = useMemo(() => {
@@ -55,60 +58,49 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
   const isCitizenView = view.startsWith("citizen");
 
   return (
-    <header className="gov-header-wrapper">
-      {/* Top Utility Bar (UX4G Government Standard) */}
-      <div className="gov-top-bar">
-        <div className="gov-top-bar-inner container">
-          <div className="gov-top-bar-left">
-            <span className="gov-emblem-badge">🇮🇳 Government of India · Public Infrastructure Intelligence</span>
-          </div>
+    <>
+      <AccessibilityModal
+        isOpen={accessibilityOpen}
+        onClose={() => setAccessibilityOpen(false)}
+      />
 
-          <div className="gov-top-bar-right">
-            {/* Language / Country Selector */}
-            <div className="navbar-lang-wrapper">
-              <button
-                className="navbar-lang-btn"
-                onClick={() => { setLangOpen(!langOpen); setMenuOpen(false); }}
-                aria-label="Select country language"
-                aria-expanded={langOpen}
-              >
-                <span className="navbar-lang-flag">{country.flag}</span>
-                <span className="navbar-lang-code">{country.languageNative}</span>
-                <span className="navbar-lang-chevron" aria-hidden="true">▾</span>
-              </button>
+      <HelpModal
+        isOpen={helpOpen}
+        onClose={() => setHelpOpen(false)}
+        onNavigate={(v) => onViewChange(v)}
+      />
 
-              {langOpen && (
-                <>
-                  <div className="navbar-lang-backdrop" onClick={() => setLangOpen(false)} />
-                  <div className="navbar-lang-dropdown" role="menu">
-                    <div className="navbar-lang-header">
-                      <span className="label-eyebrow">Select Region / Language</span>
-                      <span className="navbar-lang-sub">English is the default language</span>
-                      <div className="navbar-lang-search-wrap">
-                        <span className="navbar-lang-search-icon" aria-hidden="true">⌕</span>
-                        <input
-                          className="navbar-lang-search"
-                          type="search"
-                          value={languageQuery}
-                          onChange={(event) => setLanguageQuery(event.target.value)}
-                          placeholder="Search language or state"
-                          aria-label="Search language or state"
-                          autoFocus
-                        />
-                        {languageQuery && (
-                          <button
-                            className="navbar-lang-search-clear"
-                            type="button"
-                            onClick={() => setLanguageQuery("")}
-                            aria-label="Clear language search"
-                          >
-                            ×
-                          </button>
-                        )}
+      <header className="gov-header-wrapper">
+        {/* Top Utility Bar (UX4G Government Standard) */}
+        <div className="gov-top-bar">
+          <div className="gov-top-bar-inner container">
+            <div className="gov-top-bar-left">
+              <span className="gov-emblem-badge">🇮🇳 Government of India · Public Infrastructure Intelligence</span>
+            </div>
+
+            <div className="gov-top-bar-right">
+              {/* Language / Country Selector */}
+              <div className="navbar-lang-wrapper">
+                <button
+                  className="navbar-lang-btn"
+                  onClick={() => { setLangOpen(!langOpen); setMenuOpen(false); }}
+                  aria-label="Select country language"
+                  aria-expanded={langOpen}
+                >
+                  <span className="navbar-lang-flag">{country.flag}</span>
+                  <span className="navbar-lang-code">{country.languageNative}</span>
+                  <span className="navbar-lang-chevron" aria-hidden="true">▾</span>
+                </button>
+
+                {langOpen && (
+                  <>
+                    <div className="navbar-lang-backdrop" onClick={() => setLangOpen(false)} />
+                    <div className="navbar-lang-dropdown" role="menu">
+                      <div className="navbar-lang-header">
+                        <span className="label-eyebrow">Select Region / Language</span>
+                        <span className="navbar-lang-sub">Language support — prototype</span>
                       </div>
-                    </div>
-                    <div className="navbar-lang-options" role="none">
-                      {filteredCountries.map((c) => (
+                      {COUNTRIES.map((c) => (
                         <button
                           key={c.code}
                           className={`navbar-lang-option ${c.code === country.code ? "active" : ""}`}
@@ -117,8 +109,8 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
                         >
                           <span className="navbar-lang-option-flag">{c.flag}</span>
                           <div className="navbar-lang-option-text">
-                            <span className="navbar-lang-option-country">{c.language}</span>
-                            <span className="navbar-lang-option-lang">{c.languageNative} · {c.name}</span>
+                            <span className="navbar-lang-option-country">{c.name}</span>
+                            <span className="navbar-lang-option-lang">{c.languageNative}</span>
                           </div>
                           {c.status === "proposed" && (
                             <span className="navbar-lang-option-badge">Proposed</span>
@@ -128,29 +120,44 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
                           )}
                         </button>
                       ))}
-                      {filteredCountries.length === 0 && (
-                        <p className="navbar-lang-empty">No matching language or state.</p>
-                      )}
+                      <div className="navbar-lang-footer">
+                        <span className="disclaimer">PROPOSED ARCHITECTURE · UI DEMO ONLY</span>
+                      </div>
                     </div>
-                    <div className="navbar-lang-footer">
-                      <span className="disclaimer">36 INDIAN REGIONS · STATES &amp; UNION TERRITORIES</span>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
+                  </>
+                )}
+              </div>
 
-            <a href="#accessibility" className="gov-top-link">Accessibility</a>
-            <a href="#help" className="gov-top-link">Help</a>
-            <button
-              className="navbar-cta navbar-cta-primary"
-              onClick={() => onViewChange("staff-login")}
-            >
-              Staff Portal
-            </button>
+              <button
+                className="gov-top-link"
+                style={{ background: "none", border: "none", cursor: "pointer", font: "inherit" }}
+                onClick={() => setAccessibilityOpen(true)}
+              >
+                ♿ Accessibility
+              </button>
+              <button
+                className="gov-top-link"
+                style={{ background: "none", border: "none", cursor: "pointer", font: "inherit" }}
+                onClick={() => setHelpOpen(true)}
+              >
+                ❓ Help
+              </button>
+              <button
+                className="navbar-cta navbar-cta-primary"
+                style={{ background: "transparent", color: "var(--col-orange)", border: "1px solid var(--col-orange)" }}
+                onClick={() => onViewChange("ministry-login")}
+              >
+                🏛️ Ministry Portal
+              </button>
+              <button
+                className="navbar-cta navbar-cta-primary"
+                onClick={() => onViewChange("staff-login")}
+              >
+                Staff Portal
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
       {/* Main Header */}
       <nav className="navbar">
@@ -170,6 +177,9 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
                 {s.label}
               </button>
             ))}
+            <button className="navbar-link" onClick={() => onViewChange("approval-portal")}>
+              Approval Status
+            </button>
           </div>
 
           {/* Right Action CTAs */}
@@ -205,6 +215,7 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
         )}
       </nav>
     </header>
-  );
+  </>
+);
 }
 

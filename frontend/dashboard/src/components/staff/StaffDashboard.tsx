@@ -1,14 +1,22 @@
 import React, { useState, useEffect } from "react";
 import "../../styles/citizen.css";
-import {
-  getStaffGrievances,
-  getStaffGrievanceById,
-  updateStaffDecision,
-  updateGrievanceStatus,
-} from "../../services/grievanceService";
-import type { StaffUser, Grievance, GrievanceStatus } from "../../types";
-
+import { getStoredGrievances, updateStaffDecision, updateGrievanceStatus } from "../../services/grievanceService";
+import type { StaffUser, Grievance, GrievanceStatus, GrievanceCategory } from "../../types";
 import { GrievanceKPIBar } from "./GrievanceKPIBar";
+
+// All grievance categories — matches types/index.ts GrievanceCategory
+const ALL_CATEGORIES: GrievanceCategory[] = [
+  "Water Supply",
+  "Roads & Potholes",
+  "Drainage / Flooding",
+  "Electricity",
+  "Waste Management",
+  "Street Lighting",
+  "Public Transport",
+  "Sanitation",
+  "Public Infrastructure",
+  "Other",
+];
 
 interface StaffDashboardProps {
   user: StaffUser;
@@ -91,12 +99,11 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
     return true;
   });
 
-  // Calculate statistics STRICTLY from department-scoped grievances
-  const activeCount = grievances.filter((g) => g.status !== "RESOLVED").length;
-  const criticalCount = grievances.filter((g) => g.severity === "Critical" || g.severity === "High").length;
-  const pendingCount = grievances.filter((g) => g.decisionStatus === "PENDING" || !g.decisionStatus).length;
-  const resolvedCount = grievances.filter((g) => g.status === "RESOLVED").length;
-  const escalatedCount = grievances.filter((g) => g.status === "REOPENED").length;
+  // Derive red zone from actual data — most-affected category/location
+  const highSeverityGrievances = grievances.filter(
+    (g) => g.severity === "Critical" || g.severity === "High"
+  );
+  const topRedZoneGrievance = highSeverityGrievances[0] || null;
 
   // Extract unique categories present in department queue for filter
   const uniqueCategories = Array.from(new Set(grievances.map((g) => g.category)));
@@ -105,23 +112,47 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
     <div className="citizen-portal-container">
       {/* Top Staff Header */}
       <div className="portal-header-bar" style={{ background: "var(--col-header-bg)", color: "#fff" }}>
-        <div className="container portal-header-inner">
-          <div className="portal-title-group">
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <span className="portal-org" style={{ color: "var(--col-orange)" }}>SPIN STAFF PORTAL</span>
-              <span className="user-badge-dot" />
-              <span style={{ fontSize: "11px", color: "#4ADE80", letterSpacing: "0.1em" }}>SYSTEM OPERATIONAL</span>
+        <div className="container portal-header-inner" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            <button
+              className="btn-outline"
+              style={{
+                color: "#fff",
+                borderColor: "rgba(255,255,255,0.4)",
+                background: "rgba(255,255,255,0.1)",
+                fontSize: "12px",
+                fontWeight: "700",
+                padding: "6px 12px",
+                borderRadius: "6px",
+                cursor: "pointer",
+                whiteSpace: "nowrap"
+              }}
+              onClick={() => onNavigate("landing")}
+            >
+              ← Back to Home
+            </button>
+
+            <div className="portal-title-group">
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <span className="portal-org" style={{ color: "var(--col-orange)" }}>SPIN STAFF PORTAL</span>
+                <span className="user-badge-dot" />
+                <span style={{ fontSize: "11px", color: "#4ADE80", letterSpacing: "0.1em" }}>SYSTEM OPERATIONAL</span>
+              </div>
+              <h1 className="portal-heading" style={{ color: "#fff", fontSize: "22px" }}>
+                Department Operations & Grievance Queue
+              </h1>
+              <p className="portal-subtext" style={{ color: "rgba(255,255,255,0.7)", fontSize: "13px" }}>
+                Officer: <strong>{user.name}</strong> · Dept: <strong>{user.department}</strong> · Role: <strong>{user.role}</strong>
+              </p>
             </div>
-            <h1 className="portal-heading" style={{ color: "#fff", fontSize: "22px" }}>
-              Department Operations & Grievance Queue
-            </h1>
-            <p className="portal-subtext" style={{ color: "rgba(255,255,255,0.7)", fontSize: "13px" }}>
-              Officer: <strong>{user.name}</strong> ({user.employeeId}) · Dept: <strong>{user.department}</strong>
-            </p>
           </div>
 
-          <div style={{ display: "flex", gap: "10px" }}>
-            <button className="btn-outline" style={{ color: "#fff", borderColor: "rgba(255,255,255,0.3)" }} onClick={() => onNavigate("dashboard")}>
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
+            <button
+              className="btn-outline"
+              style={{ color: "#fff", borderColor: "rgba(255,255,255,0.3)", fontSize: "12px" }}
+              onClick={() => onNavigate("dashboard")}
+            >
               Open Policymaker Map →
             </button>
           </div>
@@ -129,39 +160,66 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
       </div>
 
       <div className="container">
-        {authError && (
-          <div style={{ background: "#ffe6e6", border: "1px solid red", color: "red", padding: "10px 14px", borderRadius: "6px", marginBottom: "16px", fontSize: "13px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span>🚫 {authError}</span>
-            <button style={{ border: "none", background: "transparent", color: "red", cursor: "pointer", fontWeight: "bold" }} onClick={() => setAuthError("")}>✕</button>
-          </div>
-        )}
-
-        {/* DEPARTMENT-SCOPED KPI BAR */}
+        {/* LIVE GRIEVANCE KPI BAR — all values from actual data */}
         <GrievanceKPIBar grievances={grievances} />
 
-        {/* KPI Overview Cards (Strictly Department Scoped) */}
+        {/* KPI Overview Cards — dynamically computed */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "12px", marginBottom: "24px" }}>
           <div className="stat-card">
             <span className="stat-label">ACTIVE GRIEVANCES</span>
-            <span className="stat-value">{activeCount}</span>
+            <span className="stat-value">{grievances.filter((g) => g.status !== "RESOLVED").length}</span>
           </div>
           <div className="stat-card">
             <span className="stat-label">CRITICAL ISSUES</span>
-            <span className="stat-value" style={{ color: "var(--col-red)" }}>{criticalCount}</span>
+            <span className="stat-value" style={{ color: "var(--col-red)" }}>
+              {grievances.filter((g) => g.severity === "Critical" || g.severity === "High").length}
+            </span>
           </div>
           <div className="stat-card accent">
             <span className="stat-label">PENDING REVIEW</span>
-            <span className="stat-value" style={{ color: "var(--col-orange)" }}>{pendingCount}</span>
+            <span className="stat-value" style={{ color: "var(--col-orange)" }}>
+              {grievances.filter((g) => g.decisionStatus === "PENDING" || !g.decisionStatus).length}
+            </span>
           </div>
           <div className="stat-card">
             <span className="stat-label">RESOLVED</span>
-            <span className="stat-value" style={{ color: "var(--col-green)" }}>{resolvedCount}</span>
+            <span className="stat-value" style={{ color: "var(--col-green)" }}>
+              {grievances.filter((g) => g.status === "RESOLVED").length}
+            </span>
           </div>
           <div className="stat-card">
             <span className="stat-label">ESCALATED / REOPENED</span>
-            <span className="stat-value" style={{ color: "var(--col-amber)" }}>{escalatedCount}</span>
+            <span className="stat-value" style={{ color: "var(--col-amber)" }}>
+              {grievances.filter((g) => g.status === "REOPENED").length}
+            </span>
           </div>
         </div>
+
+        {/* RED ZONE ALERT — dynamically from highest-severity grievance */}
+        {topRedZoneGrievance ? (
+          <div className="process-flow-box" style={{ borderLeft: "4px solid var(--col-red)", marginBottom: "24px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span className="tag-red" style={{ fontSize: "10px" }}>🔴 RED ZONE ALERT DETECTED</span>
+                <strong style={{ color: "var(--col-navy)", fontSize: "15px" }}>
+                  {topRedZoneGrievance.location.district.toUpperCase()} — {topRedZoneGrievance.category.toUpperCase()}
+                </strong>
+              </div>
+              <button className="btn-outline btn-outline-orange" style={{ fontSize: "11px" }} onClick={() => onNavigate("dashboard")}>
+                View Spatial Intelligence Map →
+              </button>
+            </div>
+            <p className="body-sm" style={{ marginTop: "6px", color: "var(--col-text-mid)" }}>
+              Severity: <strong>{topRedZoneGrievance.severity}</strong> · Location: {topRedZoneGrievance.location.address || topRedZoneGrievance.location.district} · Status: {topRedZoneGrievance.status.replace(/_/g, " ")}
+            </p>
+          </div>
+        ) : grievances.length === 0 ? (
+          <div className="process-flow-box" style={{ borderLeft: "4px solid var(--col-green)", marginBottom: "24px" }}>
+            <p className="body-sm" style={{ color: "var(--col-text-mid)" }}>
+              ✅ No active grievances submitted yet. Red zone alerts will appear here when citizens submit complaints.
+            </p>
+          </div>
+        ) : null}
 
         {/* Filter Controls & Grievance Queue Table */}
         <div className="form-card" style={{ padding: "20px" }}>
@@ -173,26 +231,25 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
               </h2>
             </div>
 
-            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-              <input
-                type="text"
-                className="form-input"
-                placeholder="Search ID or description..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ width: "180px", padding: "6px 10px", fontSize: "12px" }}
-              />
-
-              <select className="form-select" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} style={{ width: "160px" }}>
+            <div style={{ display: "flex", gap: "12px" }}>
+              <select
+                className="form-select"
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                style={{ width: "200px" }}
+              >
                 <option value="">All Categories</option>
-                {uniqueCategories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
+                {ALL_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>
 
-              <select className="form-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ width: "160px" }}>
+              <select
+                className="form-select"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                style={{ width: "180px" }}
+              >
                 <option value="">All Statuses</option>
                 <option value="SUBMITTED">Submitted</option>
                 <option value="UNDER_REVIEW">Under Review</option>
@@ -204,28 +261,38 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
             </div>
           </div>
 
-          <table className="staff-table">
-            <thead>
-              <tr>
-                <th>GRIEVANCE ID</th>
-                <th>CATEGORY</th>
-                <th>LOCATION</th>
-                <th>SEVERITY</th>
-                <th>SUBMITTED</th>
-                <th>STATUS</th>
-                <th>ASSIGNED TO</th>
-                <th>ACTION</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredGrievances.length > 0 ? (
-                filteredGrievances.map((g) => (
+          {filteredGrievances.length === 0 ? (
+            <div style={{ padding: "40px", textAlign: "center", color: "var(--col-text-muted)", background: "var(--col-panel)", borderRadius: "8px" }}>
+              <p style={{ fontSize: "14px" }}>No grievances match the selected filters.</p>
+              <p style={{ fontSize: "12px", marginTop: "8px" }}>Citizens can submit grievances through the Citizen Portal.</p>
+            </div>
+          ) : (
+            <table className="staff-table">
+              <thead>
+                <tr>
+                  <th>GRIEVANCE ID</th>
+                  <th>CATEGORY</th>
+                  <th>LOCATION</th>
+                  <th>SEVERITY</th>
+                  <th>SUBMITTED</th>
+                  <th>STATUS</th>
+                  <th>ASSIGNED TO</th>
+                  <th>ACTION</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredGrievances.map((g) => (
                   <tr key={g.id}>
                     <td className="mono" style={{ fontWeight: "700" }}>{g.id}</td>
                     <td>{g.category}</td>
                     <td>{g.location.district} ({g.location.address})</td>
                     <td>
-                      <span style={{ color: g.severity === "Critical" || g.severity === "High" ? "var(--col-red)" : "var(--col-navy)", fontWeight: "700" }}>
+                      <span style={{
+                        color: g.severity === "Critical" ? "var(--col-red)"
+                          : g.severity === "High" ? "var(--col-orange)"
+                          : "inherit",
+                        fontWeight: "700"
+                      }}>
                         {g.severity}
                       </span>
                     </td>
@@ -236,27 +303,16 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
                       <button
                         className="service-card-btn"
                         style={{ padding: "4px 10px", fontSize: "11px" }}
-                        onClick={() => handleOpenDossier(g)}
+                        onClick={() => setSelectedGrievance(g)}
                       >
                         Open Dossier →
                       </button>
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={8} style={{ textAlign: "center", padding: "40px 20px", color: "var(--col-text-muted)" }}>
-                    <div style={{ fontSize: "15px", fontWeight: "600", color: "var(--col-navy)" }}>
-                      No grievances assigned to your department.
-                    </div>
-                    <div style={{ fontSize: "12px", marginTop: "4px", color: "var(--col-text-mid)" }}>
-                      Grievances submitted for <strong>{user.department}</strong> will automatically populate in this queue.
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 
@@ -269,55 +325,60 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
                 <span className="label-eyebrow">STAFF REVIEW DOSSIER</span>
                 <h2 className="portal-heading" style={{ fontSize: "22px" }}>{selectedGrievance.id}</h2>
                 <p className="portal-subtext" style={{ fontSize: "14px", color: "var(--col-navy)" }}>
-                  {selectedGrievance.category} — {selectedGrievance.issueType} ({selectedGrievance.location.district}) · Dept: <strong>{selectedGrievance.department}</strong>
+                  {selectedGrievance.category} — {selectedGrievance.issueType} ({selectedGrievance.location.district}, {selectedGrievance.location.state})
                 </p>
               </div>
-
               <button className="btn-outline" style={{ padding: "4px 10px" }} onClick={() => setSelectedGrievance(null)}>
                 ✕ Close
               </button>
             </div>
 
-            {/* Citizen Complaint & Evidence Breakdown */}
+            {/* Complaint Details */}
             <div className="ai-review-card">
               <span className="label-eyebrow">CITIZEN COMPLAINT & EVIDENCE</span>
               <p className="body-md" style={{ color: "var(--col-navy)" }}>"{selectedGrievance.description}"</p>
-              <div style={{ fontSize: "12px", color: "var(--col-text-mid)" }}>
-                <strong>Complainant:</strong> {selectedGrievance.citizenName || "Citizen"} ({selectedGrievance.citizenPhone || "Identity Protected"})
-                <br />
-                <strong>Address:</strong> {selectedGrievance.location.address || selectedGrievance.location.district}
+              <div style={{ fontSize: "12px", color: "var(--col-text-mid)", marginTop: "8px", display: "flex", flexDirection: "column", gap: "4px" }}>
+                <span><strong>Category:</strong> {selectedGrievance.category}</span>
+                <span><strong>Issue Type:</strong> {selectedGrievance.issueType}</span>
+                <span><strong>Address:</strong> {selectedGrievance.location.address || selectedGrievance.location.district}</span>
+                <span><strong>District:</strong> {selectedGrievance.location.district} · <strong>State:</strong> {selectedGrievance.location.state}</span>
+                <span><strong>Severity:</strong> {selectedGrievance.severity} · <strong>Frequency:</strong> {selectedGrievance.frequency}</span>
+                <span><strong>Started:</strong> {selectedGrievance.startDate}</span>
               </div>
             </div>
 
-            {/* AI RECOMMENDATION BOX */}
+            {/* AI Recommendation */}
             <div className="process-flow-box" style={{ background: "var(--col-orange-dim)", border: "1px solid var(--col-orange-line)", padding: "16px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span className="label-orange">SPIN AI RECOMMENDATION</span>
-                <span className="location-status-badge verified">CONFIDENCE {selectedGrievance.aiAnalysis?.confidence || 94}%</span>
+                <span className="location-status-badge verified">
+                  CONFIDENCE {selectedGrievance.aiAnalysis?.confidence || 85}%
+                </span>
               </div>
 
               <h4 style={{ fontSize: "16px", color: "var(--col-navy)", margin: "6px 0" }}>
-                "{selectedGrievance.aiAnalysis?.reasoning || "Prioritize field inspection and departmental action."}"
+                "{selectedGrievance.aiAnalysis?.reasoning || `Prioritize field inspection for ${selectedGrievance.category} issue in ${selectedGrievance.location.district}.`}"
               </h4>
 
               <div style={{ background: "var(--col-surface)", padding: "12px", borderRadius: "6px", fontSize: "12px", margin: "8px 0" }}>
-                <strong>EMPIRICAL EVIDENCE BACKBONE (WHY?):</strong>
+                <strong>EVIDENCE:</strong>
                 <ul style={{ listStyle: "none", paddingLeft: "4px", marginTop: "4px", display: "flex", flexDirection: "column", gap: "2px" }}>
-                  <li>• {selectedGrievance.aiAnalysis?.nearbyGrievances || 24} related grievances in cluster</li>
-                  <li>• Department: {selectedGrievance.department}</li>
-                  <li>• Severity Level: {selectedGrievance.severity}</li>
-                  <li>• Location: {selectedGrievance.location.address || selectedGrievance.location.district}</li>
+                  <li>• Category: {selectedGrievance.category} in {selectedGrievance.location.district}</li>
+                  {selectedGrievance.aiAnalysis?.nearbyGrievances > 0 && (
+                    <li>• {selectedGrievance.aiAnalysis.nearbyGrievances} related grievances in cluster</li>
+                  )}
+                  <li>• Severity: {selectedGrievance.severity} ({selectedGrievance.aiAnalysis?.redZone ? "Red Zone" : "Standard Zone"})</li>
+                  <li>• Frequency: {selectedGrievance.frequency}</li>
                 </ul>
               </div>
 
-              {/* HUMAN APPROVAL REQUIRED BANNER */}
               <div style={{ background: "var(--col-navy)", color: "#fff", padding: "10px 14px", borderRadius: "6px", marginTop: "12px", fontSize: "11px", fontWeight: "700", letterSpacing: "0.08em", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span>🛡️ AI RECOMMENDATION — HUMAN APPROVAL REQUIRED</span>
                 <span style={{ color: "var(--col-orange)" }}>STATUS: {selectedGrievance.decisionStatus || "PENDING"}</span>
               </div>
             </div>
 
-            {/* Officer Note & Action Buttons */}
+            {/* Officer Note & Actions */}
             <div className="form-group">
               <label className="form-label">Officer Inspection Notes / Remarks</label>
               <textarea
@@ -346,7 +407,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
                 <span className="body-sm" style={{ fontSize: "11px" }}>Update Status:</span>
                 <select
                   className="form-select"
-                  style={{ width: "160px", padding: "6px" }}
+                  style={{ width: "180px", padding: "6px" }}
                   value={selectedGrievance.status}
                   onChange={(e) => handleStatusChange(e.target.value as GrievanceStatus)}
                 >

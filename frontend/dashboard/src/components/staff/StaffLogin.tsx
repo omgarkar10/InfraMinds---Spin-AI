@@ -74,8 +74,14 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel
   return (
     <div className="citizen-portal-container">
       <div className="container">
-        <div className="login-card" style={{ borderTop: "4px solid var(--col-navy)", maxWidth: "540px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ marginBottom: "14px", maxWidth: "520px", margin: "0 auto 14px auto" }}>
+          <button className="btn-outline" style={{ fontSize: "12px", fontWeight: "700" }} onClick={onCancel}>
+            ← Back to Home
+          </button>
+        </div>
+        <div className="login-card" style={{ borderTop: "4px solid var(--col-navy)", maxWidth: "520px" }}>
+
+          <div>
             <span className="label-eyebrow" style={{ color: "var(--col-navy)" }}>AUTHORIZED GOVERNMENT INTERFACE</span>
           </div>
 

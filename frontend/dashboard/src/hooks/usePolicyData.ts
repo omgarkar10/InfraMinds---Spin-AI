@@ -12,11 +12,15 @@ function mapCategoryToDomain(cat: string): InfrastructureDomain {
   return "Water";
 }
 
-function calculateLiveSummary(districtFilter?: string): { summary: DashboardSummary; redZones: RedZone[] } {
+function calculateLiveSummary(districtFilter?: string, stateFilter?: string): { summary: DashboardSummary; redZones: RedZone[] } {
   const all = getStoredGrievances();
-  const filtered = districtFilter
-    ? all.filter((g) => g.location.district.toLowerCase() === districtFilter.toLowerCase())
-    : all;
+  let filtered = all;
+  if (stateFilter) {
+    filtered = filtered.filter((g) => g.location.state?.toLowerCase() === stateFilter.toLowerCase());
+  }
+  if (districtFilter) {
+    filtered = filtered.filter((g) => g.location.district.toLowerCase() === districtFilter.toLowerCase());
+  }
 
   if (filtered.length === 0) {
     return {
@@ -95,14 +99,18 @@ export function usePolicyData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const refresh = useCallback(async (district?: string) => {
+  const refresh = useCallback(async (district?: string, state?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const params = district ? `?district=${encodeURIComponent(district)}` : "";
+      const queryParts: string[] = [];
+      if (district) queryParts.push(`district=${encodeURIComponent(district)}`);
+      if (state) queryParts.push(`state=${encodeURIComponent(state)}`);
+      const params = queryParts.length > 0 ? `?${queryParts.join("&")}` : "";
+
       const [summaryRes, zonesRes] = await Promise.all([
         fetch(`${API_BASE}/api/dashboard/summary${params}`),
-        fetch(`${API_BASE}/api/dashboard/red-zones`),
+        fetch(`${API_BASE}/api/dashboard/red-zones${params}`),
       ]);
       if (!summaryRes.ok || !zonesRes.ok) throw new Error("Backend server unreachable");
       const summaryData: DashboardSummary = await summaryRes.json();
@@ -111,7 +119,7 @@ export function usePolicyData() {
       setRedZones(zonesData.red_zones ?? []);
     } catch (err) {
       console.warn("Backend fetch failed, calculating live data from storage:", err);
-      const live = calculateLiveSummary(district);
+      const live = calculateLiveSummary(district, state);
       setSummary(live.summary);
       setRedZones(live.redZones);
     } finally {

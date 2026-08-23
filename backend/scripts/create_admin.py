@@ -16,27 +16,44 @@ async def create_admin():
         await conn.run_sync(Base.metadata.create_all)
         
     async with AsyncSessionLocal() as db:
-        # Check if already exists
         from sqlalchemy import select
+
+        # 1. Admin User
         stmt = select(User).where(User.email == "admin@government.gov.in")
         result = await db.execute(stmt)
-        existing = result.scalars().first()
-        
-        if existing:
-            print("Admin already exists!")
-            return
+        if not result.scalars().first():
+            admin_user = User(
+                email="admin@government.gov.in",
+                password_hash=pwd_context.hash("SecureSPIN2026!"),
+                name="System Administrator",
+                department="Municipal Infrastructure & Public Works",
+                role="admin",
+                is_verified=True
+            )
+            db.add(admin_user)
+            print("Admin user created!")
+        else:
+            print("Admin user already exists.")
 
-        user = User(
-            email="admin@government.gov.in",
-            password_hash=pwd_context.hash("SecureSPIN2026!"),
-            name="System Administrator",
-            department="Municipal Infrastructure & Public works",
-            role="admin",
-            is_verified=True
-        )
-        db.add(user)
+        # 2. Ministry Officer User
+        stmt_min = select(User).where(User.email == "ministry@nic.in")
+        result_min = await db.execute(stmt_min)
+        if not result_min.scalars().first():
+            ministry_user = User(
+                email="ministry@nic.in",
+                password_hash=pwd_context.hash("Ministry2026!"),
+                name="Dr. R. K. Sharma (Joint Secretary)",
+                department="Ministry of Housing & Urban Affairs (MoHUA)",
+                role="policymaker",
+                is_verified=True
+            )
+            db.add(ministry_user)
+            print("Ministry officer account created!")
+        else:
+            print("Ministry account already exists.")
+
         await db.commit()
-        print("Admin user created successfully!")
+        print("Database seed complete!")
 
 if __name__ == "__main__":
     asyncio.run(create_admin())

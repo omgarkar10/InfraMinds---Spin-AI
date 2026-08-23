@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import "../../styles/citizen.css";
 import { saveGrievance } from "../../services/grievanceService";
 import { getDepartmentForCategory } from "../../utils/departmentConfig";
@@ -143,8 +143,10 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
   };
 
   /* Step 3 State (Evidence & Bhashini Voice) */
-  const [voiceText] = useState<string>("");
+  const [voiceText, setVoiceText] = useState<string>("");
   const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [voiceError, setVoiceError] = useState<string>("");
+  const recognitionRef = useRef<any>(null);
 
   /* Step 5 Declaration */
   const [declaration, setDeclaration] = useState<boolean>(false);
@@ -233,13 +235,71 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
     );
   };
 
-  /* Voice Recording Trigger simulation */
+  /* Voice Recording — Browser SpeechRecognition API */
   const handleToggleRecord = () => {
-    setIsRecording(!isRecording);
-    if (!isRecording) {
-      setTimeout(() => {
+    setVoiceError("");
+
+    if (isRecording) {
+      // Stop recording
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsRecording(false);
+      return;
+    }
+
+    const SpeechRecognitionAPI =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognitionAPI) {
+      setVoiceError("Speech recognition is not supported in this browser. Please use Chrome or Edge.");
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognitionAPI();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "hi-IN"; // Hindi / Indian English / regional
+      recognition.maxAlternatives = 1;
+
+      let finalTranscript = "";
+
+      recognition.onstart = () => {
+        setIsRecording(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        let interim = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const t = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += t + " ";
+          } else {
+            interim += t;
+          }
+        }
+        setVoiceText((finalTranscript + interim).trim());
+      };
+
+      recognition.onerror = (event: any) => {
+        setVoiceError(`Voice recognition notice: ${event.error || "Microphone access issue"}. Please check microphone permissions.`);
         setIsRecording(false);
-      }, 3000);
+      };
+
+      recognition.onend = () => {
+        setIsRecording(false);
+        if (finalTranscript.trim()) {
+          setVoiceText(finalTranscript.trim());
+        }
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (e: any) {
+      setVoiceError(`Could not start voice recording: ${e?.message || "Unknown error"}`);
+      setIsRecording(false);
     }
   };
 
@@ -421,10 +481,30 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
   return (
     <div className="citizen-portal-container">
       <div className="container" style={{ maxWidth: "880px" }}>
-        <div style={{ marginBottom: "20px" }}>
-          <span className="portal-org">SPIN · CITIZEN SERVICES</span>
-          <h1 className="portal-heading">Raise a Public Infrastructure Grievance</h1>
-          <p className="portal-subtext">Follow the steps below to submit your complaint with location and evidence context.</p>
+        <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "20px" }}>
+          <button
+            className="btn-outline"
+            style={{
+              color: "var(--col-navy)",
+              borderColor: "var(--col-border)",
+              background: "var(--col-surface)",
+              fontSize: "12px",
+              fontWeight: "700",
+              padding: "6px 12px",
+              borderRadius: "6px",
+              cursor: "pointer",
+              whiteSpace: "nowrap"
+            }}
+            onClick={() => onNavigate("landing")}
+          >
+            ← Back to Home
+          </button>
+
+          <div>
+            <span className="portal-org">SPIN · CITIZEN SERVICES</span>
+            <h1 className="portal-heading" style={{ margin: 0 }}>Raise a Public Infrastructure Grievance</h1>
+            <p className="portal-subtext" style={{ margin: "4px 0 0 0" }}>Follow the steps below to submit your complaint with location and evidence context.</p>
+          </div>
         </div>
 
         {/* 4-Step Progress Bar */}
@@ -494,6 +574,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
                   type="date"
                   className="form-input"
                   value={startDate}
+                  max={new Date().toISOString().split("T")[0]}
                   onChange={(e) => setStartDate(e.target.value)}
                 />
               </div>
@@ -697,17 +778,46 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
                 Prefer speaking in your local language? Record a voice note below. Bhashini will automatically transcribe and translate it into structured data.
               </p>
 
-              <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-                <button
-                  type="button"
-                  className={`btn-outline ${isRecording ? "btn-outline-orange" : ""}`}
-                  onClick={handleToggleRecord}
-                >
-                  {isRecording ? "🔴 Recording... Click to Stop" : "🎙 Record Voice Grievance"}
-                </button>
-                <span style={{ fontSize: "12px", color: "var(--col-text-muted)" }}>
-                  {isRecording ? "Listening (Hindi / Marathi / Local Dialect)..." : voiceText ? "Voice grievance recorded" : "No voice note recorded"}
-                </span>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    className={`btn-outline ${isRecording ? "btn-outline-orange" : ""}`}
+                    style={isRecording ? { borderColor: "#dc2626", color: "#dc2626", fontWeight: "700" } : {}}
+                    onClick={handleToggleRecord}
+                  >
+                    {isRecording ? "🔴 Stop Recording" : "🎙 Record Voice Grievance"}
+                  </button>
+                  <span style={{ fontSize: "12px", color: isRecording ? "#dc2626" : "var(--col-text-muted)", fontWeight: isRecording ? "600" : "normal" }}>
+                    {isRecording
+                      ? "Listening — speak your grievance in Hindi / Marathi / Local Language..."
+                      : voiceText
+                      ? "✅ Voice note captured & transcribed"
+                      : "No voice note recorded"}
+                  </span>
+                </div>
+
+                {voiceError && (
+                  <div style={{ fontSize: "12px", color: "#dc2626", background: "#fef2f2", padding: "8px 12px", borderRadius: "4px", border: "1px solid #fecaca" }}>
+                    ⚠️ {voiceError}
+                  </div>
+                )}
+
+                {voiceText && (
+                  <div style={{ fontSize: "13px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "6px", padding: "12px 14px", color: "#166534" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                      <strong style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em", color: "#15803d" }}>Captured Voice Transcript (Bhashini ASR):</strong>
+                      <button
+                        type="button"
+                        onClick={() => setVoiceText("")}
+                        style={{ fontSize: "11px", color: "#dc2626", background: "none", border: "none", cursor: "pointer", fontWeight: "600" }}
+                      >
+                        ✕ Clear Transcript
+                      </button>
+                    </div>
+                    <p style={{ margin: 0, fontStyle: "italic" }}>"{voiceText}"</p>
+                  </div>
+                )}
               </div>
             </div>
 

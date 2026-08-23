@@ -33,13 +33,33 @@ export const TrackGrievances: React.FC<TrackGrievancesProps> = ({ onNavigate }) 
     <div className="citizen-portal-container">
       {/* Top Header */}
       <div className="portal-header-bar">
-        <div className="container portal-header-inner">
-          <div className="portal-title-group">
-            <span className="portal-org">SPIN · CITIZEN SERVICES</span>
-            <h1 className="portal-heading">My Submitted Grievances</h1>
-            <p className="portal-subtext">
-              Track real-time resolution progress, department routing, and spatial cluster analysis.
-            </p>
+        <div className="container portal-header-inner" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            <button
+              className="btn-outline"
+              style={{
+                color: "#fff",
+                borderColor: "rgba(255,255,255,0.4)",
+                background: "rgba(255,255,255,0.1)",
+                fontSize: "12px",
+                fontWeight: "700",
+                padding: "6px 12px",
+                borderRadius: "6px",
+                cursor: "pointer",
+                whiteSpace: "nowrap"
+              }}
+              onClick={() => onNavigate("landing")}
+            >
+              ← Back to Home
+            </button>
+
+            <div className="portal-title-group">
+              <span className="portal-org">SPIN · CITIZEN SERVICES</span>
+              <h1 className="portal-heading">My Submitted Grievances</h1>
+              <p className="portal-subtext">
+                Track real-time resolution progress, department routing, and spatial cluster analysis.
+              </p>
+            </div>
           </div>
 
           <button className="service-card-btn service-card-btn-orange" onClick={() => onNavigate("citizen-raise")}>

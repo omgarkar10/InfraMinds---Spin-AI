@@ -1,0 +1,59 @@
+.approval-portal-page {
+  min-height: 100vh;
+  background: var(--col-bg, #f4f6f8);
+}
+
+.approval-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+
+.approval-table th {
+  padding: 12px 14px;
+  background: var(--col-surface-alt, #eef2f6);
+  color: var(--col-navy, #0f1e36);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid var(--col-border, #d1d5db);
+}
+
+.approval-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--col-border, #e5e7eb);
+  vertical-align: middle;
+}
+
+.approval-table tbody tr:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.approval-status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.approval-status-badge.status-pending {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.approval-status-badge.status-approved {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.approval-status-badge.status-rejected {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}

@@ -29,8 +29,12 @@ export function Footer({ onViewChange }: FooterProps) {
           <div className="footer-links-col">
             <span className="label-eyebrow">OFFICIAL ACCESS</span>
             <button className="footer-link" onClick={() => onViewChange("dashboard")}>Policymaker Dashboard</button>
-            <button className="footer-link" style={{ marginTop: "8px", color: "var(--col-orange)", fontSize: "12px", fontWeight: "600" }} onClick={() => onViewChange("staff-login")}>
-              🔒 Staff / Government Login
+            <button className="footer-link" onClick={() => onViewChange("approval-portal")}>Budget Approval Status</button>
+            <button className="footer-link" style={{ marginTop: "4px", color: "var(--col-orange)", fontSize: "12px", fontWeight: "600" }} onClick={() => onViewChange("ministry-login")}>
+              🏛️ Ministry Review Portal
+            </button>
+            <button className="footer-link" style={{ marginTop: "4px", color: "var(--col-navy)", fontSize: "12px", fontWeight: "600" }} onClick={() => onViewChange("staff-login")}>
+              🔒 Staff / Field Ops Login
             </button>
           </div>
         </div>

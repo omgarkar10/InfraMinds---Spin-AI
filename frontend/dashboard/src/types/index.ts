@@ -8,6 +8,18 @@ export interface RedZone {
 
 export type InfrastructureDomain = "Water" | "Road" | "Power" | "Rail" | "Telecom" | "None";
 
+export type BudgetCategory =
+  | "Water Supply"
+  | "Roads & Potholes"
+  | "Drainage / Flooding"
+  | "Electricity"
+  | "Waste Management"
+  | "Street Lighting"
+  | "Public Transport"
+  | "Sanitation"
+  | "Public Infrastructure"
+  | "Other";
+
 export interface WeeklyStats {
   district: string;
   total_complaints: number;
@@ -23,9 +35,10 @@ export interface DashboardSummary {
 }
 
 export interface BudgetAllocation {
-  domain: InfrastructureDomain;
+  domain: string;           // budget category label
   current_cr: number;
   proposed_cr: number;
+  recommended_cr: number;   // AI-suggested budget
 }
 
 export interface PolicyActionRequest {

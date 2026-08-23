@@ -60,7 +60,10 @@ export const GrievanceDetail: React.FC<GrievanceDetailProps> = ({
     <div className="citizen-portal-container">
       <div className="container" style={{ maxWidth: "900px" }}>
         {/* Breadcrumb & Navigation */}
-        <div style={{ marginBottom: "16px" }}>
+        <div style={{ display: "flex", gap: "10px", marginBottom: "16px" }}>
+          <button className="btn-outline" style={{ fontSize: "11px", fontWeight: "700" }} onClick={() => onNavigate("landing")}>
+            ← Back to Home
+          </button>
           <button className="btn-outline" style={{ fontSize: "11px" }} onClick={() => onNavigate("citizen-track")}>
             ← Back to My Grievances
           </button>
