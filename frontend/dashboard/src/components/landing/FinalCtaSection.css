@@ -1,0 +1,80 @@
+.final-cta-section {
+  padding: 5rem 0 6rem 0;
+  background: var(--surface-subtle, #f8fafc);
+}
+
+.final-cta-card {
+  background: var(--col-navy, #0f172a);
+  color: #ffffff;
+  border-radius: 24px;
+  padding: 4rem 2rem;
+  box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.final-cta-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: radial-gradient(circle at 80% 20%, rgba(234, 88, 12, 0.15) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.final-cta-title {
+  color: #ffffff !important;
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.final-cta-subtitle {
+  color: #94a3b8;
+  max-width: 540px;
+  margin: 0 auto 2.5rem auto;
+  font-size: 1.2rem;
+}
+
+.final-cta-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.btn-cta-primary {
+  background: var(--col-orange, #ea580c);
+  color: #ffffff;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.btn-cta-primary:hover {
+  background: #c2410c;
+  transform: translateY(-2px);
+}
+
+.btn-cta-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.15s ease;
+}
+
+.btn-cta-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}

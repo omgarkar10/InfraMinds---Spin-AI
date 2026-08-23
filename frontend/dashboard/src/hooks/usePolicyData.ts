@@ -1,26 +1,93 @@
 import { useCallback, useEffect, useState } from "react";
-import type { DashboardSummary, RedZone, PolicyActionRequest } from "../types";
+import type { DashboardSummary, RedZone, PolicyActionRequest, InfrastructureDomain } from "../types";
+import { getStoredGrievances } from "../services/grievanceService";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
-const MOCK_SUMMARY: DashboardSummary = {
-  executive_summary:
-    "4,200 verified complaints in Sector 4 over the last 7 days. Water infrastructure dominates grievance volume. 14 Red Zone clusters require immediate policy action.",
-  weekly_stats: {
-    district: "Sector 4",
-    total_complaints: 4200,
-    top_domain: "Water",
-    avg_severity: 7.2,
-    red_zone_count: 14,
-    period: "last_7_days",
-  },
-};
+function mapCategoryToDomain(cat: string): InfrastructureDomain {
+  const lower = (cat || "").toLowerCase();
+  if (lower.includes("water") || lower.includes("drain")) return "Water";
+  if (lower.includes("road") || lower.includes("pothole") || lower.includes("transport")) return "Road";
+  if (lower.includes("electric") || lower.includes("light") || lower.includes("power")) return "Power";
+  return "Water";
+}
 
-const MOCK_RED_ZONES: RedZone[] = [
-  { lat: 18.5204, lng: 73.8567, density: 420, domain: "Water", district: "Sector 4" },
-  { lat: 19.0760, lng: 72.8777, density: 380, domain: "Road", district: "Sector 2" },
-  { lat: 28.6139, lng: 77.2090, density: 510, domain: "Power", district: "Sector 3" },
-];
+function calculateLiveSummary(districtFilter?: string): { summary: DashboardSummary; redZones: RedZone[] } {
+  const all = getStoredGrievances();
+  const filtered = districtFilter
+    ? all.filter((g) => g.location.district.toLowerCase() === districtFilter.toLowerCase())
+    : all;
+
+  if (filtered.length === 0) {
+    return {
+      summary: {
+        executive_summary: districtFilter
+          ? `No complaints filed for ${districtFilter} yet.`
+          : "No citizen grievances recorded yet. Submit a report via the Citizen Portal to view real-time intelligence summaries.",
+        weekly_stats: {
+          district: districtFilter || "All Districts",
+          total_complaints: 0,
+          top_domain: "None",
+          avg_severity: 0,
+          red_zone_count: 0,
+          period: "last_7_days",
+        },
+      },
+      redZones: [],
+    };
+  }
+
+  const domainCounts: Record<string, number> = {};
+  filtered.forEach((g) => {
+    domainCounts[g.category] = (domainCounts[g.category] || 0) + 1;
+  });
+
+  let topCategory = "Water";
+  let maxCount = 0;
+  Object.entries(domainCounts).forEach(([domain, count]) => {
+    if (count > maxCount) {
+      maxCount = count;
+      topCategory = domain;
+    }
+  });
+
+  const topDomain = mapCategoryToDomain(topCategory);
+  const redZoneCount = filtered.filter(
+    (g) => g.aiAnalysis?.redZone || g.severity === "High" || g.severity === "Critical"
+  ).length;
+
+  const severityScores: Record<string, number> = {
+    Low: 2.5,
+    Medium: 5.0,
+    High: 8.0,
+    Critical: 10.0,
+  };
+  const totalSeverity = filtered.reduce((acc, g) => acc + (severityScores[g.severity] || 5.0), 0);
+  const avgSeverity = filtered.length > 0 ? Number((totalSeverity / filtered.length).toFixed(1)) : 0;
+
+  const redZones: RedZone[] = filtered.map((g) => ({
+    lat: g.location.lat || 18.5204,
+    lng: g.location.lng || 73.8567,
+    density: 100,
+    domain: mapCategoryToDomain(g.category),
+    district: g.location.district || "Default",
+  }));
+
+  return {
+    summary: {
+      executive_summary: `${filtered.length} verified complaint(s) recorded in ${districtFilter || "all districts"}. ${topCategory} infrastructure dominates grievance volume. ${redZoneCount} Red Zone cluster(s) logged.`,
+      weekly_stats: {
+        district: districtFilter || "All Districts",
+        total_complaints: filtered.length,
+        top_domain: topDomain,
+        avg_severity: avgSeverity,
+        red_zone_count: redZoneCount,
+        period: "last_7_days",
+      },
+    },
+    redZones,
+  };
+}
 
 export function usePolicyData() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
@@ -43,19 +110,10 @@ export function usePolicyData() {
       setSummary(summaryData);
       setRedZones(zonesData.red_zones ?? []);
     } catch (err) {
-      console.warn("Backend fetch failed, falling back to mock data:", err);
-      setSummary({
-        ...MOCK_SUMMARY,
-        executive_summary: district
-          ? `4,200 verified complaints in ${district} over the last 7 days. Water infrastructure dominates grievance volume. 14 Red Zone clusters require immediate policy action.`
-          : MOCK_SUMMARY.executive_summary,
-        weekly_stats: {
-          ...MOCK_SUMMARY.weekly_stats,
-          district: district || "Sector 4",
-        },
-      });
-      setRedZones(MOCK_RED_ZONES);
-      setError("Backend server offline — showing demo fallback data. Run backend: uvicorn spin_agents.api:app --port 8080");
+      console.warn("Backend fetch failed, calculating live data from storage:", err);
+      const live = calculateLiveSummary(district);
+      setSummary(live.summary);
+      setRedZones(live.redZones);
     } finally {
       setLoading(false);
     }

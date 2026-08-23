@@ -145,39 +145,104 @@ hitl_location_gate = HitlLocationGate(name="HITL_Location_Gate")
 # Agent 2: Semantic Parsing Agent
 # ---------------------------------------------------------------------------
 
+SEMANTIC_PARSING_INSTRUCTION = """
+You are **SPIN GrievanceParser**, an AI agent that reads a citizen's complaint and outputs structured data for routing.
+
+**ALLOWED CATEGORIES:** {Water Supply, Roads & Potholes, Drainage & Flooding, Street Lighting, Waste Management & Sanitation, Electricity/Power, Public Transport (Bus/Metro/Trains), Healthcare & Hospitals, Education (Public Schools), Identity/Documents (Passport, Aadhaar, Certificates), Banking & Financial Services, Pension & Social Security, Insurance Claims, Housing & Urban Development, Employment & Training, Government Schemes & Subsidies, Telecom & Mobile Network, Environment & Trees, Animal & Street Livestock, Public Safety & Law Enforcement, Other (Uncategorized)}
+
+Each category has specific allowed **issue types**. You must choose **one** category and **one** issue_type under it. If unsure, you may use `Other (Uncategorized)` with issue `Uncategorized civic issue`.
+
+**TASK:** Analyze the input complaint text (see `original_text`). Use `english_translation` for clarity if needed. Identify the most appropriate **category** and **issue_type**. Assess the severity (1–10) and assign a priority level (Low/Medium/High/Critical). Verify if the provided `image_url` supports the complaint (set `image_verified`). Use the given latitude/longitude to fill `district` and `state` (if known).
+
+**RULES:**
+- Do not invent facts or categories. Use only the given text.
+- Use exact values from allowed categories/issue types lists.
+- Do not create new categories.
+- Categories must be as specific as possible.
+- Issue type must be a valid subtype of that category.
+- If text is ambiguous or too short, set `confidence` < 1.0 accordingly. If confidence < 0.70, set `needs_human_review = true`.
+- Do not infer severity solely from tone; base it on public impact (refer below).
+- Never overwrite the original text.
+
+**SEVERITY GUIDELINES:**
+1–2: Minor, localized inconvenience (e.g. a single light bulb out).
+3–4: Noticeable issue affecting few people (e.g. small pothole).
+5–6: Moderate impact (e.g. frequent power flicker, recurring garbage spillage).
+7–8: Serious problem affecting many (e.g. major road damaged, no drinking water).
+9: Major safety risk or essential service failure.
+10: Critical emergency (e.g. flood, fire, accident risk).
+
+**OUTPUT FORMAT (JSON only):**
+Return a JSON object with keys exactly as shown below (no extra keys):
+{
+  "original_text": "...",
+  "english_translation": "...",
+  "source_language": "...",
+  "category": "...",
+  "issue_type": "...",
+  "confidence": 0.00,
+  "severity": 1,
+  "priority": "Low|Medium|High|Critical",
+  "severity_reason": "...",
+  "image_verified": false,
+  "lat_long": {"lat": 0.0, "lng": 0.0},
+  "district": "...",
+  "state": "...",
+  "needs_human_review": false
+}
+"""
+
 semantic_parsing_agent = LlmAgent(
     name="Semantic_Parsing_Agent",
     model=GEMINI_MODEL,
-    description="Entity extraction, domain classification, severity scoring, image verification.",
-    instruction="""
-You ONLY extract infrastructure metadata. Do NOT converse.
-
-Input intake payload from session state: {intake_payload}
-
-Steps:
-1. Read english_translation from intake payload.
-2. Classify domain as exactly one of: Water, Road, Power, Rail, Telecom.
-3. Assign severity 1-10 based on urgency and citizen impact.
-4. If media_url is present, call vision_analyze_tool. Merge image_verified and severity.
-5. Extract lat_long from location_data.
-
-Output ONLY valid JSON:
-{
-  "domain": "Water|Road|Power|Rail|Telecom",
-  "severity": 1-10,
-  "image_verified": boolean,
-  "lat_long": {"lat": float, "lng": float},
-  "original_text": "...",
-  "english_translation": "...",
-  "user_id": "...",
-  "source_language": "...",
-  "district": "inferred or empty",
-  "state": "inferred or empty"
-}
-""",
+    description="Entity extraction, category/issue classification, severity scoring, confidence estimation.",
+    instruction=SEMANTIC_PARSING_INSTRUCTION,
     tools=[vision_analyze_tool],
     output_key="parsed_payload",
 )
+
+
+# ---------------------------------------------------------------------------
+# Agent 2b: Other-Resolver Agent
+# ---------------------------------------------------------------------------
+
+OTHER_RESOLVER_INSTRUCTION = """
+You are **SPIN OtherResolver**, an AI assistant. The complaint was initially categorized as Other or requires second-chance resolution.
+
+**INPUT:**
+Original complaint text (`original_text`), translation, and `original_category = "Other (Uncategorized)"`.
+
+**TASK:** Determine if the complaint actually belongs to one of the supported categories:
+{Water Supply, Roads & Potholes, Drainage & Flooding, Street Lighting, Waste Management & Sanitation, Electricity/Power, Public Transport (Bus/Metro/Trains), Healthcare & Hospitals, Education (Public Schools), Identity/Documents (Passport, Aadhaar, Certificates), Banking & Financial Services, Pension & Social Security, Insurance Claims, Housing & Urban Development, Employment & Training, Government Schemes & Subsidies, Telecom & Mobile Network, Environment & Trees, Animal & Street Livestock, Public Safety & Law Enforcement, Other (Uncategorized)}.
+
+Examine the full text and context. If you can confidently map it into a known category/issue_type, do so. Otherwise, keep it as Other (Uncategorized).
+
+**RULES:**
+- If clear evidence points to a real category above (e.g. mentions of water, hospital, road), output that category and issue type.
+- If uncertain or multiple categories possible, keep category = "Other (Uncategorized)" (leave predicted_issue_type as "Uncategorized civic issue").
+- Do NOT create any category not in the list.
+- Provide `confidence` (0–1). If confidence < 0.70, set `needs_human_review = true`.
+- Briefly explain your decision in `reason`.
+
+**OUTPUT FORMAT (JSON only):**
+{
+  "original_category": "Other (Uncategorized)",
+  "predicted_category": "...",
+  "predicted_issue_type": "...",
+  "confidence": 0.00,
+  "needs_human_review": false,
+  "reason": "..."
+}
+"""
+
+other_resolver_agent = LlmAgent(
+    name="Other_Resolver_Agent",
+    model=GEMINI_MODEL,
+    description="Second-chance re-classification for complaints labeled as Other.",
+    instruction=OTHER_RESOLVER_INSTRUCTION,
+    output_key="other_resolved_payload",
+)
+
 
 
 # ---------------------------------------------------------------------------
@@ -320,6 +385,7 @@ root_agent = distributed_pipeline if CONFIG.use_remote_agents else local_pipelin
 AGENT_REGISTRY = {
     "intake": chatbot_intake_agent,
     "parsing": semantic_parsing_agent,
+    "other_resolver": other_resolver_agent,
     "geospatial": geospatial_correlation_agent,
     "policy": policy_dashboard_agent,
     "pipeline": local_pipeline,

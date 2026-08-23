@@ -1,0 +1,149 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SPIN Civic Grievance Category Taxonomy",
+  "description": "Fixed taxonomy of 20 categories and hierarchical issue types for Indian citizen grievance classification",
+  "categories": {
+    "Water Supply": [
+      "No water at all",
+      "Low water pressure",
+      "Contaminated/muddy water",
+      "Pipeline leakage",
+      "Tanker service issues",
+      "Water billing/connection problem"
+    ],
+    "Roads & Potholes": [
+      "Large potholes",
+      "Damaged/cracked road",
+      "Missing road signage or markings",
+      "Road obstruction (fallen tree, debris)",
+      "Unmarked speed breakers",
+      "Encroachment on road"
+    ],
+    "Drainage & Flooding": [
+      "Blocked/drains overflow",
+      "Flooded street after rain",
+      "Open/uncapped manhole",
+      "Sewage backup",
+      "Gully drain breach"
+    ],
+    "Street Lighting": [
+      "Streetlights not working (night)",
+      "Flickering lights",
+      "Broken lamp post",
+      "Missing pole"
+    ],
+    "Waste Management & Sanitation": [
+      "Garbage not collected",
+      "Overflowing garbage bin",
+      "Dumping on street",
+      "Open defecation spot",
+      "Lack of public toilets",
+      "Uncovered sewage"
+    ],
+    "Electricity/Power": [
+      "Power outage",
+      "Transformer issue",
+      "Exposed wires/poles",
+      "Erratic voltage",
+      "Billing or metering issue",
+      "Fuse/tripping problems"
+    ],
+    "Public Transport (Bus/Metro/Trains)": [
+      "Bus route missing or infrequent",
+      "Broken bus shelter",
+      "Metro train delay",
+      "Railway track maintenance",
+      "Lack of connectivity",
+      "Ticketing/system outage"
+    ],
+    "Healthcare & Hospitals": [
+      "Hospital staff shortage",
+      "Medicine/service unavailability",
+      "Dirty/unsafe hospital environment",
+      "Emergency ambulance delay",
+      "Billing grievance"
+    ],
+    "Education (Public Schools)": [
+      "School infrastructure (building, toilets) issue",
+      "Teacher absenteeism",
+      "Quality of mid-day meal",
+      "Admission or fee grievance",
+      "Lack of water/ power in school"
+    ],
+    "Identity/Documents (Passport, Aadhaar, Certificates)": [
+      "Passport issuance delay/loss",
+      "Aadhaar update failure",
+      "Caste/Income certificate not issued",
+      "Voter ID/birth certificate grievance"
+    ],
+    "Banking & Financial Services": [
+      "ATM breakdown or cash not dispensed",
+      "Bank branch closed without notice",
+      "Loan/pension account issue",
+      "Internet banking failure",
+      "Insurance/claim dispute"
+    ],
+    "Pension & Social Security": [
+      "Pension arrears or delay",
+      "Widow pension enrollment problem",
+      "Disability allowance issue",
+      "Social benefit transfer failure"
+    ],
+    "Insurance Claims": [
+      "Vehicle/health insurance claim delay",
+      "Policy not received",
+      "Claim rejection appeal",
+      "Insurance portal problem"
+    ],
+    "Housing & Urban Development": [
+      "Illegal encroachment",
+      "Housing scheme denial",
+      "RERA complaint (sale issue)",
+      "Slum rehabilitation issue",
+      "Building safety"
+    ],
+    "Employment & Training": [
+      "Job placement denial",
+      "RSETI/self-employment training quality",
+      "Unemployment allowance delay",
+      "NREGA work grievance"
+    ],
+    "Government Schemes & Subsidies": [
+      "Scheme benefit not received",
+      "Subsidy disbursal delay",
+      "PM-KISAN/others application issue",
+      "Gold scheme delay"
+    ],
+    "Telecom & Mobile Network": [
+      "Mobile network outage",
+      "Broadband/Internet down",
+      "Tower noise/hazard",
+      "Delay in SIM/Aadhaar linking"
+    ],
+    "Environment & Trees": [
+      "Fallen tree on street",
+      "Illegal tree cutting",
+      "Pollution/noise complaints",
+      "Public park maintenance",
+      "Damaged footpath from tree roots"
+    ],
+    "Animal & Street Livestock": [
+      "Stray dog/cow/cattle issue",
+      "Animal rescue needed",
+      "Beastly nuisance (pigs, monkeys, etc.)"
+    ],
+    "Public Safety & Law Enforcement": [
+      "Traffic signal not working",
+      "Stray cattle on road",
+      "Encroachment of public land",
+      "Any other safety hazard"
+    ],
+    "Other (Uncategorized)": [
+      "Miscellaneous civic issues not listed above",
+      "Community demand",
+      "Administrative delay",
+      "Garbage pickup timing",
+      "Uncategorized civic issue"
+    ]
+  }
+}

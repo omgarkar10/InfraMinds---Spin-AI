@@ -78,6 +78,19 @@ const CATEGORY_ISSUE_MAP: Record<GrievanceCategory, string[]> = {
   Other: ["Other public infrastructure grievance"],
 };
 
+const STATE_DISTRICT_MAP: Record<string, string[]> = {
+  Maharashtra: ["Pune", "Mumbai", "Thane", "Nagpur", "Nashik", "Chhatrapati Sambhajinagar", "Pimpri-Chinchwad"],
+  "Delhi (NCT)": ["New Delhi", "North Delhi", "South Delhi", "East Delhi", "West Delhi", "Central Delhi"],
+  Karnataka: ["Bengaluru", "Mysuru", "Hubballi-Dharwad", "Mangaluru", "Belagavi"],
+  Telangana: ["Hyderabad", "Warangal", "Nizamabad", "Karimnagar"],
+  "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Tiruchirappalli", "Salem"],
+  Gujarat: ["Ahmedabad", "Surat", "Vadodara", "Rajkot"],
+  "Uttar Pradesh": ["Lucknow", "Kanpur", "Noida (Gautam Buddha Nagar)", "Varanasi", "Agra"],
+  "West Bengal": ["Kolkata", "Howrah", "Siliguri"],
+  Rajasthan: ["Jaipur", "Jodhpur", "Udaipur"],
+  "Madhya Pradesh": ["Bhopal", "Indore"],
+};
+
 export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
   user,
   onNavigate,
@@ -85,53 +98,126 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
   const [step, setStep] = useState<number>(1);
 
   /* Step 1 State */
-  const [category, setCategory] = useState<GrievanceCategory>("Water Supply");
-  const [issueType, setIssueType] = useState<string>("Pipeline leakage / burst");
-  const [severity, setSeverity] = useState<GrievanceSeverity>("High");
-  const [startDate, setStartDate] = useState<string>("2026-08-01");
-  const [frequency, setFrequency] = useState<"One time" | "Occasional" | "Daily" | "Continuous">("Continuous");
-  const [description, setDescription] = useState<string>(
-    "Main drinking water pipeline W-402 has burst near Sector 4 East. Residents have received no municipal water for 3 weeks and water tankers are irregular."
-  );
+  const [category, setCategory] = useState<GrievanceCategory | "">("");
+  const [issueType, setIssueType] = useState<string>("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [frequency, setFrequency] = useState<"One time" | "Occasional" | "Daily" | "Continuous" | "">("");
+  const [description, setDescription] = useState<string>("");
 
   /* Step 2 State (Location) */
   const [location, setLocation] = useState<LocationData>({
-    lat: 18.5204,
-    lng: 73.8567,
-    address: "Main Road, Sector 4 East, Ward 14",
-    district: "Pune",
-    state: "Maharashtra",
-    pinCode: "411001",
-    isVerified: true,
+    lat: 20.5937,
+    lng: 78.9629,
+    address: "",
+    district: "",
+    state: "",
+    pinCode: "",
+    isVerified: false,
   });
 
+  const [isGpsLoading, setIsGpsLoading] = useState<boolean>(false);
+  const [gpsError, setGpsError] = useState<string>("");
+
+  /* Handle State dropdown change */
+  const handleStateChange = (selectedState: string) => {
+    const validDistricts = STATE_DISTRICT_MAP[selectedState] || [];
+    const isCurrentDistrictValid = validDistricts.includes(location.district);
+    setLocation((prev) => ({
+      ...prev,
+      state: selectedState,
+      district: isCurrentDistrictValid ? prev.district : "",
+    }));
+  };
+
   /* Step 3 State (Evidence & Bhashini Voice) */
-  const [voiceText] = useState<string>(
-    "पानी की मुख्य लाइन पिछले 3 हफ़्तों से टूटी हुई है। सेक्टर 4 में पीने का पानी नहीं आ रहा है।"
-  );
+  const [voiceText] = useState<string>("");
   const [isRecording, setIsRecording] = useState<boolean>(false);
 
   /* Step 5 Declaration */
   const [declaration, setDeclaration] = useState<boolean>(false);
   const [submittedGrievance, setSubmittedGrievance] = useState<Grievance | null>(null);
 
-  /* Handle Location GPS trigger */
+  /* Handle Location GPS trigger with Reverse Geocoding */
   const handleUseCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setLocation((prev) => ({
-            ...prev,
-            lat: Number(pos.coords.latitude.toFixed(4)),
-            lng: Number(pos.coords.longitude.toFixed(4)),
-            isVerified: true,
-          }));
-        },
-        () => {
-          setLocation((prev) => ({ ...prev, isVerified: true }));
-        }
-      );
+    if (!navigator.geolocation) {
+      setGpsError("Geolocation is not supported by your browser. Please enter location manually.");
+      return;
     }
+    setIsGpsLoading(true);
+    setGpsError("");
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = Number(pos.coords.latitude.toFixed(4));
+        const lng = Number(pos.coords.longitude.toFixed(4));
+
+        let detectedState = "Maharashtra";
+        let detectedDistrict = "Pune";
+        let detectedPin = "411001";
+
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, {
+            headers: { "User-Agent": "SPIN-CitizenPortal/1.0" },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            const addr = data.address || {};
+            const rawState = addr.state || "";
+            const rawDistrict = addr.city || addr.town || addr.county || addr.state_district || addr.suburb || "";
+            const rawPin = addr.postcode || "";
+
+            const matchedState = Object.keys(STATE_DISTRICT_MAP).find(
+              (s) => s.toLowerCase() === rawState.toLowerCase() || rawState.toLowerCase().includes(s.toLowerCase())
+            );
+            if (matchedState) {
+              detectedState = matchedState;
+              const validDistricts = STATE_DISTRICT_MAP[matchedState];
+              const matchedDistrict = validDistricts.find(
+                (d) => d.toLowerCase() === rawDistrict.toLowerCase() || rawDistrict.toLowerCase().includes(d.toLowerCase())
+              );
+              if (matchedDistrict) {
+                detectedDistrict = matchedDistrict;
+              } else if (validDistricts.length > 0) {
+                detectedDistrict = validDistricts[0];
+              }
+            }
+            if (rawPin && /^\d{6}$/.test(rawPin.trim())) {
+              detectedPin = rawPin.trim();
+            }
+          }
+        } catch {
+          if (lat > 28 && lat < 29 && lng > 76 && lng < 78) {
+            detectedState = "Delhi (NCT)";
+            detectedDistrict = "New Delhi";
+            detectedPin = "110001";
+          } else if (lat > 12 && lat < 14 && lng > 77 && lng < 78) {
+            detectedState = "Karnataka";
+            detectedDistrict = "Bengaluru";
+            detectedPin = "560001";
+          } else if (lat > 18.8 && lat < 19.3 && lng > 72.7 && lng < 73.1) {
+            detectedState = "Maharashtra";
+            detectedDistrict = "Mumbai";
+            detectedPin = "400001";
+          }
+        }
+
+        setLocation((prev) => ({
+          ...prev,
+          lat,
+          lng,
+          state: detectedState,
+          district: detectedDistrict,
+          pinCode: detectedPin,
+          isVerified: true,
+        }));
+        setIsGpsLoading(false);
+      },
+      () => {
+        setIsGpsLoading(false);
+        setGpsError("GPS location access denied or unavailable. Please select your State and District manually.");
+      },
+      { timeout: 10000 }
+    );
   };
 
   /* Voice Recording Trigger simulation */
@@ -153,19 +239,61 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
     }
   };
 
+  /* Centralized Validation Function */
+  const validateStep = (stepNum: number): boolean => {
+    switch (stepNum) {
+      case 1:
+        return (
+          category !== "" &&
+          issueType !== "" &&
+          startDate !== "" &&
+          frequency !== ""
+        );
+      case 2:
+        return (
+          location.state !== "" &&
+          location.district !== "" &&
+          location.address.trim() !== "" &&
+          /^\d{6}$/.test(location.pinCode.trim())
+        );
+      case 3:
+        return true; // Supporting evidence is optional
+      case 4:
+        return declaration === true;
+      default:
+        return false;
+    }
+  };
+
+  const isCurrentStepValid = validateStep(step);
+
+  const canNavigateToStep = (targetStep: number): boolean => {
+    if (targetStep <= step) return true;
+    for (let i = 1; i < targetStep; i++) {
+      if (!validateStep(i)) return false;
+    }
+    return true;
+  };
+
+  const handleNextStep = (targetStep: number) => {
+    if (!canNavigateToStep(targetStep)) return;
+    setStep(targetStep);
+  };
+
   /* Handle Final Submission */
   const handleSubmit = () => {
+    if (!validateStep(4)) return;
     const id = `SPIN-2026-${Math.floor(100000 + Math.random() * 900000)}`;
     const newGrievance: Grievance = {
       id,
       citizenId: user.id || "cit-001",
-      citizenName: user.name || "Ramesh Kulkarni",
-      citizenPhone: user.phone || "+91 98230 41092",
-      category,
+      citizenName: user.name || "Citizen",
+      citizenPhone: user.phone || "",
+      category: (category || "Other") as GrievanceCategory,
       issueType,
-      severity,
+      severity: "Medium" as GrievanceSeverity,
       startDate,
-      frequency,
+      frequency: (frequency || "One time") as any,
       description,
       location,
       evidence: {
@@ -175,17 +303,17 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
         documentName: "Evidence_Photo.jpg",
       },
       aiAnalysis: {
-        category,
+        category: (category || "Other") as GrievanceCategory,
         issue: issueType,
-        severity,
-        location: `${location.district} / Ward 14`,
+        severity: "Medium" as GrievanceSeverity,
+        location: `${location.district || "Unknown"} / Ward 14`,
         confidence: 94,
         nearbyGrievances: 37,
         redZone: true,
-        reasoning: `Spatial correlation detected 37 similar ${category.toLowerCase()} grievances within a 12 km² cluster near ${location.district}.`,
+        reasoning: `Spatial correlation detected 37 similar ${(category || "other").toLowerCase()} grievances within a 12 km² cluster near ${location.district || "Unknown"}.`,
       },
       status: "SUBMITTED",
-      department: `${location.district} Municipal ${category} Department`,
+      department: `${location.district || "Local"} Municipal ${category || "General"} Department`,
       assignedTo: "Chief Engineer (Infrastructure)",
       createdAt: new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }),
       updatedAt: new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }),
@@ -208,47 +336,56 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
 
     saveGrievance(newGrievance);
     setSubmittedGrievance(newGrievance);
-    setStep(6);
+    setStep(5);
   };
 
-  /* SUCCESS SCREEN STEP 6 */
-  if (step === 6 && submittedGrievance) {
+  /* SUCCESS SCREEN STEP 5 */
+  if (step === 5 && submittedGrievance) {
     return (
       <div className="citizen-portal-container">
         <div className="container" style={{ maxWidth: "720px" }}>
           <div className="form-card" style={{ borderTop: "4px solid var(--col-green)", textAlign: "center" }}>
             <div style={{ fontSize: "40px", color: "var(--col-green)" }}>✓</div>
-            <h2 className="portal-heading" style={{ color: "var(--col-green)" }}>Grievance Submitted Successfully</h2>
+            <h2 className="portal-heading" style={{ color: "var(--col-green)" }}>✓ Grievance Submitted Successfully</h2>
             <p className="portal-subtext">
-              Your report has been logged and assigned to the municipal infrastructure engine.
+              Your complaint has been logged and assigned to the municipal infrastructure engine.
             </p>
 
             <div style={{ background: "var(--col-panel)", padding: "16px", borderRadius: "8px", margin: "16px 0" }}>
-              <span className="label-eyebrow">OFFICIAL GRIEVANCE TRACKING ID</span>
-              <div style={{ fontSize: "28px", fontWeight: "800", color: "var(--col-navy)", letterSpacing: "0.05em", margin: "4px 0" }}>
+              <span className="label-eyebrow">YOUR GRIEVANCE ID</span>
+              <div style={{ fontSize: "26px", fontWeight: "800", color: "var(--col-navy)", letterSpacing: "0.05em", margin: "4px 0" }}>
                 {submittedGrievance.id}
               </div>
-              <div style={{ display: "flex", justifyContent: "center", gap: "16px", fontSize: "12px", color: "var(--col-text-mid)", flexWrap: "wrap" }}>
-                <span><strong>Date:</strong> {submittedGrievance.createdAt}</span>
-                <span><strong>Category:</strong> {submittedGrievance.category}</span>
-                <span><strong>District:</strong> {submittedGrievance.location.district}</span>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginTop: "12px", textAlign: "left", fontSize: "13px" }}>
+                <div><strong>Submitted:</strong> {submittedGrievance.createdAt}</div>
+                <div><strong>Category:</strong> {submittedGrievance.category}</div>
+                <div><strong>Location:</strong> {submittedGrievance.location.address || submittedGrievance.location.district || "Registered Location"}</div>
+                <div>
+                  <strong>Current Status:</strong>{" "}
+                  <span className="status-pill SUBMITTED">{submittedGrievance.status}</span>
+                </div>
               </div>
             </div>
 
             <div style={{ borderTop: "1px solid var(--col-border)", paddingTop: "16px", textAlign: "left" }}>
               <span className="label-eyebrow">NEXT SYSTEM STAGES</span>
-              <div className="process-stepper-line" style={{ marginTop: "8px" }}>
-                <span className="status-pill SUBMITTED">1. SUBMITTED</span>
+              <div className="process-stepper-line" style={{ marginTop: "10px", flexWrap: "wrap", gap: "6px" }}>
+                <span className="status-pill SUBMITTED">Submitted</span>
                 <span className="process-arrow">→</span>
-                <span className="status-pill UNDER_REVIEW">2. AI PROCESSING</span>
+                <span className="status-pill UNDER_REVIEW">AI Processing</span>
                 <span className="process-arrow">→</span>
-                <span className="status-pill UNDER_REVIEW">3. ROUTED TO DEPT</span>
+                <span className="status-pill UNDER_REVIEW">Department Routing</span>
                 <span className="process-arrow">→</span>
-                <span className="status-pill RESOLVED">4. RESOLVED</span>
+                <span className="status-pill UNDER_REVIEW">Government Review</span>
+                <span className="process-arrow">→</span>
+                <span className="status-pill UNDER_REVIEW">Action</span>
+                <span className="process-arrow">→</span>
+                <span className="status-pill RESOLVED">Resolved</span>
               </div>
             </div>
 
-            <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap", marginTop: "16px" }}>
+            <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap", marginTop: "20px" }}>
               <button
                 className="service-card-btn service-card-btn-orange"
                 onClick={() => onNavigate("citizen-detail", submittedGrievance.id)}
@@ -277,35 +414,34 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
           <p className="portal-subtext">Follow the steps below to submit your complaint with location and evidence context.</p>
         </div>
 
-        {/* 5-Step Progress Bar */}
+        {/* 4-Step Progress Bar */}
         <div className="form-step-bar">
-          <div className={`step-indicator-item ${step === 1 ? "active" : step > 1 ? "completed" : ""}`}>
-            <span className="step-number-circle">{step > 1 ? "✓" : "1"}</span>
-            <span>STEP 1 — ISSUE</span>
-          </div>
-          <div className={`step-indicator-item ${step === 2 ? "active" : step > 2 ? "completed" : ""}`}>
-            <span className="step-number-circle">{step > 2 ? "✓" : "2"}</span>
-            <span>STEP 2 — LOCATION</span>
-          </div>
-          <div className={`step-indicator-item ${step === 3 ? "active" : step > 3 ? "completed" : ""}`}>
-            <span className="step-number-circle">{step > 3 ? "✓" : "3"}</span>
-            <span>STEP 3 — EVIDENCE</span>
-          </div>
-          <div className={`step-indicator-item ${step === 4 ? "active" : step > 4 ? "completed" : ""}`}>
-            <span className="step-number-circle">{step > 4 ? "✓" : "4"}</span>
-            <span>STEP 4 — AI REVIEW</span>
-          </div>
-          <div className={`step-indicator-item ${step === 5 ? "active" : ""}`}>
-            <span className="step-number-circle">5</span>
-            <span>STEP 5 — SUBMIT</span>
-          </div>
+          {[
+            { num: 1, label: "STEP 1 — ISSUE" },
+            { num: 2, label: "STEP 2 — LOCATION" },
+            { num: 3, label: "STEP 3 — EVIDENCE" },
+            { num: 4, label: "STEP 4 — REVIEW & SUBMIT" },
+          ].map((item) => {
+            const isClickable = canNavigateToStep(item.num);
+            return (
+              <div
+                key={item.num}
+                className={`step-indicator-item ${step === item.num ? "active" : step > item.num ? "completed" : ""}`}
+                style={{ cursor: isClickable ? "pointer" : "not-allowed", opacity: isClickable ? 1 : 0.6 }}
+                onClick={() => handleNextStep(item.num)}
+              >
+                <span className="step-number-circle">{step > item.num ? "✓" : item.num}</span>
+                <span>{item.label}</span>
+              </div>
+            );
+          })}
         </div>
 
         {/* STEP 1: ISSUE DETAILS */}
         {step === 1 && (
           <div className="form-card">
             <div>
-              <span className="label-eyebrow">STEP 1 OF 5</span>
+              <span className="label-eyebrow">STEP 1 OF 4</span>
               <h2 className="portal-heading" style={{ fontSize: "20px" }}>Select Infrastructure Issue Category</h2>
             </div>
 
@@ -316,6 +452,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
                 value={category}
                 onChange={(e) => handleCategoryChange(e.target.value as GrievanceCategory)}
               >
+                <option value="" disabled>Select Category...</option>
                 {Object.keys(CATEGORY_ISSUE_MAP).map((cat) => (
                   <option key={cat} value={cat}>
                     {cat}
@@ -327,7 +464,8 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
             <div className="form-group">
               <label className="form-label">Specific Issue Type *</label>
               <select className="form-select" value={issueType} onChange={(e) => setIssueType(e.target.value)}>
-                {(CATEGORY_ISSUE_MAP[category] || []).map((issue) => (
+                <option value="" disabled>Select Specific Issue...</option>
+                {(category ? CATEGORY_ISSUE_MAP[category as GrievanceCategory] : []).map((issue) => (
                   <option key={issue} value={issue}>
                     {issue}
                   </option>
@@ -335,40 +473,10 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
               </select>
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Severity Level *</label>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px" }}>
-                {(["Low", "Medium", "High", "Critical"] as GrievanceSeverity[]).map((sev) => (
-                  <label
-                    key={sev}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      background: severity === sev ? "var(--col-orange-dim)" : "var(--col-panel)",
-                      border: severity === sev ? "1px solid var(--col-orange)" : "1px solid var(--col-border)",
-                      padding: "10px",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      fontWeight: severity === sev ? "600" : "400",
-                      fontSize: "13px",
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name="severity"
-                      checked={severity === sev}
-                      onChange={() => setSeverity(sev)}
-                    />
-                    {sev}
-                  </label>
-                ))}
-              </div>
-            </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               <div className="form-group">
-                <label className="form-label">When did this issue start?</label>
+                <label className="form-label">When did this issue start? *</label>
                 <input
                   type="date"
                   className="form-input"
@@ -378,12 +486,13 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
               </div>
 
               <div className="form-group">
-                <label className="form-label">How frequently does this happen?</label>
+                <label className="form-label">How frequently does this happen? *</label>
                 <select
                   className="form-select"
                   value={frequency}
                   onChange={(e) => setFrequency(e.target.value as any)}
                 >
+                  <option value="" disabled>Select frequency...</option>
                   <option value="One time">One time</option>
                   <option value="Occasional">Occasional</option>
                   <option value="Daily">Daily</option>
@@ -393,14 +502,13 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
             </div>
 
             <div className="form-group">
-              <label className="form-label">Describe the issue *</label>
+              <label className="form-label">Describe the issue (Optional)</label>
               <textarea
                 className="form-textarea"
                 rows={4}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe what is happening, where it is happening, and how it is affecting local residents..."
-                required
               />
               <span className="body-sm" style={{ textAlign: "right", fontSize: "11px" }}>
                 {description.length} / 1000 characters
@@ -408,7 +516,15 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
             </div>
 
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <button className="service-card-btn service-card-btn-orange" onClick={() => setStep(2)}>
+              <button
+                className="service-card-btn service-card-btn-orange"
+                disabled={!isCurrentStepValid}
+                style={{
+                  opacity: isCurrentStepValid ? 1 : 0.5,
+                  cursor: isCurrentStepValid ? "pointer" : "not-allowed",
+                }}
+                onClick={() => handleNextStep(2)}
+              >
                 Continue to Step 2: Location →
               </button>
             </div>
@@ -419,16 +535,21 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
         {step === 2 && (
           <div className="form-card">
             <div>
-              <span className="label-eyebrow">STEP 2 OF 5</span>
+              <span className="label-eyebrow">STEP 2 OF 4</span>
               <h2 className="portal-heading" style={{ fontSize: "20px" }}>Where is the issue?</h2>
               <p className="portal-subtext" style={{ fontSize: "13px" }}>
                 SPIN uses location information to identify clusters of similar grievances and understand infrastructure demand.
               </p>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <button className="btn-outline btn-outline-orange" onClick={handleUseCurrentLocation}>
-                📍 Use My Current Location (GPS)
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
+              <button
+                type="button"
+                className="btn-outline btn-outline-orange"
+                disabled={isGpsLoading}
+                onClick={handleUseCurrentLocation}
+              >
+                {isGpsLoading ? "⌛ Detecting Location (GPS)..." : "📍 USE MY CURRENT LOCATION (GPS)"}
               </button>
 
               <span className={`location-status-badge ${location.isVerified ? "verified" : "required"}`}>
@@ -436,78 +557,107 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
               </span>
             </div>
 
-            <div className="process-flow-box" style={{ padding: "20px", textAlign: "center", background: "#E2E8F0" }}>
-              <span style={{ fontSize: "24px" }}>📍</span>
-              <div style={{ fontWeight: "700", color: "var(--col-navy)", fontSize: "14px", marginTop: "4px" }}>
-                {location.address}
+            {gpsError && (
+              <div style={{ background: "var(--col-orange-dim)", border: "1px solid var(--col-orange-line)", padding: "10px 14px", borderRadius: "6px", fontSize: "12px", color: "var(--col-navy)", marginTop: "10px" }}>
+                ⚠️ {gpsError}
               </div>
-              <span style={{ fontSize: "11px", color: "var(--col-text-muted)" }}>
-                GPS: {location.lat}, {location.lng} · Drag marker to adjust exact street location
-              </span>
-            </div>
+            )}
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            {location.isVerified && (
+              <div className="process-flow-box" style={{ padding: "12px 16px", background: "var(--col-panel)", borderRadius: "6px", marginTop: "12px" }}>
+                <div style={{ fontSize: "12px", color: "var(--col-text-mid)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
+                  <span>📍 <strong>System Captured GPS Coordinates:</strong> {location.lat}, {location.lng}</span>
+                  <span className="location-status-badge verified" style={{ fontSize: "10px" }}>GPS VERIFIED ✓</span>
+                </div>
+              </div>
+            )}
+
+            {/* Location Hierarchy: State -> City/District -> Address/Landmark -> PIN Code */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "16px" }}>
+              {/* 1. State * */}
+              <div className="form-group">
+                <label className="form-label">State *</label>
+                <select
+                  className="form-select"
+                  value={location.state}
+                  onChange={(e) => handleStateChange(e.target.value)}
+                >
+                  <option value="" disabled>Select State...</option>
+                  {Object.keys(STATE_DISTRICT_MAP).map((st) => (
+                    <option key={st} value={st}>
+                      {st}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 2. City / District * */}
+              <div className="form-group">
+                <label className="form-label">City / District *</label>
+                <select
+                  className="form-select"
+                  value={location.district}
+                  disabled={!location.state}
+                  onChange={(e) => setLocation({ ...location, district: e.target.value })}
+                >
+                  <option value="" disabled>
+                    {location.state ? "Select City / District..." : "Select a State first"}
+                  </option>
+                  {(location.state ? STATE_DISTRICT_MAP[location.state] || [] : []).map((dist) => (
+                    <option key={dist} value={dist}>
+                      {dist}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 3. Address / Landmark * */}
               <div className="form-group">
                 <label className="form-label">Address / Landmark *</label>
                 <input
                   type="text"
                   className="form-input"
+                  placeholder="Enter specific street address, landmark, or area (e.g. Near Main Water Tank, Sector 4)"
                   value={location.address}
                   onChange={(e) => setLocation({ ...location, address: e.target.value })}
                 />
               </div>
 
+              {/* 4. PIN Code * */}
               <div className="form-group">
-                <label className="form-label">District *</label>
-                <select
-                  className="form-select"
-                  value={location.district}
-                  onChange={(e) => setLocation({ ...location, district: e.target.value })}
-                >
-                  <option value="Pune">Pune</option>
-                  <option value="Delhi">Delhi</option>
-                  <option value="Mumbai">Mumbai</option>
-                  <option value="Bengaluru">Bengaluru</option>
-                  <option value="Hyderabad">Hyderabad</option>
-                </select>
-              </div>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px" }}>
-              <div className="form-group">
-                <label className="form-label">State</label>
+                <label className="form-label">PIN Code *</label>
                 <input
                   type="text"
+                  maxLength={6}
                   className="form-input"
-                  value={location.state}
-                  onChange={(e) => setLocation({ ...location, state: e.target.value })}
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">PIN Code</label>
-                <input
-                  type="text"
-                  className="form-input"
+                  placeholder="Enter 6-digit PIN Code (e.g. 411001)"
                   value={location.pinCode}
-                  onChange={(e) => setLocation({ ...location, pinCode: e.target.value })}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, "");
+                    setLocation({ ...location, pinCode: val });
+                  }}
                 />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Coordinates</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  disabled
-                  value={`${location.lat}, ${location.lng}`}
-                />
+                {location.pinCode && !/^\d{6}$/.test(location.pinCode.trim()) && (
+                  <span style={{ fontSize: "11px", color: "var(--col-red)", marginTop: "2px" }}>
+                    Please enter a valid 6-digit PIN code.
+                  </span>
+                )}
               </div>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <button className="btn-outline" onClick={() => setStep(1)}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: "20px" }}>
+              <button className="btn-outline" onClick={() => handleNextStep(1)}>
                 ← Back
               </button>
-              <button className="service-card-btn service-card-btn-orange" onClick={() => setStep(3)}>
+              <button
+                className="service-card-btn service-card-btn-orange"
+                disabled={!isCurrentStepValid}
+                style={{
+                  opacity: isCurrentStepValid ? 1 : 0.5,
+                  cursor: isCurrentStepValid ? "pointer" : "not-allowed",
+                }}
+                onClick={() => handleNextStep(3)}
+              >
                 Continue to Step 3: Evidence →
               </button>
             </div>
@@ -518,7 +668,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
         {step === 3 && (
           <div className="form-card">
             <div>
-              <span className="label-eyebrow">STEP 3 OF 5</span>
+              <span className="label-eyebrow">STEP 3 OF 4</span>
               <h2 className="portal-heading" style={{ fontSize: "20px" }}>Add Supporting Evidence (Optional)</h2>
               <p className="portal-subtext" style={{ fontSize: "13px" }}>
                 Upload photos, documents, or record a voice grievance in your native Indian dialect via Bhashini AI integration.
@@ -543,22 +693,8 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
                   {isRecording ? "🔴 Recording... Click to Stop" : "🎙 Record Voice Grievance"}
                 </button>
                 <span style={{ fontSize: "12px", color: "var(--col-text-muted)" }}>
-                  {isRecording ? "Listening (Hindi / Marathi / Local Dialect)..." : "Audio file: demo-audio-hindi.mp3 attached"}
+                  {isRecording ? "Listening (Hindi / Marathi / Local Dialect)..." : voiceText ? "Voice grievance recorded" : "No voice note recorded"}
                 </span>
-              </div>
-
-              <div style={{ background: "var(--col-surface)", padding: "12px", borderRadius: "6px", fontSize: "11px" }}>
-                <div style={{ fontWeight: "700", color: "var(--col-navy)", marginBottom: "4px" }}>BHASHINI PROCESSING PIPELINE:</div>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", color: "var(--col-text-mid)" }}>
-                  <span>VOICE INPUT (Hindi / Marathi)</span>
-                  <span>→</span>
-                  <span>BHASHINI ASR (Speech → Text)</span>
-                  <span>→</span>
-                  <span>GEMINI PARSER (Entity & Severity)</span>
-                </div>
-                <div style={{ marginTop: "6px", fontStyle: "italic", color: "var(--col-navy)" }}>
-                  "{voiceText}"
-                </div>
               </div>
             </div>
 
@@ -579,89 +715,32 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
             </div>
 
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <button className="btn-outline" onClick={() => setStep(2)}>
+              <button className="btn-outline" onClick={() => handleNextStep(2)}>
                 ← Back
               </button>
-              <button className="service-card-btn service-card-btn-orange" onClick={() => setStep(4)}>
-                Continue to Step 4: AI Review →
+              <button
+                className="service-card-btn service-card-btn-orange"
+                disabled={!isCurrentStepValid}
+                style={{
+                  opacity: isCurrentStepValid ? 1 : 0.5,
+                  cursor: isCurrentStepValid ? "pointer" : "not-allowed",
+                }}
+                onClick={() => handleNextStep(4)}
+              >
+                Continue to Step 4: Review & Submit →
               </button>
             </div>
           </div>
         )}
 
-        {/* STEP 4: AI REVIEW & INTERPRETATION */}
+
+
+        {/* STEP 4: FINAL REVIEW & SUBMIT */}
         {step === 4 && (
           <div className="form-card">
             <div>
-              <span className="label-eyebrow">STEP 4 OF 5</span>
-              <h2 className="portal-heading" style={{ fontSize: "20px" }}>SPIN AI Interpretation Breakdown</h2>
-              <p className="portal-subtext" style={{ fontSize: "13px" }}>
-                SPIN has analyzed your input and correlated spatial demand across government GIS datasets.
-              </p>
-            </div>
-
-            <div className="ai-review-card">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span className="label-orange">SPIN AI PARSED OUTPUT</span>
-                <span className="location-status-badge verified">CONFIDENCE: 94%</span>
-              </div>
-
-              <div className="ai-review-grid">
-                <div className="ai-review-item">
-                  <label>Category</label>
-                  <span>{category}</span>
-                </div>
-                <div className="ai-review-item">
-                  <label>Issue Identified</label>
-                  <span>{issueType}</span>
-                </div>
-                <div className="ai-review-item">
-                  <label>Severity Score</label>
-                  <span style={{ color: "var(--col-red)" }}>{severity} (8.5/10)</span>
-                </div>
-                <div className="ai-review-item">
-                  <label>Location Cluster</label>
-                  <span>{location.district} / Ward 14</span>
-                </div>
-                <div className="ai-review-item">
-                  <label>Nearby Complaints</label>
-                  <span style={{ color: "var(--col-orange)" }}>37 Complaints in 12 km²</span>
-                </div>
-                <div className="ai-review-item">
-                  <label>Red Zone Flag</label>
-                  <span style={{ color: "var(--col-red)" }}>YES (High Demand)</span>
-                </div>
-              </div>
-
-              <div style={{ background: "var(--col-surface)", padding: "12px", borderRadius: "6px", fontSize: "12px", color: "var(--col-text-mid)" }}>
-                <strong>Reasoning:</strong> Grievance density in Ward 14 reached 3.1 complaints/km². 84% cite line W-402 rupture. High likelihood of public infrastructure intervention required.
-              </div>
-            </div>
-
-            <div className="gov-disclaimer-callout">
-              <span>⚠️</span>
-              <div>
-                <strong>CITIZEN REVIEW:</strong> Please review the information above before submitting. If the AI misidentified your category or issue, click "Edit Information".
-              </div>
-            </div>
-
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <button className="btn-outline" onClick={() => setStep(1)}>
-                ✏️ Edit Information
-              </button>
-              <button className="service-card-btn service-card-btn-orange" onClick={() => setStep(5)}>
-                Confirm & Continue to Step 5 →
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 5: FINAL REVIEW & SUBMIT */}
-        {step === 5 && (
-          <div className="form-card">
-            <div>
-              <span className="label-eyebrow">STEP 5 OF 5</span>
-              <h2 className="portal-heading" style={{ fontSize: "20px" }}>Final Grievance Summary & Declaration</h2>
+              <span className="label-eyebrow">STEP 4 OF 4</span>
+              <h2 className="portal-heading" style={{ fontSize: "20px" }}>Review & Submit Your Grievance</h2>
               <p className="portal-subtext" style={{ fontSize: "13px" }}>
                 Review all submitted details and sign the citizen declaration before official dispatch.
               </p>
@@ -669,10 +748,6 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
 
             <table className="data-table">
               <tbody>
-                <tr>
-                  <td>CITIZEN NAME</td>
-                  <td>{user.name} ({user.phone})</td>
-                </tr>
                 <tr>
                   <td>CATEGORY</td>
                   <td><strong>{category}</strong></td>
@@ -682,20 +757,26 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
                   <td>{issueType}</td>
                 </tr>
                 <tr>
-                  <td>SEVERITY</td>
-                  <td><span style={{ color: "var(--col-red)", fontWeight: "700" }}>{severity}</span></td>
-                </tr>
-                <tr>
                   <td>LOCATION</td>
-                  <td>{location.address}, {location.district}, {location.state} - {location.pinCode}</td>
+                  <td>{location.address}, {location.district}{location.state ? `, ${location.state}` : ""}{location.pinCode ? ` - ${location.pinCode}` : ""}</td>
                 </tr>
                 <tr>
-                  <td>DESCRIPTION</td>
-                  <td>{description}</td>
+                  <td>STARTED</td>
+                  <td>{startDate}</td>
                 </tr>
                 <tr>
-                  <td>EVIDENCE ATTACHED</td>
-                  <td>1 Audio Recording (Hindi), 1 Site Photo, 1 PDF Petition</td>
+                  <td>FREQUENCY</td>
+                  <td>{frequency}</td>
+                </tr>
+                {description && (
+                  <tr>
+                    <td>DESCRIPTION</td>
+                    <td>{description}</td>
+                  </tr>
+                )}
+                <tr>
+                  <td>EVIDENCE</td>
+                  <td>{voiceText ? "Voice Note Recorded" : "Digital Form Intake"}</td>
                 </tr>
               </tbody>
             </table>
@@ -712,13 +793,13 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({
             </div>
 
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <button className="btn-outline" onClick={() => setStep(4)}>
-                ← Back to Step 4
+              <button className="btn-outline" onClick={() => handleNextStep(3)}>
+                ← Back to Step 3
               </button>
               <button
                 className="service-card-btn service-card-btn-orange"
-                disabled={!declaration}
-                style={{ opacity: declaration ? 1 : 0.5, cursor: declaration ? "pointer" : "not-allowed" }}
+                disabled={!isCurrentStepValid}
+                style={{ opacity: isCurrentStepValid ? 1 : 0.5, cursor: isCurrentStepValid ? "pointer" : "not-allowed" }}
                 onClick={handleSubmit}
               >
                 Submit Grievance Officially →

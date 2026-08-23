@@ -1,14 +1,12 @@
 import { useEffect, useRef } from "react";
-import { useLanguage } from "../../hooks/useLanguage";
 import "./HeroSection.css";
 
 interface HeroSectionProps {
-  onViewChange?: (view: "landing" | "dashboard" | "citizen") => void;
+  onViewChange?: (view: "landing" | "dashboard" | "citizen" | "citizen-raise" | "citizen-track") => void;
   onOpenDemoModal?: () => void;
 }
 
 export function HeroSection({ onViewChange, onOpenDemoModal }: HeroSectionProps) {
-  const { t } = useLanguage();
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -24,7 +22,7 @@ export function HeroSection({ onViewChange, onOpenDemoModal }: HeroSectionProps)
     resize();
     window.addEventListener("resize", resize);
 
-    // Normalized India outline coordinates
+    // Outline coordinates for visualization
     const INDIA_POINTS = [
       [0.42,0.05],[0.48,0.03],[0.55,0.04],[0.62,0.08],[0.68,0.13],[0.72,0.18],
       [0.75,0.25],[0.77,0.32],[0.80,0.38],[0.78,0.45],[0.82,0.52],[0.83,0.58],
@@ -34,7 +32,7 @@ export function HeroSection({ onViewChange, onOpenDemoModal }: HeroSectionProps)
       [0.28,0.26],[0.32,0.20],[0.36,0.14],[0.39,0.09],[0.42,0.05]
     ];
 
-    // Infrastructure signal points
+    // Citizen signal points
     const DOTS = [
       { x: 0.52, y: 0.60, label: "PUNE WARD 14", domain: "WATER", active: false, t: 0, cluster: true },
       { x: 0.50, y: 0.52, label: "MUMBAI CENTRAL", domain: "ROAD", active: false, t: 0, cluster: false },
@@ -70,7 +68,7 @@ export function HeroSection({ onViewChange, onOpenDemoModal }: HeroSectionProps)
         ctx.stroke();
       }
 
-      // Draw India vector polygon
+      // Draw vector polygon
       ctx.beginPath();
       INDIA_POINTS.forEach(([nx, ny], i) => {
         const px = nx * w * 0.75 + w * 0.12;
@@ -79,10 +77,10 @@ export function HeroSection({ onViewChange, onOpenDemoModal }: HeroSectionProps)
         else ctx.lineTo(px, py);
       });
       ctx.closePath();
-      ctx.strokeStyle = "rgba(15, 30, 54, 0.25)";
+      ctx.strokeStyle = "rgba(15, 30, 54, 0.2)";
       ctx.lineWidth = 1.5;
       ctx.stroke();
-      ctx.fillStyle = "rgba(15, 30, 54, 0.03)";
+      ctx.fillStyle = "rgba(15, 30, 54, 0.02)";
       ctx.fill();
 
       // Flowing signal lines & dots
@@ -102,25 +100,18 @@ export function HeroSection({ onViewChange, onOpenDemoModal }: HeroSectionProps)
         const r = isCluster ? 7 : 4;
         const col = dot.domain === "WATER" ? "2, 132, 199" : dot.domain === "ROAD" ? "15, 23, 42" : "22, 163, 74";
 
-        // Draw dot point
         ctx.beginPath();
         ctx.arc(px, py, r, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(${col},${alpha * (isCluster ? 0.95 : 0.65)})`;
         ctx.fill();
 
-        // Pulsing red zone ring for high density cluster
         if (isCluster) {
           const pulse = (Math.sin(frame * 0.06) + 1) * 0.5;
           ctx.beginPath();
           ctx.arc(px, py, r + 10 + pulse * 8, 0, Math.PI * 2);
-          ctx.strokeStyle = `rgba(220, 38, 38, ${0.6 * (1 - pulse * 0.4)})`;
+          ctx.strokeStyle = `rgba(234, 88, 12, ${0.6 * (1 - pulse * 0.4)})`;
           ctx.lineWidth = 2;
           ctx.stroke();
-
-          // Label
-          ctx.fillStyle = "rgba(220, 38, 38, 0.95)";
-          ctx.font = "600 11px Inter, sans-serif";
-          ctx.fillText("🔴 RED ZONE: PUNE WATER DISRUPTION (37 SIGNALS)", px + 16, py + 4);
         }
       });
 
@@ -139,50 +130,51 @@ export function HeroSection({ onViewChange, onOpenDemoModal }: HeroSectionProps)
   return (
     <section className="hero-section" id="overview">
       <div className="hero-container container">
-        {/* Left Column: Hero Overview & Judge Presentation Matrix */}
+        {/* Left Column: Hero Headline & Citizen Actions */}
         <div className="hero-left">
           <div className="hero-eyebrow-group">
-            <span className="label-eyebrow tag-navy">{t.hero_eyebrow}</span>
-            <span className="demo-badge-subtle">PROTOTYPE DEMONSTRATION</span>
+            <span className="label-eyebrow tag-navy">SPIN · PUBLIC INFRASTRUCTURE NETWORK</span>
           </div>
 
           <h1 className="editorial-h1 hero-headline">
-            {t.hero_headline_1} <span className="text-highlight">{t.hero_headline_2}</span>
+            Turning Citizen Voices into <span className="text-highlight">Better Public Infrastructure</span>
           </h1>
 
           <p className="body-lg hero-supporting-text">
-            {t.hero_body}
+            SPIN helps citizens report problems affecting their community and helps authorities understand where attention is needed.
           </p>
 
-          {/* Action CTAs */}
+          {/* Primary Action Buttons for Citizens */}
           <div className="hero-actions">
-            {onOpenDemoModal && (
-              <button className="hero-btn-primary" onClick={onOpenDemoModal}>
-                ⚡ See SPIN in 30 Seconds
-              </button>
-            )}
-            <button className="hero-btn-secondary" onClick={() => onViewChange?.("dashboard")}>
-              {t.enter_dashboard}
+            <button className="hero-btn-primary" onClick={() => onViewChange?.("citizen-raise")}>
+              Report a Problem →
             </button>
+            <button className="hero-btn-secondary" onClick={() => onViewChange?.("citizen-track")}>
+              Track My Grievance
+            </button>
+
           </div>
 
-          {/* Pipeline flow strip */}
-          <div className="pipeline-strip hero-pipeline" role="list">
-            {[t.pipeline_citizen, t.pipeline_ai, t.pipeline_geo, t.pipeline_policy].map((node, i, arr) => (
-              <div key={node} className="pipeline-item">
-                <span className="pipeline-node">{node}</span>
-                {i < arr.length - 1 && <span className="pipeline-arrow" aria-hidden="true" />}
-              </div>
-            ))}
+          {/* Citizen Benefit Highlights */}
+          <div className="hero-highlights">
+            <div className="highlight-item">
+              <span className="highlight-check">✓</span> Simple 1-minute reporting
+            </div>
+            <div className="highlight-item">
+              <span className="highlight-check">✓</span> Speak in your local language
+            </div>
+            <div className="highlight-item">
+              <span className="highlight-check">✓</span> Track status with live updates
+            </div>
           </div>
         </div>
 
-        {/* Right Column: Interactive Map Visualization & Legend */}
+        {/* Right Column: Visual Signal Map */}
         <div className="hero-right">
           <div className="hero-map-frame">
             <div className="hero-map-header">
-              <span className="label-eyebrow">NATIONAL INFRASTRUCTURE INTELLIGENCE MAP</span>
-              <span className="status-live">● LIVE CANVAS</span>
+              <span className="label-eyebrow">COMMUNITY INFRASTRUCTURE MAP</span>
+              <span className="status-live">● LIVE SIGNALS</span>
             </div>
 
             <div className="canvas-wrapper">
@@ -191,67 +183,17 @@ export function HeroSection({ onViewChange, onOpenDemoModal }: HeroSectionProps)
 
             {/* Map Legend */}
             <div className="map-legend">
-              <span className="legend-title">MAP LEGEND:</span>
+              <span className="legend-title">SIGNAL LEGEND:</span>
               <div className="legend-items">
-                <span className="legend-item"><span className="dot blue" /> Citizen Signals</span>
-                <span className="legend-item"><span className="dot navy" /> Infrastructure</span>
-                <span className="legend-item"><span className="dot red" /> High-demand Red Zone</span>
-                <span className="legend-item"><span className="dot green" /> Policy Intervention</span>
+                <span className="legend-item"><span className="dot blue" /> Water Issues</span>
+                <span className="legend-item"><span className="dot navy" /> Road & Transit</span>
+                <span className="legend-item"><span className="dot green" /> Power & Lighting</span>
+                <span className="legend-item"><span className="dot red" /> Priority Attention</span>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* HACKATHON PRESENTATION MODE: First Viewport 6-Question Matrix — Full Width */}
-      <div className="judge-matrix container">
-        <div className="judge-matrix-header">
-          <span className="label-eyebrow">FIRST-VIEWPORT SYSTEM SUMMARY (FOR JUDGES & VISITORS)</span>
-        </div>
-        <div className="judge-grid">
-          <div className="judge-card">
-            <strong className="judge-q">1. WHAT IS SPIN?</strong>
-            <p className="judge-a">AI-driven infrastructure intelligence network combining DPI, Bhashini, & geospatial analytics.</p>
-          </div>
-          <div className="judge-card">
-            <strong className="judge-q">2. WHAT PROBLEM DOES IT SOLVE?</strong>
-            <p className="judge-a">Resolves fragmented grievance data so isolated complaints reveal macro infrastructure gaps.</p>
-          </div>
-          <div className="judge-card">
-            <strong className="judge-q">3. WHAT DATA ENTERS?</strong>
-            <p className="judge-a">Multilingual citizen voice, text, photo evidence, GPS metadata, and CPGRAMS records.</p>
-          </div>
-          <div className="judge-card">
-            <strong className="judge-q">4. WHAT DOES AI DO?</strong>
-            <p className="judge-a">Translates local speech, extracts entities/severity, overlays GIS, and flags Red Zones.</p>
-          </div>
-          <div className="judge-card">
-            <strong className="judge-q">5. WHAT COMES OUT?</strong>
-            <p className="judge-a">High-priority Red Zone maps & evidence-backed budget reallocation recommendations.</p>
-          </div>
-          <div className="judge-card">
-            <strong className="judge-q">6. WHO USES THE OUTPUT?</strong>
-            <p className="judge-a">District decision-makers, policymakers, and public works department heads.</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Trust / Institutional Context Strip */}
-      <div className="dpi-strip">
-        <div className="dpi-strip-inner container">
-          <span className="dpi-strip-title">BUILT AROUND INDIA'S DIGITAL PUBLIC INFRASTRUCTURE ECOSYSTEM</span>
-          <div className="dpi-badges">
-            <span className="dpi-badge">Bhashini (Multilingual AI)</span>
-            <span className="dpi-badge">CPGRAMS Data Layer</span>
-            <span className="dpi-badge">PM Gati Shakti GIS</span>
-            <span className="dpi-badge">Geospatial Data</span>
-            <span className="dpi-badge">Citizen Voice Signals</span>
-            <span className="dpi-badge">Gemini AI Agents</span>
-          </div>
-          <span className="dpi-proto-tag">Prototype / Demonstration Integration</span>
-        </div>
-      </div>
     </section>
   );
 }
-

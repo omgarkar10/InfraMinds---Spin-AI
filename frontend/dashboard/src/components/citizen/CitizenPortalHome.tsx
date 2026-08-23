@@ -22,10 +22,9 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
           </div>
 
           {user.isLoggedIn ? (
-            <div className="user-badge">
-              <span className="user-badge-dot" />
-              <span>{user.name} ({user.phone})</span>
-            </div>
+            <button className="btn-outline" onClick={() => onNavigate("citizen-logout")}>
+              Sign Out
+            </button>
           ) : (
             <button className="btn-outline" onClick={() => onNavigate("citizen-login")}>
               Sign In / Citizen Login
@@ -68,7 +67,7 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
               Check the live status, department assignment, and official updates of grievances you have submitted.
             </p>
             <ul className="service-card-examples">
-              <li>• Search by Grievance ID (e.g. SPIN-2026-004821)</li>
+              <li>• Search by Grievance ID (e.g. SPIN-2026-123456)</li>
               <li>• Real-time department routing status</li>
               <li>• AI Spatial Cluster correlation breakdown</li>
               <li>• Official resolution timeline</li>

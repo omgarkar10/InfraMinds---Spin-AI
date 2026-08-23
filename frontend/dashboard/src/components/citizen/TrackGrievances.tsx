@@ -77,7 +77,7 @@ export const TrackGrievances: React.FC<TrackGrievancesProps> = ({ onNavigate }) 
               <input
                 type="text"
                 className="form-input"
-                placeholder="Search by ID (e.g. SPIN-2026-004821)..."
+                placeholder="Search by ID (e.g. SPIN-2026-123456)..."
                 value={searchId}
                 onChange={(e) => setSearchId(e.target.value)}
               />
