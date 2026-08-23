@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useLanguage, COUNTRIES, type CountryCode } from "../../hooks/useLanguage";
 import { AccessibilityModal } from "../common/AccessibilityModal";
 import { HelpModal } from "../common/HelpModal";
@@ -15,6 +15,16 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
   const [accessibilityOpen, setAccessibilityOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const { country, setCountry } = useLanguage();
+
+  const filteredCountries = useMemo(() => {
+    const query = languageQuery.trim().toLocaleLowerCase();
+    if (!query) return COUNTRIES;
+
+    return COUNTRIES.filter((option) =>
+      [option.language, option.languageNative, option.name, option.code]
+        .some((value) => value.toLocaleLowerCase().includes(query))
+    );
+  }, [languageQuery]);
 
   const SECTIONS = [
     { id: "overview", label: "Overview" },
@@ -41,6 +51,7 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
 
   const handleSelectCountry = (code: CountryCode) => {
     setCountry(code);
+    setLanguageQuery("");
     setLangOpen(false);
   };
 

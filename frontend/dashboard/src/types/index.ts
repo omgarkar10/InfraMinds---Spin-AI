@@ -64,6 +64,8 @@ export type GrievanceCategory =
   | "Public Transport"
   | "Sanitation"
   | "Public Infrastructure"
+  | "Healthcare & Hospitals"
+  | "Public Safety & Law Enforcement"
   | "Other";
 
 export type GrievanceSeverity = "Low" | "Medium" | "High" | "Critical";

@@ -125,6 +125,38 @@ def test_policy_action():
     print("✓ POST /api/dashboard/policy-action passed:", data)
 
 
+def test_staff_department_filtering():
+    print("\nTesting GET /api/staff/grievances (Department Filtering)...")
+    # 1. Water Supply Staff request
+    res_water = client.get("/api/staff/grievances", headers={"X-Staff-Department": "Water Supply"})
+    assert res_water.status_code == 200
+    data_water = res_water.json()
+    assert data_water["department"] == "Water Supply"
+    for g in data_water["grievances"]:
+        assert g["department"] == "Water Supply"
+    print("✓ Water Supply department filter passed:", len(data_water["grievances"]), "grievance(s)")
+
+    # 2. Admin request
+    res_admin = client.get("/api/staff/grievances", headers={"X-Staff-Role": "admin"})
+    assert res_admin.status_code == 200
+    data_admin = res_admin.json()
+    assert len(data_admin["grievances"]) >= len(data_water["grievances"])
+    print("✓ Admin cross-department access passed:", len(data_admin["grievances"]), "total grievances")
+
+
+def test_staff_grievance_authorization_check():
+    print("\nTesting GET /api/staff/grievances/{id} (Security Authorization Check)...")
+    # Authorized access: Water officer requesting Water grievance
+    res_ok = client.get("/api/staff/grievances/SPIN-2026-WTR001", headers={"X-Staff-Department": "Water Supply"})
+    assert res_ok.status_code == 200
+    print("✓ Authorized department access granted (200 OK)")
+
+    # Unauthorized access: Electricity officer requesting Water grievance
+    res_forbidden = client.get("/api/staff/grievances/SPIN-2026-WTR001", headers={"X-Staff-Department": "Electricity"})
+    assert res_forbidden.status_code == 403
+    print("✓ Unauthorized cross-department access rejected (403 Forbidden):", res_forbidden.json()["detail"])
+
+
 def run_all_tests():
     print("=" * 70)
     print("       SPIN REST API VERIFICATION SUITE")
@@ -136,6 +168,8 @@ def run_all_tests():
     test_dashboard_summary()
     test_dashboard_red_zones()
     test_policy_action()
+    test_staff_department_filtering()
+    test_staff_grievance_authorization_check()
     print("\n" + "=" * 70)
     print("       ALL REST API ENDPOINT TESTS PASSED SUCCESSFULLY!")
     print("=" * 70)
@@ -143,3 +177,4 @@ def run_all_tests():
 
 if __name__ == "__main__":
     run_all_tests()
+

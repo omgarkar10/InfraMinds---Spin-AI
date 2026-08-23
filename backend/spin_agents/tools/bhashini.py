@@ -42,12 +42,25 @@ async def bhashini_translate(
 ) -> dict[str, Any]:
     """Translate regional text to English via Bhashini NMT pipeline."""
     if not CONFIG.bhashini_api_key or not CONFIG.bhashini_user_id:
-        return {
-            "original_text": text,
-            "english_translation": f"[Mock Bhashini Translation ({source_language}->{target_language})] {text}",
-            "source_language": source_language,
-            "target_language": target_language,
-        }
+        try:
+            import sys
+            import os
+            sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+            from translate_service import translate_to_english
+            res = translate_to_english(text)
+            return {
+                "original_text": text,
+                "english_translation": res.get("translated_text", text),
+                "source_language": res.get("source_language", source_language),
+                "target_language": target_language,
+            }
+        except Exception:
+            return {
+                "original_text": text,
+                "english_translation": text,
+                "source_language": source_language,
+                "target_language": target_language,
+            }
 
     payload = {
         "pipelineTasks": [

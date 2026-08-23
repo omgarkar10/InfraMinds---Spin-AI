@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../../styles/citizen.css";
 import { getStoredGrievances, updateStaffDecision, updateGrievanceStatus } from "../../services/grievanceService";
 import type { StaffUser, Grievance, GrievanceStatus, GrievanceCategory } from "../../types";
@@ -24,23 +24,50 @@ interface StaffDashboardProps {
 }
 
 export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate }) => {
-  const [grievances, setGrievances] = useState<Grievance[]>(getStoredGrievances());
+  const [grievances, setGrievances] = useState<Grievance[]>(getStaffGrievances(user));
   const [selectedGrievance, setSelectedGrievance] = useState<Grievance | null>(null);
   const [staffNote, setStaffNote] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [authError, setAuthError] = useState<string>("");
+
+  useEffect(() => {
+    // Whenever logged in user changes, reload department-scoped grievances
+    refreshData();
+  }, [user.id, user.department, user.role]);
 
   const refreshData = () => {
-    const list = getStoredGrievances();
+    const list = getStaffGrievances(user);
     setGrievances(list);
     if (selectedGrievance) {
-      const updated = list.find((g) => g.id === selectedGrievance.id);
-      if (updated) setSelectedGrievance(updated);
+      const authorized = getStaffGrievanceById(selectedGrievance.id, user);
+      if (authorized) {
+        setSelectedGrievance(authorized);
+      } else {
+        setSelectedGrievance(null);
+      }
+    }
+  };
+
+  const handleOpenDossier = (g: Grievance) => {
+    const authorized = getStaffGrievanceById(g.id, user);
+    if (authorized) {
+      setSelectedGrievance(authorized);
+      setAuthError("");
+    } else {
+      setAuthError(`Access Denied: Grievance ${g.id} belongs to a different department.`);
     }
   };
 
   const handleDecision = (decision: "ACCEPTED" | "MODIFIED" | "REJECTED") => {
     if (!selectedGrievance) return;
+    const authorized = getStaffGrievanceById(selectedGrievance.id, user);
+    if (!authorized) {
+      setAuthError("Access Denied: Unauthorized modification attempt.");
+      setSelectedGrievance(null);
+      return;
+    }
     updateStaffDecision(selectedGrievance.id, decision, staffNote || `Officer ${decision.toLowerCase()} recommendation.`);
     setStaffNote("");
     refreshData();
@@ -48,6 +75,12 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
 
   const handleStatusChange = (newStatus: GrievanceStatus) => {
     if (!selectedGrievance) return;
+    const authorized = getStaffGrievanceById(selectedGrievance.id, user);
+    if (!authorized) {
+      setAuthError("Access Denied: Unauthorized status change attempt.");
+      setSelectedGrievance(null);
+      return;
+    }
     updateGrievanceStatus(selectedGrievance.id, newStatus, staffNote || `Officer changed status to ${newStatus}.`);
     setStaffNote("");
     refreshData();
@@ -56,6 +89,13 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
   const filteredGrievances = grievances.filter((g) => {
     if (statusFilter && g.status !== statusFilter) return false;
     if (categoryFilter && g.category !== categoryFilter) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const matchId = g.id.toLowerCase().includes(q);
+      const matchDesc = g.description.toLowerCase().includes(q);
+      const matchLoc = (g.location.address || "").toLowerCase().includes(q) || (g.location.district || "").toLowerCase().includes(q);
+      if (!matchId && !matchDesc && !matchLoc) return false;
+    }
     return true;
   });
 
@@ -64,6 +104,9 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
     (g) => g.severity === "Critical" || g.severity === "High"
   );
   const topRedZoneGrievance = highSeverityGrievances[0] || null;
+
+  // Extract unique categories present in department queue for filter
+  const uniqueCategories = Array.from(new Set(grievances.map((g) => g.category)));
 
   return (
     <div className="citizen-portal-container">
@@ -180,10 +223,12 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
 
         {/* Filter Controls & Grievance Queue Table */}
         <div className="form-card" style={{ padding: "20px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "12px" }}>
             <div>
               <span className="label-eyebrow">DEPARTMENT QUEUE</span>
-              <h2 className="portal-heading" style={{ fontSize: "18px" }}>Grievance Processing Queue</h2>
+              <h2 className="portal-heading" style={{ fontSize: "18px" }}>
+                {user.department} Queue ({filteredGrievances.length})
+              </h2>
             </div>
 
             <div style={{ display: "flex", gap: "12px" }}>

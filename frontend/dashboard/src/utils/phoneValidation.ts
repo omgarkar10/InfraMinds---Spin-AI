@@ -1,4 +1,18 @@
-import { SUPPORTED_COUNTRIES, CountryPhoneRule } from "./phoneCountries";
+export interface CountryPhoneConfig {
+  code: string;
+  name: string;
+  flag: string;
+  dialCode: string;
+  minLength: number;
+  maxLength: number;
+  pattern: string;
+  placeholder: string;
+  customErrorMessages?: {
+    invalidLength?: string;
+    invalidPrefix?: string;
+    general?: string;
+  };
+}
 
 export interface ValidationResult {
   isValid: boolean;
@@ -14,11 +28,10 @@ export function sanitizePhoneNumber(input: string): string {
 }
 
 /**
- * Retrieves country phone rule by country ISO code (defaulting to IN).
+ * Retrieves country phone rule by country ISO code from dynamically loaded configs.
  */
-export function getCountryByCode(countryCode: string): CountryPhoneRule {
-  const country = SUPPORTED_COUNTRIES.find((c) => c.code === countryCode);
-  return country || SUPPORTED_COUNTRIES[0];
+export function getCountryByCode(countryCode: string, configs: CountryPhoneConfig[]): CountryPhoneConfig | undefined {
+  return configs.find((c) => c.code === countryCode) || configs[0];
 }
 
 /**
@@ -26,9 +39,18 @@ export function getCountryByCode(countryCode: string): CountryPhoneRule {
  */
 export function validatePhoneNumber(
   countryCode: string,
-  rawPhoneNumber: string
+  rawPhoneNumber: string,
+  configs: CountryPhoneConfig[]
 ): ValidationResult {
-  const country = getCountryByCode(countryCode);
+  if (!configs || configs.length === 0) {
+    return { isValid: false, errorMessage: "Configuration not loaded.", normalizedNumber: null };
+  }
+
+  const country = getCountryByCode(countryCode, configs);
+  if (!country) {
+    return { isValid: false, errorMessage: "Invalid country selected.", normalizedNumber: null };
+  }
+
   const sanitized = sanitizePhoneNumber(rawPhoneNumber);
 
   if (!sanitized) {
@@ -66,16 +88,19 @@ export function validatePhoneNumber(
   }
 
   // 2. Pattern / Prefix Validation
-  if (!pattern.test(sanitized)) {
-    const error =
-      customErrorMessages?.invalidPrefix ||
-      customErrorMessages?.general ||
-      `Enter a valid ${name} mobile number.`;
-    return {
-      isValid: false,
-      errorMessage: error,
-      normalizedNumber: null,
-    };
+  if (pattern) {
+    const regex = new RegExp(pattern);
+    if (!regex.test(sanitized)) {
+      const error =
+        customErrorMessages?.invalidPrefix ||
+        customErrorMessages?.general ||
+        `Enter a valid ${name} mobile number.`;
+      return {
+        isValid: false,
+        errorMessage: error,
+        normalizedNumber: null,
+      };
+    }
   }
 
   // 3. Construct Normalized International Format (+<dialCode><sanitized>)

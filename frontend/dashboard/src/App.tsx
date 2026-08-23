@@ -10,10 +10,14 @@ import { FinalCtaSection } from "./components/landing/FinalCtaSection";
 import { Footer } from "./components/landing/Footer";
 import { DemoModal } from "./components/landing/DemoModal";
 import { PolicyDashboard } from "./components/PolicyDashboard";
+import { ChatbotWidget } from "./components/ChatbotWidget";
 
 /* Citizen & Staff Portal Imports */
 import { CitizenPortalHome } from "./components/citizen/CitizenPortalHome";
 import { CitizenLogin } from "./components/citizen/CitizenLogin";
+import { CitizenSignup } from "./components/citizen/CitizenSignup";
+import { CitizenForgotPassword } from "./components/citizen/CitizenForgotPassword";
+import { CitizenResetPassword } from "./components/citizen/CitizenResetPassword";
 import { RaiseGrievanceForm } from "./components/citizen/RaiseGrievanceForm";
 import { TrackGrievances } from "./components/citizen/TrackGrievances";
 import { GrievanceDetail } from "./components/citizen/GrievanceDetail";
@@ -30,6 +34,9 @@ export type ViewState =
   | "dashboard"
   | "citizen"
   | "citizen-login"
+  | "citizen-signup"
+  | "citizen-forgot-password"
+  | "citizen-reset-password"
   | "citizen-raise"
   | "citizen-track"
   | "citizen-detail"
@@ -43,6 +50,9 @@ function AppInner() {
   const [view, setView] = useState<ViewState>("landing");
   const [targetViewAfterLogin, setTargetViewAfterLogin] = useState<string>("citizen-raise");
   const [selectedGrievanceId, setSelectedGrievanceId] = useState<string>("");
+  
+  // For Reset Password flow
+  const [resetPhone, setResetPhone] = useState<string>("");
 
   const [citizenUser, setCitizenUser] = useState<CitizenUser>(getStoredCitizenUser());
   const [staffUser, setStaffUser] = useState<StaffUser>(getStoredStaffUser());
@@ -152,6 +162,33 @@ function AppInner() {
           onLoginSuccess={handleCitizenLoginSuccess}
           targetViewAfterLogin={targetViewAfterLogin}
           onCancel={() => setView("citizen")}
+          onSignupClick={() => setView("citizen-signup")}
+          onForgotPasswordClick={() => setView("citizen-forgot-password")}
+        />
+      )}
+      
+      {view === "citizen-signup" && (
+        <CitizenSignup
+          onLoginClick={() => setView("citizen-login")}
+          onSignupSuccess={handleCitizenLoginSuccess}
+        />
+      )}
+      
+      {view === "citizen-forgot-password" && (
+        <CitizenForgotPassword
+          onBackToLogin={() => setView("citizen-login")}
+          onResetRequested={(phone) => {
+            setResetPhone(phone);
+            setView("citizen-reset-password");
+          }}
+        />
+      )}
+      
+      {view === "citizen-reset-password" && (
+        <CitizenResetPassword
+          phone={resetPhone}
+          onBackToLogin={() => setView("citizen-login")}
+          onResetSuccess={() => setView("citizen-login")}
         />
       )}
 
@@ -197,7 +234,6 @@ function AppInner() {
         <main>
           <HeroSection
             onViewChange={(v) => handleNavigate(v)}
-            onOpenDemoModal={() => setIsDemoModalOpen(true)}
           />
           <WhySpinSection />
           <HowItHelpsSection />
@@ -206,6 +242,9 @@ function AppInner() {
           <Footer onViewChange={(v) => handleNavigate(v)} />
         </main>
       )}
+
+      {/* Global Floating Chatbot Widget */}
+      <ChatbotWidget />
     </>
   );
 }
