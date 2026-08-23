@@ -58,19 +58,6 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel
     }
   };
 
-  const handleQuickDemoLogin = (dept: string, roleName: StaffUser["role"], officerName: string) => {
-    const demoUser: StaffUser = {
-      id: `staff-demo-${dept.toLowerCase().replace(/[^a-z0-9]/g, "-")}`,
-      name: officerName,
-      employeeId: `EMP-${dept.slice(0, 3).toUpperCase()}-402`,
-      email: `${dept.toLowerCase().replace(/[^a-z0-9]/g, "")}.officer@gov.in`,
-      department: dept,
-      role: roleName,
-      isLoggedIn: true,
-    };
-    performLoginWithUser(demoUser);
-  };
-
   return (
     <div className="citizen-portal-container">
       <div className="container">
@@ -147,70 +134,6 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel
               {loading ? "Signing in..." : "Sign In to Staff Portal →"}
             </button>
           </form>
-
-          <div style={{ marginTop: "16px", paddingTop: "12px", borderTop: "1px dashed var(--col-border)" }}>
-            <span className="label-eyebrow" style={{ fontSize: "10px", marginBottom: "8px", display: "block" }}>
-              DEMO PRESET ACCOUNTS (ONE-CLICK DEPARTMENT SWITCH)
-            </span>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-              <button
-                type="button"
-                className="btn-outline"
-                style={{ padding: "4px 8px", fontSize: "11px" }}
-                onClick={() => handleQuickDemoLogin("Water Supply", "Department Officer", "Er. Rajesh Patil")}
-              >
-                💧 Water Supply Staff
-              </button>
-              <button
-                type="button"
-                className="btn-outline"
-                style={{ padding: "4px 8px", fontSize: "11px" }}
-                onClick={() => handleQuickDemoLogin("Electricity", "Department Officer", "Er. Sunita Rao")}
-              >
-                ⚡ Electricity Staff
-              </button>
-              <button
-                type="button"
-                className="btn-outline"
-                style={{ padding: "4px 8px", fontSize: "11px" }}
-                onClick={() => handleQuickDemoLogin("Roads & Transport", "Department Officer", "Er. Vikas Gupta")}
-              >
-                🛣️ Roads Staff
-              </button>
-              <button
-                type="button"
-                className="btn-outline"
-                style={{ padding: "4px 8px", fontSize: "11px" }}
-                onClick={() => handleQuickDemoLogin("Sanitation", "Department Officer", "Officer Ananya D.")}
-              >
-                🧹 Sanitation Staff
-              </button>
-              <button
-                type="button"
-                className="btn-outline"
-                style={{ padding: "4px 8px", fontSize: "11px" }}
-                onClick={() => handleQuickDemoLogin("Public Health", "Department Officer", "Dr. K. S. Verma")}
-              >
-                🏥 Health Staff
-              </button>
-              <button
-                type="button"
-                className="btn-outline"
-                style={{ padding: "4px 8px", fontSize: "11px" }}
-                onClick={() => handleQuickDemoLogin("Police / Law & Order", "Department Officer", "Insp. Rajesh Kumar")}
-              >
-                👮 Police Staff
-              </button>
-              <button
-                type="button"
-                className="btn-outline"
-                style={{ padding: "4px 8px", fontSize: "11px", borderColor: "var(--col-navy)", color: "var(--col-navy)", fontWeight: "bold" }}
-                onClick={() => handleQuickDemoLogin("All Departments", "Administrator", "System Administrator")}
-              >
-                👑 Super Admin (All Depts)
-              </button>
-            </div>
-          </div>
 
           <div style={{ borderTop: "1px solid var(--col-border)", paddingTop: "14px", marginTop: "14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span className="disclaimer" style={{ fontSize: "10px" }}>
