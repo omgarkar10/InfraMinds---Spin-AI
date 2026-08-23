@@ -4,6 +4,7 @@ import { App } from "./App";
 import "./styles/editorial.css";
 import "./styles/dashboard.css";
 import "./styles/citizen.css";
+import "./styles/chatbot.css";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
