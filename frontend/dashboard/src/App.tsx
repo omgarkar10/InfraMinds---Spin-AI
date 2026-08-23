@@ -19,6 +19,9 @@ import { TrackGrievances } from "./components/citizen/TrackGrievances";
 import { GrievanceDetail } from "./components/citizen/GrievanceDetail";
 import { StaffLogin } from "./components/staff/StaffLogin";
 import { StaffDashboard } from "./components/staff/StaffDashboard";
+import { ApprovalPortal } from "./components/approval/ApprovalPortal";
+import { MinistryLogin } from "./components/ministry/MinistryLogin";
+import { MinistryReviewPortal } from "./components/ministry/MinistryReviewPortal";
 import { getStoredCitizenUser, getStoredStaffUser, clearStoredCitizenUser } from "./services/grievanceService";
 import type { CitizenUser, StaffUser } from "./types";
 
@@ -31,7 +34,10 @@ export type ViewState =
   | "citizen-track"
   | "citizen-detail"
   | "staff-login"
-  | "staff-dashboard";
+  | "staff-dashboard"
+  | "approval-portal"
+  | "ministry-login"
+  | "ministry-portal";
 
 function AppInner() {
   const [view, setView] = useState<ViewState>("landing");
@@ -40,9 +46,10 @@ function AppInner() {
 
   const [citizenUser, setCitizenUser] = useState<CitizenUser>(getStoredCitizenUser());
   const [staffUser, setStaffUser] = useState<StaffUser>(getStoredStaffUser());
+  const [ministryUser, setMinistryUser] = useState<StaffUser>(getStoredStaffUser());
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
 
-  /* Navigation handler with Citizen Auth Protection */
+  /* Navigation handler with Auth Protection */
   const handleNavigate = (newView: string, extraId?: string) => {
     if (extraId) {
       setSelectedGrievanceId(extraId);
@@ -68,6 +75,12 @@ function AppInner() {
       return;
     }
 
+    // Require Ministry Login BEFORE Ministry Portal
+    if (newView === "ministry-portal" && !ministryUser.isLoggedIn) {
+      setView("ministry-login");
+      return;
+    }
+
     setView(newView as ViewState);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -84,6 +97,12 @@ function AppInner() {
     setView("staff-dashboard");
   };
 
+  /* Ministry Login Success Callback */
+  const handleMinistryLoginSuccess = (user: StaffUser) => {
+    setMinistryUser(user);
+    setView("ministry-portal");
+  };
+
   return (
     <>
       <Navbar
@@ -98,7 +117,27 @@ function AppInner() {
       />
 
       {/* VIEW ROUTING */}
-      {view === "dashboard" && <PolicyDashboard />}
+      {view === "dashboard" && <PolicyDashboard onNavigate={(v) => handleNavigate(v)} />}
+
+      {/* APPROVAL STATUS PORTAL */}
+      {view === "approval-portal" && (
+        <ApprovalPortal onNavigate={(v) => handleNavigate(v)} />
+      )}
+
+      {/* MINISTRY PORTAL VIEWS */}
+      {view === "ministry-login" && (
+        <MinistryLogin
+          onLoginSuccess={handleMinistryLoginSuccess}
+          onCancel={() => setView("landing")}
+        />
+      )}
+
+      {view === "ministry-portal" && (
+        <MinistryReviewPortal
+          user={ministryUser}
+          onNavigate={(v) => handleNavigate(v)}
+        />
+      )}
 
       {/* CITIZEN PORTAL VIEWS */}
       {view === "citizen" && (

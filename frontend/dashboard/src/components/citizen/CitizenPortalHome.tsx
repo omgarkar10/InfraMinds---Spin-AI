@@ -12,13 +12,33 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
     <div className="citizen-portal-container">
       {/* Top Government Service Header */}
       <div className="portal-header-bar">
-        <div className="container portal-header-inner">
-          <div className="portal-title-group">
-            <span className="portal-org">SPIN · SYMBIOTIC PUBLIC INFRASTRUCTURE NETWORK</span>
-            <h1 className="portal-heading">Citizen Grievance Services</h1>
-            <p className="portal-subtext">
-              Report a public infrastructure issue or track the progress of a grievance you have already submitted.
-            </p>
+        <div className="container portal-header-inner" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            <button
+              className="btn-outline"
+              style={{
+                color: "#fff",
+                borderColor: "rgba(255,255,255,0.4)",
+                background: "rgba(255,255,255,0.1)",
+                fontSize: "12px",
+                fontWeight: "700",
+                padding: "6px 12px",
+                borderRadius: "6px",
+                cursor: "pointer",
+                whiteSpace: "nowrap"
+              }}
+              onClick={() => onNavigate("landing")}
+            >
+              ← Back to Home
+            </button>
+
+            <div className="portal-title-group">
+              <span className="portal-org">SPIN · SYMBIOTIC PUBLIC INFRASTRUCTURE NETWORK</span>
+              <h1 className="portal-heading">Citizen Grievance Services</h1>
+              <p className="portal-subtext">
+                Report a public infrastructure issue or track the progress of a grievance you have already submitted.
+              </p>
+            </div>
           </div>
 
           {user.isLoggedIn ? (

@@ -46,6 +46,11 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
   return (
     <div className="citizen-portal-container">
       <div className="container">
+        <div style={{ marginBottom: "14px", maxWidth: "480px", margin: "0 auto 14px auto" }}>
+          <button className="btn-outline" style={{ fontSize: "12px", fontWeight: "700" }} onClick={onCancel}>
+            ← Back to Home
+          </button>
+        </div>
         <div className="login-card">
 
           <div>
