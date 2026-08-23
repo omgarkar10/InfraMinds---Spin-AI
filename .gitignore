@@ -59,3 +59,4 @@ Thumbs.db
 *.swo
 *.log
 **/*.log
+spin.db
