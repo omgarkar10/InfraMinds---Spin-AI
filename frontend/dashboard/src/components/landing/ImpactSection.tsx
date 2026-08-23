@@ -12,7 +12,6 @@ export function ImpactSection() {
           {t.impact_h2_1}<br />
           <span className="problem-h2-highlight">{t.impact_h2_2}</span>
         </h2>
-        <span className="demo-badge">[ {t.impact_demo_badge} ]</span>
       </div>
 
       <div className="impact-levels-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', marginTop: '4rem' }}>

@@ -47,9 +47,8 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel
       <div className="container">
         <div className="login-card" style={{ borderTop: "4px solid var(--col-navy)", maxWidth: "520px" }}>
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
             <span className="label-eyebrow" style={{ color: "var(--col-navy)" }}>AUTHORIZED GOVERNMENT INTERFACE</span>
-            <span className="demo-badge-subtle" style={{ fontSize: "9px" }}>DEMO STAFF AUTH</span>
           </div>
 
           <div>
@@ -110,8 +109,13 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel
               </select>
             </div>
 
-            <button type="submit" className="service-card-btn" style={{ background: "var(--col-navy)", width: "100%", justifyContent: "center" }}>
-              Sign In to Staff Portal →
+            <button
+              type="submit"
+              className="service-card-btn"
+              style={{ background: "var(--col-navy)", width: "100%", justifyContent: "center" }}
+              disabled={loading}
+            >
+              {loading ? "Signing In…" : "Sign In to Staff Portal →"}
             </button>
           </form>
 
