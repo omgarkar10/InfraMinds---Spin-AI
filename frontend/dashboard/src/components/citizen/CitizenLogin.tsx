@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "../../styles/citizen.css";
 import { setStoredCitizenUser } from "../../services/grievanceService";
+import { sendOtp, verifyOtp } from "../../services/authService";
 import type { CitizenUser } from "../../types";
 
 interface CitizenLoginProps {
@@ -18,29 +19,56 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [isNewAccount, setIsNewAccount] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSendOtp = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!phone || phone.length < 8) return;
-    setOtpSent(true);
+  const getCleanPhone = () => {
+    // Assuming +91 is added automatically in the UI, we send +91XXXXXXXXXX
+    return "+91" + phone.replace(/\s/g, "");
   };
 
-  const handleVerify = (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    const user: CitizenUser = {
-      id: "cit-" + Math.floor(100 + Math.random() * 900),
-      name: name || "Citizen User",
-      phone: "+91 " + phone,
-      isLoggedIn: true,
-    };
-    setStoredCitizenUser(user);
-    onLoginSuccess(user);
+    if (!phone || phone.length < 8) return;
+    setLoading(true);
+    setError("");
+    try {
+      await sendOtp(getCleanPhone());
+      setOtpSent(true);
+    } catch (err: any) {
+      setError(err.message || "Failed to send OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const result = await verifyOtp(getCleanPhone(), otp);
+      
+      const user: CitizenUser = {
+        id: result.user.id,
+        name: result.user.name || name || "Citizen User",
+        phone: result.user.phone,
+        isLoggedIn: true,
+      };
+      setStoredCitizenUser(user);
+      onLoginSuccess(user);
+    } catch (err: any) {
+      setError(err.message || "Invalid OTP");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="citizen-portal-container">
       <div className="container">
         <div className="login-card">
+
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span className="label-eyebrow">GOVERNMENT SERVICE LOGIN</span>
             <span className="demo-badge-subtle" style={{ fontSize: "9px" }}>PROTOTYPE AUTHENTICATION</span>
@@ -54,7 +82,13 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
           </div>
 
           <form onSubmit={otpSent ? handleVerify : handleSendOtp} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            {error && (
+              <div style={{ color: "red", fontSize: "13px", padding: "8px", background: "#ffe6e6", borderRadius: "4px" }}>
+                {error}
+              </div>
+            )}
             {isNewAccount && (
+
               <div className="form-group">
                 <label className="form-label">Full Name *</label>
                 <input
