@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "../../styles/citizen.css";
 import { setStoredCitizenUser } from "../../services/grievanceService";
+import { sendOtp, verifyOtp } from "../../services/authService";
 import type { CitizenUser } from "../../types";
 import { SUPPORTED_COUNTRIES } from "../../utils/phoneCountries";
 import { validatePhoneNumber, getCountryByCode, sanitizePhoneNumber } from "../../utils/phoneValidation";
@@ -15,6 +16,19 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
   onLoginSuccess,
   onCancel,
 }) => {
+<<<<<<< HEAD
+  const [phone, setPhone] = useState("98230 41092");
+  const [name, setName] = useState("Ramesh Kulkarni");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [isNewAccount, setIsNewAccount] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const getCleanPhone = () => {
+    // Assuming +91 is added automatically in the UI, we send +91XXXXXXXXXX
+    return "+91" + phone.replace(/\s/g, "");
+=======
   const [countryCode, setCountryCode] = useState<string>("IN");
   const [phone, setPhone] = useState<string>("");
   const [name, setName] = useState<string>("");
@@ -42,10 +56,46 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
       return;
     }
     setOtpSent(true);
+>>>>>>> origin/main
   };
 
-  const handleVerify = (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+<<<<<<< HEAD
+    if (!phone || phone.length < 8) return;
+    setLoading(true);
+    setError("");
+    try {
+      await sendOtp(getCleanPhone());
+      setOtpSent(true);
+    } catch (err: any) {
+      setError(err.message || "Failed to send OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const result = await verifyOtp(getCleanPhone(), otp);
+      
+      const user: CitizenUser = {
+        id: result.user.id,
+        name: result.user.name || name || "Citizen User",
+        phone: result.user.phone,
+        isLoggedIn: true,
+      };
+      setStoredCitizenUser(user);
+      onLoginSuccess(user);
+    } catch (err: any) {
+      setError(err.message || "Invalid OTP");
+    } finally {
+      setLoading(false);
+    }
+=======
     const check = validatePhoneNumber(countryCode, phone);
     if (!check.isValid || !check.normalizedNumber) {
       return;
@@ -59,12 +109,14 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
     };
     setStoredCitizenUser(user);
     onLoginSuccess(user);
+>>>>>>> origin/main
   };
 
   return (
     <div className="citizen-portal-container">
       <div className="container">
         <div className="login-card">
+
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span className="label-eyebrow">GOVERNMENT SERVICE LOGIN</span>
             <span className="demo-badge-subtle" style={{ fontSize: "9px" }}>PROTOTYPE AUTHENTICATION</span>
@@ -78,6 +130,27 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
           </div>
 
           <form onSubmit={otpSent ? handleVerify : handleSendOtp} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+<<<<<<< HEAD
+            {error && (
+              <div style={{ color: "red", fontSize: "13px", padding: "8px", background: "#ffe6e6", borderRadius: "4px" }}>
+                {error}
+              </div>
+            )}
+            {isNewAccount && (
+
+              <div className="form-group">
+                <label className="form-label">Full Name *</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Enter your full name as per Aadhaar / ID"
+                  required
+                />
+              </div>
+            )}
+=======
             <div className="form-group">
               <label className="form-label">Full Name (Optional)</label>
               <input
@@ -88,6 +161,7 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
                 placeholder="Enter full name"
               />
             </div>
+>>>>>>> origin/main
 
             {/* Country-Specific Mobile Number Section */}
             <div className="form-group">

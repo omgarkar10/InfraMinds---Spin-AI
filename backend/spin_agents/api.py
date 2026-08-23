@@ -13,15 +13,28 @@ from pydantic import BaseModel, Field
 from spin_agents.tools.bhashini import bhashini_asr, bhashini_translate
 from spin_agents.tools.bigquery import query_red_zones, query_weekly_summary
 from spin_agents.runner import run_pipeline
+from spin_agents.auth import router as auth_router
+from spin_agents.db import Base, engine
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from translate_service import translate_to_english
 
+async def init_db():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
 app = FastAPI(title="SPIN Citizen Edge API", version="1.0.0")
+
+@app.on_event("startup")
+async def on_startup():
+    await init_db()
+
+app.include_router(auth_router)
 
 app.add_middleware(
     CORSMiddleware,
+
     allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
     allow_credentials=True,
     allow_methods=["*"],

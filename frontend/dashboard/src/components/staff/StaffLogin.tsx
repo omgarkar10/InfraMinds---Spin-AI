@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "../../styles/citizen.css";
 import { setStoredStaffUser } from "../../services/grievanceService";
+import { staffLogin } from "../../services/authService";
 import type { StaffUser } from "../../types";
 
 interface StaffLoginProps {
@@ -9,30 +10,43 @@ interface StaffLoginProps {
 }
 
 export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel }) => {
-  const [email, setEmail] = useState("officer.infrastructure@pune.gov.in");
-  const [password, setPassword] = useState("••••••••••••");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [department, setDepartment] = useState("Municipal Infrastructure & Public Works");
   const [role, setRole] = useState<StaffUser["role"]>("Department Officer");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const user: StaffUser = {
-      id: "staff-881",
-      name: "Dr. A. V. Deshpande",
-      employeeId: "MH-GOV-8812",
-      email,
-      department,
-      role,
-      isLoggedIn: true,
-    };
-    setStoredStaffUser(user);
-    onLoginSuccess(user);
+    setLoading(true);
+    setError("");
+    try {
+      const result = await staffLogin(email, password);
+      
+      const user: StaffUser = {
+        id: result.user.id,
+        name: result.user.name || "Staff Member",
+        employeeId: "N/A", // This could come from backend in future
+        email: result.user.email,
+        department: result.user.department || department,
+        role: result.user.role as StaffUser["role"],
+        isLoggedIn: true,
+      };
+      setStoredStaffUser(user);
+      onLoginSuccess(user);
+    } catch (err: any) {
+      setError(err.message || "Login failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="citizen-portal-container">
       <div className="container">
         <div className="login-card" style={{ borderTop: "4px solid var(--col-navy)", maxWidth: "520px" }}>
+
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span className="label-eyebrow" style={{ color: "var(--col-navy)" }}>AUTHORIZED GOVERNMENT INTERFACE</span>
             <span className="demo-badge-subtle" style={{ fontSize: "9px" }}>DEMO STAFF AUTH</span>
@@ -46,8 +60,14 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel
           </div>
 
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            {error && (
+              <div style={{ color: "red", fontSize: "13px", padding: "8px", background: "#ffe6e6", borderRadius: "4px" }}>
+                {error}
+              </div>
+            )}
             <div className="form-group">
               <label className="form-label">Official Email / Employee ID *</label>
+
               <input
                 type="text"
                 className="form-input"
