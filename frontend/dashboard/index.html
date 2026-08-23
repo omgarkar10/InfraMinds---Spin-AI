@@ -1,9 +1,8 @@
 <!DOCTYPE html>
-<html lang="en" class="notranslate">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="google" content="notranslate" />
     <meta name="description" content="SPIN — Symbiotic Public Infrastructure Network. An AI-driven Digital Public Infrastructure platform that converts citizen grievances into spatial intelligence for infrastructure planning and policy decisions." />
     <meta name="theme-color" content="#0B0C0F" />
     <title>SPIN — Symbiotic Public Infrastructure Network</title>
@@ -43,8 +42,18 @@
         pointer-events: none !important;
       }
     </style>
+    <script type="text/javascript">
+      function googleTranslateElementInit() {
+        new google.translate.TranslateElement({
+          pageLanguage: 'en',
+          autoDisplay: false
+        }, 'google_translate_element');
+      }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
   </head>
-  <body class="notranslate">
+  <body>
+    <div id="google_translate_element"></div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
