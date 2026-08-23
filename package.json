@@ -1,7 +1,7 @@
 {
   "dependencies": {
-    "@deck.gl/geo-layers": "^9.3.10",
+    "@deck.gl/geo-layers": "^8.9.36",
     "antigravity-sdk": "^1.7.0",
-    "deck.gl": "^9.3.10"
+    "deck.gl": "^8.9.36"
   }
 }

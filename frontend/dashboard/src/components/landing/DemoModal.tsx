@@ -154,7 +154,7 @@ export function DemoModal({ isOpen, onClose, onOpenDashboard }: DemoModalProps) 
   const step = DEMO_STEPS[currentStepIndex];
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setInterval>;
     if (autoPlay && isOpen) {
       timer = setInterval(() => {
         setCurrentStepIndex((prev) => {
