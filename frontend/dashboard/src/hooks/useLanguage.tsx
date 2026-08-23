@@ -379,7 +379,7 @@ const LanguageContext = createContext<LanguageContextValue>({
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [code, setCode] = useState<CountryCode>(() => {
     const saved = localStorage.getItem("spin_selected_country");
-    return (saved as CountryCode) || "MH";
+    return (saved as CountryCode) || "AR";
   });
 
   const country = COUNTRIES.find((c) => c.code === code) || COUNTRIES[0];

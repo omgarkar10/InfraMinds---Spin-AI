@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useLanguage, COUNTRIES, type CountryCode } from "../../hooks/useLanguage";
 import "../navigation/Navbar.css";
 
@@ -10,7 +10,18 @@ interface NavbarProps {
 export function Navbar({ view, onViewChange }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
+  const [languageQuery, setLanguageQuery] = useState("");
   const { country, setCountry } = useLanguage();
+
+  const filteredCountries = useMemo(() => {
+    const query = languageQuery.trim().toLocaleLowerCase();
+    if (!query) return COUNTRIES;
+
+    return COUNTRIES.filter((option) =>
+      [option.language, option.languageNative, option.name, option.code]
+        .some((value) => value.toLocaleLowerCase().includes(query))
+    );
+  }, [languageQuery]);
 
   const SECTIONS = [
     { id: "overview", label: "Overview" },
@@ -37,6 +48,7 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
 
   const handleSelectCountry = (code: CountryCode) => {
     setCountry(code);
+    setLanguageQuery("");
     setLangOpen(false);
   };
 
@@ -71,30 +83,57 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
                   <div className="navbar-lang-dropdown" role="menu">
                     <div className="navbar-lang-header">
                       <span className="label-eyebrow">Select Region / Language</span>
-                      <span className="navbar-lang-sub">Language support — prototype</span>
+                      <span className="navbar-lang-sub">English is the default language</span>
+                      <div className="navbar-lang-search-wrap">
+                        <span className="navbar-lang-search-icon" aria-hidden="true">⌕</span>
+                        <input
+                          className="navbar-lang-search"
+                          type="search"
+                          value={languageQuery}
+                          onChange={(event) => setLanguageQuery(event.target.value)}
+                          placeholder="Search language or state"
+                          aria-label="Search language or state"
+                          autoFocus
+                        />
+                        {languageQuery && (
+                          <button
+                            className="navbar-lang-search-clear"
+                            type="button"
+                            onClick={() => setLanguageQuery("")}
+                            aria-label="Clear language search"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    {COUNTRIES.map((c) => (
-                      <button
-                        key={c.code}
-                        className={`navbar-lang-option ${c.code === country.code ? "active" : ""}`}
-                        onClick={() => handleSelectCountry(c.code)}
-                        role="menuitem"
-                      >
-                        <span className="navbar-lang-option-flag">{c.flag}</span>
-                        <div className="navbar-lang-option-text">
-                          <span className="navbar-lang-option-country">{c.name}</span>
-                          <span className="navbar-lang-option-lang">{c.languageNative}</span>
-                        </div>
-                        {c.status === "proposed" && (
-                          <span className="navbar-lang-option-badge">Proposed</span>
-                        )}
-                        {c.code === country.code && (
-                          <span className="navbar-lang-option-check">✓</span>
-                        )}
-                      </button>
-                    ))}
+                    <div className="navbar-lang-options" role="none">
+                      {filteredCountries.map((c) => (
+                        <button
+                          key={c.code}
+                          className={`navbar-lang-option ${c.code === country.code ? "active" : ""}`}
+                          onClick={() => handleSelectCountry(c.code)}
+                          role="menuitem"
+                        >
+                          <span className="navbar-lang-option-flag">{c.flag}</span>
+                          <div className="navbar-lang-option-text">
+                            <span className="navbar-lang-option-country">{c.language}</span>
+                            <span className="navbar-lang-option-lang">{c.languageNative} · {c.name}</span>
+                          </div>
+                          {c.status === "proposed" && (
+                            <span className="navbar-lang-option-badge">Proposed</span>
+                          )}
+                          {c.code === country.code && (
+                            <span className="navbar-lang-option-check">✓</span>
+                          )}
+                        </button>
+                      ))}
+                      {filteredCountries.length === 0 && (
+                        <p className="navbar-lang-empty">No matching language or state.</p>
+                      )}
+                    </div>
                     <div className="navbar-lang-footer">
-                      <span className="disclaimer">PROPOSED ARCHITECTURE · UI DEMO ONLY</span>
+                      <span className="disclaimer">36 INDIAN REGIONS · STATES &amp; UNION TERRITORIES</span>
                     </div>
                   </div>
                 </>

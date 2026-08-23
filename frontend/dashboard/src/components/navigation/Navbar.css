@@ -253,7 +253,7 @@
   background: var(--col-surface);
   border: 1px solid var(--col-border-strong);
   border-radius: 8px;
-  width: 240px;
+  width: min(320px, calc(100vw - 24px));
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
   padding: 6px 0;
 }
@@ -261,6 +261,55 @@
 .navbar-lang-header {
   padding: 10px 14px;
   border-bottom: 1px solid var(--col-border);
+}
+
+.navbar-lang-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.navbar-lang-search-icon {
+  position: absolute;
+  left: 9px;
+  color: var(--col-text-muted);
+  font-size: 17px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.navbar-lang-search {
+  width: 100%;
+  border: 1px solid var(--col-border-mid);
+  border-radius: 4px;
+  padding: 7px 30px 7px 28px;
+  color: var(--col-text);
+  background: var(--col-surface);
+  font: 11px var(--font);
+  outline: none;
+}
+
+.navbar-lang-search:focus {
+  border-color: var(--col-orange);
+  box-shadow: 0 0 0 2px var(--col-orange-dim);
+}
+
+.navbar-lang-search-clear {
+  position: absolute;
+  right: 7px;
+  border: 0;
+  background: none;
+  color: var(--col-text-muted);
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.navbar-lang-options {
+  max-height: min(52vh, 420px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .navbar-lang-sub {
@@ -307,6 +356,13 @@
 .navbar-lang-option-lang {
   font-size: 10px;
   color: var(--col-text-muted);
+}
+
+.navbar-lang-empty {
+  padding: 18px 14px;
+  color: var(--col-text-muted);
+  font-size: 11px;
+  text-align: center;
 }
 
 .navbar-lang-option-badge {
