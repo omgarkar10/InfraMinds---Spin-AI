@@ -1,24 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 
-export async function citizenLogin(identifier: string, password: string) {
-  const response = await fetch(`${API_URL}/auth/citizen-login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ identifier, password }),
-  });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Invalid credentials");
-  }
-  const data = await response.json();
-  if (data.access_token) {
-    localStorage.setItem("citizen_token", data.access_token);
-  }
-  return data;
-}
-
 export async function getCountriesConfig() {
   const response = await fetch(`${API_URL}/config/countries`);
   if (!response.ok) {
