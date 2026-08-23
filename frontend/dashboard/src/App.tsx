@@ -10,6 +10,7 @@ import { FinalCtaSection } from "./components/landing/FinalCtaSection";
 import { Footer } from "./components/landing/Footer";
 import { DemoModal } from "./components/landing/DemoModal";
 import { PolicyDashboard } from "./components/PolicyDashboard";
+import { ChatbotWidget } from "./components/ChatbotWidget";
 
 /* Citizen & Staff Portal Imports */
 import { CitizenPortalHome } from "./components/citizen/CitizenPortalHome";
@@ -202,6 +203,9 @@ function AppInner() {
           <Footer onViewChange={(v) => handleNavigate(v)} />
         </main>
       )}
+
+      {/* Global Floating Chatbot Widget */}
+      <ChatbotWidget />
     </>
   );
 }
