@@ -6,7 +6,7 @@ import json
 import os
 import uuid
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -14,6 +14,7 @@ from spin_agents.tools.bhashini import bhashini_asr, bhashini_translate
 from spin_agents.tools.bigquery import query_red_zones, query_weekly_summary
 from spin_agents.runner import run_pipeline
 from spin_agents.auth import router as auth_router
+from spin_agents.config_routes import router as config_router
 from spin_agents.db import Base, engine
 import sys
 import os
@@ -31,6 +32,7 @@ async def on_startup():
     await init_db()
 
 app.include_router(auth_router)
+app.include_router(config_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -174,7 +176,8 @@ async def pipeline_run(payload: PipelineRequest):
 
 @app.get("/api/dashboard/summary")
 async def dashboard_summary(district: str | None = None):
-    stats = query_weekly_summary(district)
+    res = query_weekly_summary(district)
+    stats = res[0] if isinstance(res, list) and res else (res if isinstance(res, dict) else {})
     total = stats.get("total_complaints", 0)
     domain = stats.get("top_domain", "Infrastructure")
     dist = stats.get("district", district or "National")
@@ -219,3 +222,100 @@ async def firebase_webhook(request: Request):
         location=body.get("location"),
     )
     return await citizen_webhook(message)
+
+
+# ── Staff Department-Based Grievance Routing & Authorization Endpoints ───────
+
+MOCK_BACKEND_GRIEVANCES = [
+    {
+        "id": "SPIN-2026-WTR001",
+        "title": "Water Main Leakage Sector 4",
+        "category": "Water Supply",
+        "department": "Water Supply",
+        "status": "SUBMITTED",
+        "severity": "High",
+        "location": "Pune (Sector 4)",
+    },
+    {
+        "id": "SPIN-2026-ELE001",
+        "title": "Transformer Sparking Kurla",
+        "category": "Electricity",
+        "department": "Electricity",
+        "status": "INSPECTION_SCHEDULED",
+        "severity": "Critical",
+        "location": "Mumbai (Kurla)",
+    },
+    {
+        "id": "SPIN-2026-RD001",
+        "title": "Deep Pothole Lajpat Nagar",
+        "category": "Roads & Potholes",
+        "department": "Roads & Transport",
+        "status": "ACTION_TAKEN",
+        "severity": "High",
+        "location": "New Delhi (Lajpat Nagar)",
+    },
+    {
+        "id": "SPIN-2026-SAN001",
+        "title": "Garbage Dump Overflow Market Yard",
+        "category": "Waste Management",
+        "department": "Sanitation",
+        "status": "SUBMITTED",
+        "severity": "High",
+        "location": "Pune (Market Yard)",
+    },
+]
+
+@app.get("/api/staff/grievances")
+async def get_staff_grievances(
+    department: str | None = None,
+    role: str | None = "staff",
+    x_staff_department: str | None = Header(None, alias="X-Staff-Department"),
+    x_staff_role: str | None = Header(None, alias="X-Staff-Role"),
+):
+    """
+    Returns grievances filtered strictly by staff member's assigned department.
+    Super-admins and Policymakers receive system-wide grievances.
+    """
+    staff_dept = x_staff_department or department
+    staff_role = (x_staff_role or role or "staff").lower()
+
+    if staff_role in ["admin", "administrator", "policymaker", "super-admin"] or not staff_dept:
+        return {"status": "success", "department": staff_dept or "All", "grievances": MOCK_BACKEND_GRIEVANCES}
+
+    filtered = [
+        g for g in MOCK_BACKEND_GRIEVANCES
+        if g["department"].lower() == staff_dept.lower()
+    ]
+    return {
+        "status": "success",
+        "department": staff_dept,
+        "grievances": filtered,
+        "count": len(filtered),
+    }
+
+@app.get("/api/staff/grievances/{grievance_id}")
+async def get_staff_grievance_by_id(
+    grievance_id: str,
+    x_staff_department: str | None = Header(None, alias="X-Staff-Department"),
+    x_staff_role: str | None = Header(None, alias="X-Staff-Role"),
+):
+    """
+    Enforces authorization check before returning single grievance details.
+    Rejects request with 403 Forbidden if staff department does not match grievance department.
+    """
+    grievance = next((g for g in MOCK_BACKEND_GRIEVANCES if g["id"].lower() == grievance_id.lower()), None)
+    if not grievance:
+        raise HTTPException(status_code=404, detail="Grievance not found.")
+
+    staff_role = (x_staff_role or "staff").lower()
+    if staff_role in ["admin", "administrator", "policymaker", "super-admin"]:
+        return {"status": "success", "grievance": grievance}
+
+    if not x_staff_department or grievance["department"].lower() != x_staff_department.lower():
+        raise HTTPException(
+            status_code=403,
+            detail=f"Access denied. Grievance belongs to '{grievance['department']}', but authorized staff department is '{x_staff_department or 'Unassigned'}'."
+        )
+
+    return {"status": "success", "grievance": grievance}
+

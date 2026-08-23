@@ -1,51 +1,24 @@
 <!DOCTYPE html>
-<html lang="en" class="notranslate">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="google" content="notranslate" />
     <meta name="description" content="SPIN — Symbiotic Public Infrastructure Network. An AI-driven Digital Public Infrastructure platform that converts citizen grievances into spatial intelligence for infrastructure planning and policy decisions." />
     <meta name="theme-color" content="#0B0C0F" />
     <title>SPIN — Symbiotic Public Infrastructure Network</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-    <style>
-      /* RIGOROUSLY HIDE GOOGLE TRANSLATE UI & TOOLBAR BANNERS */
-      .goog-te-banner-frame,
-      .goog-te-banner,
-      .skiptranslate,
-      iframe.goog-te-banner-frame,
-      iframe.skiptranslate,
-      iframe[id^=":1."],
-      iframe[id^=":2."],
-      .VIpgJd-Z44wUd-aEsB2c-bF92uf,
-      #goog-gt-tt,
-      .goog-te-balloon-frame,
-      #google_translate_element {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        height: 0 !important;
-        width: 0 !important;
-        pointer-events: none !important;
-      }
-      
-      body {
-        top: 0px !important;
-        position: static !important;
-      }
-      
-      /* Hide hover highlights & text decorations injected by translate */
-      .goog-text-highlight {
-        background: none !important;
-        box-shadow: none !important;
-        pointer-events: none !important;
-      }
-    </style>
   </head>
-  <body class="notranslate">
+  <body>
+    <div id="google_translate_element" style="display:none;"></div>
     <div id="root"></div>
+    <script type="text/javascript">
+      function googleTranslateElementInit() {
+        new google.translate.TranslateElement({pageLanguage: 'en', autoDisplay: false}, 'google_translate_element');
+      }
+    </script>
+    <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

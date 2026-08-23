@@ -1,9 +1,17 @@
-from google.cloud import translate_v2 as translate
+try:
+    from google.cloud import translate_v2 as translate
+except ImportError:
+    try:
+        from google.cloud import translate
+    except ImportError:
+        translate = None
 import os
 
 # Initialize the translation client.
 # This assumes GOOGLE_APPLICATION_CREDENTIALS environment variable is set.
 def get_translation_client():
+    if not translate:
+        return None
     try:
         return translate.Client()
     except Exception as e:

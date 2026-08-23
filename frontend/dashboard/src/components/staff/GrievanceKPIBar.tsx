@@ -11,12 +11,11 @@ export const GrievanceKPIBar: React.FC<GrievanceKPIBarProps> = ({
   grievances = [],
   isLiveApi = false,
 }) => {
-  // Dynamically blend base municipal scale stats with live stored grievances
-  const totalGrievances = 4280 + grievances.length;
-  const activeCount = grievances.filter((g) => g.status !== "RESOLVED").length;
-  const pendingGrievances = 486 + activeCount;
-  const avgResolutionDays = "2.4 days";
-  const highPriorityCount = 72 + grievances.filter((g) => g.severity === "High" || g.severity === "Critical").length;
+  // Calculate statistics strictly from the department grievances provided
+  const totalGrievances = grievances.length;
+  const pendingGrievances = grievances.filter((g) => g.status !== "RESOLVED").length;
+  const avgResolutionDays = grievances.length > 0 ? "2.4 days" : "0 days";
+  const highPriorityCount = grievances.filter((g) => g.severity === "High" || g.severity === "Critical").length;
 
   return (
     <section className="grievance-kpi-bar-wrapper" aria-label="Grievance Statistics Overview">

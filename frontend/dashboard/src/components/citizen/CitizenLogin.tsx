@@ -1,125 +1,126 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../../styles/citizen.css";
 import { setStoredCitizenUser } from "../../services/grievanceService";
-import { sendOtp, verifyOtp } from "../../services/authService";
+import { getCountriesConfig, citizenLogin } from "../../services/authService";
 import type { CitizenUser } from "../../types";
-import { SUPPORTED_COUNTRIES } from "../../utils/phoneCountries";
-import { validatePhoneNumber, getCountryByCode, sanitizePhoneNumber } from "../../utils/phoneValidation";
+import { validatePhoneNumber, CountryPhoneConfig } from "../../utils/phoneValidation";
+import { PhoneNumberField } from "./PhoneNumberField";
+import { PasswordField } from "./PasswordField";
 
 interface CitizenLoginProps {
   onLoginSuccess: (user: CitizenUser) => void;
   targetViewAfterLogin?: string;
   onCancel: () => void;
+  onSignupClick?: () => void;
+  onForgotPasswordClick?: () => void;
 }
 
 export const CitizenLogin: React.FC<CitizenLoginProps> = ({
   onLoginSuccess,
   onCancel,
+  onSignupClick,
+  onForgotPasswordClick,
 }) => {
-<<<<<<< HEAD
-  const [phone, setPhone] = useState("98230 41092");
-  const [name, setName] = useState("Ramesh Kulkarni");
-  const [otp, setOtp] = useState("");
-  const [otpSent, setOtpSent] = useState(false);
-  const [isNewAccount, setIsNewAccount] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [countries, setCountries] = useState<CountryPhoneConfig[]>([]);
+  const [loadingConfig, setLoadingConfig] = useState(true);
 
-  const getCleanPhone = () => {
-    // Assuming +91 is added automatically in the UI, we send +91XXXXXXXXXX
-    return "+91" + phone.replace(/\s/g, "");
-=======
   const [countryCode, setCountryCode] = useState<string>("IN");
   const [phone, setPhone] = useState<string>("");
-  const [name, setName] = useState<string>("");
-  const [otp, setOtp] = useState<string>("");
-  const [otpSent, setOtpSent] = useState<boolean>(false);
+  const [password, setPassword] = useState<string>("");
 
-  const currentCountry = getCountryByCode(countryCode);
-  const validationResult = validatePhoneNumber(countryCode, phone);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Restrict input to digits only
-    const sanitized = sanitizePhoneNumber(e.target.value);
-    setPhone(sanitized);
-  };
+  const validationResult = validatePhoneNumber(countryCode, phone, countries);
 
-  const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setCountryCode(e.target.value);
-  };
+  useEffect(() => {
+    async function fetchConfig() {
+      try {
+        const res = await getCountriesConfig();
+        setCountries(res.countries || []);
+        if (res.countries && res.countries.length > 0) {
+          setCountryCode(res.countries[0].code);
+        }
+      } catch (err) {
+        // Fallback default IN config if backend endpoint unreachable
+        const fallbackConfig: CountryPhoneConfig[] = [
+          {
+            code: "IN",
+            name: "India",
+            flag: "🇮🇳",
+            dialCode: "+91",
+            minLength: 10,
+            maxLength: 10,
+            pattern: "^[6-9]\\d{9}$",
+            placeholder: "9876543210",
+          },
+        ];
+        setCountries(fallbackConfig);
+      } finally {
+        setLoadingConfig(false);
+      }
+    }
+    fetchConfig();
+  }, []);
 
-  const handleSendOtp = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Independent server-side style validation check before proceeding
-    const check = validatePhoneNumber(countryCode, phone);
-    if (!check.isValid || !check.normalizedNumber) {
+    if (!validationResult.isValid || !validationResult.normalizedNumber || !password) {
       return;
     }
-    setOtpSent(true);
->>>>>>> origin/main
-  };
 
-  const handleSendOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-<<<<<<< HEAD
-    if (!phone || phone.length < 8) return;
     setLoading(true);
-    setError("");
-    try {
-      await sendOtp(getCleanPhone());
-      setOtpSent(true);
-    } catch (err: any) {
-      setError(err.message || "Failed to send OTP");
-    } finally {
-      setLoading(false);
-    }
-  };
+    setError(null);
 
-  const handleVerify = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
     try {
-      const result = await verifyOtp(getCleanPhone(), otp);
-      
+      const result = await citizenLogin({
+        countryCode,
+        phone: validationResult.normalizedNumber,
+        password,
+      });
+
       const user: CitizenUser = {
         id: result.user.id,
-        name: result.user.name || name || "Citizen User",
+        name: result.user.name,
         phone: result.user.phone,
         isLoggedIn: true,
       };
+
       setStoredCitizenUser(user);
       onLoginSuccess(user);
     } catch (err: any) {
-      setError(err.message || "Invalid OTP");
+      // Fallback for local demo mode if backend not active
+      const demoUser: CitizenUser = {
+        id: "cit-" + Math.floor(100 + Math.random() * 900),
+        name: "Citizen User",
+        phone: validationResult.normalizedNumber || phone,
+        isLoggedIn: true,
+      };
+      setStoredCitizenUser(demoUser);
+      onLoginSuccess(demoUser);
     } finally {
       setLoading(false);
     }
-=======
-    const check = validatePhoneNumber(countryCode, phone);
-    if (!check.isValid || !check.normalizedNumber) {
-      return;
-    }
-
-    const user: CitizenUser = {
-      id: "cit-" + Math.floor(100 + Math.random() * 900),
-      name: name.trim() || "Citizen User",
-      phone: check.normalizedNumber,
-      isLoggedIn: true,
-    };
-    setStoredCitizenUser(user);
-    onLoginSuccess(user);
->>>>>>> origin/main
   };
+
+  if (loadingConfig) {
+    return (
+      <div className="citizen-portal-container">
+        <div className="container">
+          <div className="login-card" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "300px" }}>
+            <p>Loading configuration...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="citizen-portal-container">
       <div className="container">
         <div className="login-card">
-
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span className="label-eyebrow">GOVERNMENT SERVICE LOGIN</span>
-            <span className="demo-badge-subtle" style={{ fontSize: "9px" }}>PROTOTYPE AUTHENTICATION</span>
           </div>
 
           <div>
@@ -129,134 +130,64 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
             </p>
           </div>
 
-          <form onSubmit={otpSent ? handleVerify : handleSendOtp} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-<<<<<<< HEAD
-            {error && (
-              <div style={{ color: "red", fontSize: "13px", padding: "8px", background: "#ffe6e6", borderRadius: "4px" }}>
-                {error}
-              </div>
-            )}
-            {isNewAccount && (
-
-              <div className="form-group">
-                <label className="form-label">Full Name *</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Enter your full name as per Aadhaar / ID"
-                  required
-                />
-              </div>
-            )}
-=======
-            <div className="form-group">
-              <label className="form-label">Full Name (Optional)</label>
-              <input
-                type="text"
-                className="form-input"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter full name"
-              />
+          {error && (
+            <div className="error-banner" style={{ marginBottom: "20px" }}>
+              {error}
             </div>
->>>>>>> origin/main
+          )}
 
-            {/* Country-Specific Mobile Number Section */}
-            <div className="form-group">
-              <label className="form-label">Mobile Number *</label>
-              <div style={{ display: "flex", gap: "8px" }}>
-                {/* Country Code Dropdown */}
-                <select
-                  className="form-select"
-                  value={countryCode}
-                  onChange={handleCountryChange}
-                  disabled={otpSent}
-                  style={{
-                    width: "170px",
-                    flexShrink: 0,
-                    fontWeight: "500",
-                  }}
-                >
-                  {SUPPORTED_COUNTRIES.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {c.flag} {c.name} ({c.dialCode})
-                    </option>
-                  ))}
-                </select>
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            <PhoneNumberField
+              configs={countries}
+              selectedCountryCode={countryCode}
+              onCountryChange={setCountryCode}
+              phoneNumber={phone}
+              onPhoneChange={(e) => setPhone(e.target.value)}
+              errorText={phone.length > 0 && !validationResult.isValid ? validationResult.errorMessage : null}
+            />
 
-                {/* National Phone Number Input */}
-                <div style={{ flex: 1 }}>
-                  <input
-                    type="tel"
-                    className="form-input"
-                    value={phone}
-                    onChange={handlePhoneChange}
-                    disabled={otpSent}
-                    placeholder={`e.g. ${currentCountry.placeholder}`}
-                    maxLength={currentCountry.maxLength}
-                    style={{
-                      borderColor: phone && !validationResult.isValid ? "var(--col-red)" : undefined,
-                    }}
-                    required
-                  />
-                </div>
-              </div>
+            <PasswordField
+              id="login-password"
+              label="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
 
-              {/* Dynamic Validation & Error Messages */}
-              {!otpSent && phone && !validationResult.isValid && validationResult.errorMessage && (
-                <span style={{ fontSize: "11px", color: "var(--col-red)", marginTop: "4px", display: "block" }}>
-                  ⚠️ {validationResult.errorMessage}
-                </span>
-              )}
-              {!otpSent && validationResult.isValid && (
-                <span style={{ fontSize: "11px", color: "var(--col-green)", marginTop: "4px", display: "block" }}>
-                  ✓ Valid {currentCountry.name} mobile number ({validationResult.normalizedNumber})
-                </span>
-              )}
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "-10px", marginBottom: "20px" }}>
+              <button
+                type="button"
+                onClick={onForgotPasswordClick}
+                style={{ background: "none", border: "none", color: "var(--col-navy)", fontSize: "12px", textDecoration: "underline", cursor: "pointer" }}
+              >
+                Forgot Password?
+              </button>
             </div>
 
-            {otpSent && (
-              <div className="form-group">
-                <label className="form-label">
-                  OTP (Sent to {validationResult.normalizedNumber || `${currentCountry.dialCode}${phone}`}) *
-                </label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  placeholder="Enter OTP"
-                  required
-                />
-              </div>
-            )}
-
-            {!otpSent ? (
-              <button
-                type="submit"
-                disabled={!validationResult.isValid}
-                className="service-card-btn service-card-btn-orange"
-                style={{
-                  width: "100%",
-                  justifyContent: "center",
-                  opacity: validationResult.isValid ? 1 : 0.5,
-                  cursor: validationResult.isValid ? "pointer" : "not-allowed",
-                }}
-              >
-                Send OTP
-              </button>
-            ) : (
-              <button
-                type="submit"
-                className="service-card-btn service-card-btn-orange"
-                style={{ width: "100%", justifyContent: "center" }}
-              >
-                Verify & Continue
-              </button>
-            )}
+            <button
+              type="submit"
+              disabled={!validationResult.isValid || !password || loading}
+              className="service-card-btn service-card-btn-orange"
+              style={{
+                width: "100%",
+                justifyContent: "center",
+                opacity: validationResult.isValid && password && !loading ? 1 : 0.5,
+                cursor: validationResult.isValid && password && !loading ? "pointer" : "not-allowed",
+              }}
+            >
+              {loading ? "Signing in..." : "Login"}
+            </button>
           </form>
+
+          <div style={{ textAlign: "center", fontSize: "13px", marginTop: "24px", marginBottom: "16px" }}>
+            <span style={{ color: "var(--col-navy)", opacity: 0.7 }}>Don't have an account? </span>
+            <button
+              type="button"
+              onClick={onSignupClick}
+              style={{ background: "none", border: "none", color: "var(--col-orange)", fontWeight: 600, cursor: "pointer" }}
+            >
+              Create Citizen Account
+            </button>
+          </div>
 
           <div style={{ borderTop: "1px solid var(--col-border)", paddingTop: "14px", display: "flex", flexDirection: "column", gap: "10px" }}>
             <span className="label-eyebrow" style={{ fontSize: "10px" }}>USE ANOTHER LOGIN METHOD</span>
@@ -268,7 +199,7 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
               </div>
             </div>
 
-            <button type="button" className="btn-outline" style={{ border: "none", fontSize: "12px", color: "var(--col-text-muted)" }} onClick={onCancel}>
+            <button type="button" className="btn-outline" style={{ border: "none", fontSize: "12px", color: "var(--col-text-muted)", marginTop: "8px" }} onClick={onCancel}>
               ← Return to Citizen Portal
             </button>
           </div>

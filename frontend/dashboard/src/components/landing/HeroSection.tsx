@@ -3,10 +3,9 @@ import "./HeroSection.css";
 
 interface HeroSectionProps {
   onViewChange?: (view: "landing" | "dashboard" | "citizen" | "citizen-raise" | "citizen-track") => void;
-  onOpenDemoModal?: () => void;
 }
 
-export function HeroSection({ onViewChange, onOpenDemoModal }: HeroSectionProps) {
+export function HeroSection({ onViewChange }: HeroSectionProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
