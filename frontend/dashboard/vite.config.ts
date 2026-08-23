@@ -28,7 +28,7 @@ export default defineConfig(({ mode }) => ({
         // Split vendor bundles for better caching
         manualChunks: {
           react: ["react", "react-dom"],
-          maps: ["@react-google-maps/api"],
+          maps: ["@vis.gl/react-google-maps"],
         },
       },
     },

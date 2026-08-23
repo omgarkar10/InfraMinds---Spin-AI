@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { APIProvider } from "@vis.gl/react-google-maps";
 import { LanguageProvider } from "./hooks/useLanguage";
 import { Navbar } from "./components/navigation/Navbar";
 import { HeroSection } from "./components/landing/HeroSection";
@@ -175,11 +176,16 @@ function AppInner() {
   );
 }
 
+
 export function App() {
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? "";
+  
   return (
-    <LanguageProvider>
-      <AppInner />
-    </LanguageProvider>
+    <APIProvider apiKey={apiKey}>
+      <LanguageProvider>
+        <AppInner />
+      </LanguageProvider>
+    </APIProvider>
   );
 }
 
