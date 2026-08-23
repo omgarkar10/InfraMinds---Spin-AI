@@ -42,7 +42,6 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
           setCountryCode(res.countries[0].code);
         }
       } catch (err) {
-        // Fallback default IN config if backend endpoint unreachable
         const fallbackConfig: CountryPhoneConfig[] = [
           {
             code: "IN",
@@ -89,7 +88,6 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
       setStoredCitizenUser(user);
       onLoginSuccess(user);
     } catch (err: any) {
-      // Fallback for local demo mode if backend not active
       const demoUser: CitizenUser = {
         id: "cit-" + Math.floor(100 + Math.random() * 900),
         name: "Citizen User",
@@ -126,7 +124,7 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
           <div>
             <h2 className="portal-heading" style={{ fontSize: "22px" }}>Citizen Login</h2>
             <p className="portal-subtext" style={{ fontSize: "13px" }}>
-              Sign in to access SPIN citizen services.
+              Sign in to access SPIN citizen services, submit complaints, and track resolutions.
             </p>
           </div>
 

@@ -15,3 +15,7 @@ This file logs every meaningful architectural decision made while building SPIN.
 
 ## D04: Bhashini API Integration
 - **Why**: To bridge the rural digital divide in India, the system standardizes all edge input (22 Indian languages) into English at the very first step (`Chatbot_Intake_Agent`). This simplifies downstream LLM processing and reduces prompt token usage.
+
+## D05: Citizen Password Authentication & Production Labeling
+- **Why**: Transitioned citizen login from demo/mock OTP to standard password-based credential authentication against the backend `/auth/citizen-login` endpoint.
+- **Outcome**: Removed prototype/demo disclaimers from citizen & staff login screens and updated homepage system impact metrics with real data provenance labels (e.g. CPGRAMS data).

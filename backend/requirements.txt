@@ -15,6 +15,7 @@ pyjwt>=2.8.0
 passlib>=1.7.4
 bcrypt>=3.2.2
 python-multipart>=0.0.9
+twilio>=9.0.0
 pandas>=2.0.0
 openpyxl>=3.1.0
 xlrd>=2.0.1

@@ -9,6 +9,38 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      /* HIDE GOOGLE TRANSLATE UI & TOOLBAR BANNERS */
+      .goog-te-banner-frame,
+      .goog-te-banner,
+      .skiptranslate,
+      iframe.goog-te-banner-frame,
+      iframe.skiptranslate,
+      iframe[id^=":1."],
+      iframe[id^=":2."],
+      .VIpgJd-Z44wUd-aEsB2c-bF92uf,
+      #goog-gt-tt,
+      .goog-te-balloon-frame,
+      #google_translate_element {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        height: 0 !important;
+        width: 0 !important;
+        pointer-events: none !important;
+      }
+      
+      body {
+        top: 0px !important;
+        position: static !important;
+      }
+      
+      .goog-text-highlight {
+        background: none !important;
+        box-shadow: none !important;
+        pointer-events: none !important;
+      }
+    </style>
   </head>
   <body>
     <div id="google_translate_element" style="display:none;"></div>

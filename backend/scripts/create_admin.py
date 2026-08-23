@@ -30,7 +30,7 @@ async def create_admin():
             email="admin@government.gov.in",
             password_hash=pwd_context.hash("SecureSPIN2026!"),
             name="System Administrator",
-            department="IT Operations",
+            department="Municipal Infrastructure & Public works",
             role="admin",
             is_verified=True
         )

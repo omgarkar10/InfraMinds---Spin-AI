@@ -29,7 +29,6 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel
     setError("");
 
     try {
-      // Try backend authentication
       const result = await staffLogin(email, password);
 
       const user: StaffUser = {
@@ -43,7 +42,6 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel
       };
       performLoginWithUser(user);
     } catch (err: any) {
-      // Fallback for local demo authentication mode if backend is unreachable or credentials local
       const empId = `EMP-${Math.floor(10000 + Math.random() * 90000)}`;
       const fallbackUser: StaffUser = {
         id: `staff-${Date.now()}`,
@@ -60,7 +58,6 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel
     }
   };
 
-  // Quick preset demo login for easy testing across departments
   const handleQuickDemoLogin = (dept: string, roleName: StaffUser["role"], officerName: string) => {
     const demoUser: StaffUser = {
       id: `staff-demo-${dept.toLowerCase().replace(/[^a-z0-9]/g, "-")}`,
@@ -145,7 +142,6 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel
             </button>
           </form>
 
-          {/* Quick Department Switcher for Demo & Testing */}
           <div style={{ marginTop: "16px", paddingTop: "12px", borderTop: "1px dashed var(--col-border)" }}>
             <span className="label-eyebrow" style={{ fontSize: "10px", marginBottom: "8px", display: "block" }}>
               DEMO PRESET ACCOUNTS (ONE-CLICK DEPARTMENT SWITCH)
