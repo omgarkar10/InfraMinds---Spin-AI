@@ -17,15 +17,28 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
   const [helpOpen, setHelpOpen] = useState(false);
   const { country, setCountry } = useLanguage();
 
-  const filteredCountries = useMemo(() => {
-    const query = languageQuery.trim().toLocaleLowerCase();
-    if (!query) return COUNTRIES;
+  const languageOptions = useMemo(() => {
+    const grouped = new Map<string, { country: typeof COUNTRIES[number]; regions: string[] }>();
+    COUNTRIES.forEach((option) => {
+      const existing = grouped.get(option.language);
+      if (existing) {
+        existing.regions.push(option.name);
+      } else {
+        grouped.set(option.language, { country: option, regions: [option.name] });
+      }
+    });
+    return Array.from(grouped.values());
+  }, []);
 
-    return COUNTRIES.filter((option) =>
-      [option.language, option.languageNative, option.name, option.code]
+  const filteredLanguages = useMemo(() => {
+    const query = languageQuery.trim().toLocaleLowerCase();
+    if (!query) return languageOptions;
+
+    return languageOptions.filter(({ country: option, regions }) =>
+      [option.language, option.languageNative, option.code, ...regions]
         .some((value) => value.toLocaleLowerCase().includes(query))
     );
-  }, [languageQuery]);
+  }, [languageOptions, languageQuery]);
 
   const SECTIONS = [
     { id: "overview", label: "Overview" },
@@ -81,7 +94,7 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
 
             <div className="gov-top-bar-right">
               {/* Language / Country Selector */}
-              <div className="navbar-lang-wrapper">
+              <div className="navbar-lang-wrapper notranslate" translate="no">
                 <button
                   className="navbar-lang-btn"
                   onClick={() => { setLangOpen(!langOpen); setMenuOpen(false); }}
@@ -124,27 +137,27 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
                         </div>
                       </div>
                       <div className="navbar-lang-options" role="none">
-                        {filteredCountries.map((c) => (
+                        {filteredLanguages.map(({ country: c, regions }) => (
                           <button
-                            key={c.code}
-                            className={`navbar-lang-option ${c.code === country.code ? "active" : ""}`}
+                            key={c.language}
+                            className={`navbar-lang-option ${c.language === country.language ? "active" : ""}`}
                             onClick={() => handleSelectCountry(c.code)}
                             role="menuitem"
                           >
                             <span className="navbar-lang-option-flag">{c.flag}</span>
                             <div className="navbar-lang-option-text">
                               <span className="navbar-lang-option-country">{c.language}</span>
-                              <span className="navbar-lang-option-lang">{c.languageNative} · {c.name}</span>
+                              <span className="navbar-lang-option-lang">{c.languageNative} · {regions.join(", ")}</span>
                             </div>
                             {c.status === "proposed" && (
                               <span className="navbar-lang-option-badge">Proposed</span>
                             )}
-                            {c.code === country.code && (
+                            {c.language === country.language && (
                               <span className="navbar-lang-option-check">✓</span>
                             )}
                           </button>
                         ))}
-                        {filteredCountries.length === 0 && (
+                        {filteredLanguages.length === 0 && (
                           <p className="navbar-lang-empty">No matching language or state.</p>
                         )}
                       </div>
