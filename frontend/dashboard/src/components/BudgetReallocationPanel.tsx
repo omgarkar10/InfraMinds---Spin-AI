@@ -42,19 +42,30 @@ export function BudgetReallocationPanel({
     }
   };
 
+  const hasRedZone = redZoneDomain && redZoneDomain !== "None";
+
   return (
     <aside className="panel budget-panel">
-      <h2>{t.dash_budget_title}</h2>
-
-      {redZoneDomain && (
-        <p className="red-zone-hint">
-          SPIN Signal: <strong>{redZoneDomain}</strong> demand elevated in identified zones.
-        </p>
-      )}
+      <div className="panel-header">
+        <h2 className="panel-title">BUDGET REALLOCATION RECOMMENDATIONS</h2>
+        <span className="panel-badge">FISCAL MODEL</span>
+      </div>
 
       <p className="spin-signal-note">
         Adjustments below are AI-generated recommendations. Final approval remains with policymakers.
       </p>
+
+      {hasRedZone && (
+        <div className="why-recommendation-box">
+          <div className="why-header">
+            <span className="why-icon">💡</span>
+            <span className="why-title">WHY THIS RECOMMENDATION?</span>
+          </div>
+          <p className="why-desc">
+            Spatial correlation & civic demand elevated for <strong>{redZoneDomain}</strong> in identified red zones.
+          </p>
+        </div>
+      )}
 
       <div className="slider-list">
         {allocations.map((item) => {
@@ -62,7 +73,7 @@ export function BudgetReallocationPanel({
           return (
             <div key={item.domain} className="slider-row">
               <div className="slider-header">
-                <span>{item.domain}</span>
+                <span className="domain-name">{item.domain}</span>
                 <span className="budget-value">₹{item.proposed_cr} Cr</span>
               </div>
               <input
@@ -75,9 +86,11 @@ export function BudgetReallocationPanel({
                 className="budget-slider"
                 disabled={approved}
               />
-              <span className={`budget-delta ${delta > 0 ? "positive" : ""}`}>
-                {delta >= 0 ? "+" : ""}{delta} Cr from current ₹{item.current_cr} Cr
-              </span>
+              <div className="slider-footer">
+                <span className={`budget-delta ${delta > 0 ? "positive" : delta < 0 ? "negative" : ""}`}>
+                  {delta >= 0 ? "+" : ""}{delta} Cr from current ₹{item.current_cr} Cr
+                </span>
+              </div>
             </div>
           );
         })}
@@ -94,9 +107,11 @@ export function BudgetReallocationPanel({
           ? "Submitting…"
           : "Submit Recommendation for Approval"}
       </button>
+
       {!approved && (
         <p className="approval-note">{t.trans_disclaimer}</p>
       )}
     </aside>
   );
 }
+

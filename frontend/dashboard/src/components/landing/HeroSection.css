@@ -113,6 +113,29 @@
   background: var(--col-surface);
 }
 
+/* Citizen Highlights */
+.hero-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.highlight-item {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--col-text-mid);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.highlight-check {
+  color: var(--col-orange);
+  font-weight: 800;
+}
+
+
 /* Pipeline Flow Strip */
 .hero-pipeline {
   display: flex;

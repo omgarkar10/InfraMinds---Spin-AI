@@ -6,7 +6,7 @@ export interface RedZone {
   district: string;
 }
 
-export type InfrastructureDomain = "Water" | "Road" | "Power" | "Rail" | "Telecom";
+export type InfrastructureDomain = "Water" | "Road" | "Power" | "Rail" | "Telecom" | "None";
 
 export interface WeeklyStats {
   district: string;

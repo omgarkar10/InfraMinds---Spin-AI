@@ -3,6 +3,8 @@ import "../../styles/citizen.css";
 import { setStoredCitizenUser } from "../../services/grievanceService";
 import { sendOtp, verifyOtp } from "../../services/authService";
 import type { CitizenUser } from "../../types";
+import { SUPPORTED_COUNTRIES } from "../../utils/phoneCountries";
+import { validatePhoneNumber, getCountryByCode, sanitizePhoneNumber } from "../../utils/phoneValidation";
 
 interface CitizenLoginProps {
   onLoginSuccess: (user: CitizenUser) => void;
@@ -14,6 +16,7 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
   onLoginSuccess,
   onCancel,
 }) => {
+<<<<<<< HEAD
   const [phone, setPhone] = useState("98230 41092");
   const [name, setName] = useState("Ramesh Kulkarni");
   const [otp, setOtp] = useState("");
@@ -25,10 +28,40 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
   const getCleanPhone = () => {
     // Assuming +91 is added automatically in the UI, we send +91XXXXXXXXXX
     return "+91" + phone.replace(/\s/g, "");
+=======
+  const [countryCode, setCountryCode] = useState<string>("IN");
+  const [phone, setPhone] = useState<string>("");
+  const [name, setName] = useState<string>("");
+  const [otp, setOtp] = useState<string>("");
+  const [otpSent, setOtpSent] = useState<boolean>(false);
+
+  const currentCountry = getCountryByCode(countryCode);
+  const validationResult = validatePhoneNumber(countryCode, phone);
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Restrict input to digits only
+    const sanitized = sanitizePhoneNumber(e.target.value);
+    setPhone(sanitized);
+  };
+
+  const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setCountryCode(e.target.value);
+  };
+
+  const handleSendOtp = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Independent server-side style validation check before proceeding
+    const check = validatePhoneNumber(countryCode, phone);
+    if (!check.isValid || !check.normalizedNumber) {
+      return;
+    }
+    setOtpSent(true);
+>>>>>>> origin/main
   };
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+<<<<<<< HEAD
     if (!phone || phone.length < 8) return;
     setLoading(true);
     setError("");
@@ -62,6 +95,21 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
     } finally {
       setLoading(false);
     }
+=======
+    const check = validatePhoneNumber(countryCode, phone);
+    if (!check.isValid || !check.normalizedNumber) {
+      return;
+    }
+
+    const user: CitizenUser = {
+      id: "cit-" + Math.floor(100 + Math.random() * 900),
+      name: name.trim() || "Citizen User",
+      phone: check.normalizedNumber,
+      isLoggedIn: true,
+    };
+    setStoredCitizenUser(user);
+    onLoginSuccess(user);
+>>>>>>> origin/main
   };
 
   return (
@@ -77,11 +125,12 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
           <div>
             <h2 className="portal-heading" style={{ fontSize: "22px" }}>Citizen Login</h2>
             <p className="portal-subtext" style={{ fontSize: "13px" }}>
-              Sign in to access SPIN citizen services, submit complaints, and track resolutions.
+              Sign in to access SPIN citizen services.
             </p>
           </div>
 
           <form onSubmit={otpSent ? handleVerify : handleSendOtp} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+<<<<<<< HEAD
             {error && (
               <div style={{ color: "red", fontSize: "13px", padding: "8px", background: "#ffe6e6", borderRadius: "4px" }}>
                 {error}
@@ -101,64 +150,122 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
                 />
               </div>
             )}
+=======
+            <div className="form-group">
+              <label className="form-label">Full Name (Optional)</label>
+              <input
+                type="text"
+                className="form-input"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter full name"
+              />
+            </div>
+>>>>>>> origin/main
 
+            {/* Country-Specific Mobile Number Section */}
             <div className="form-group">
               <label className="form-label">Mobile Number *</label>
               <div style={{ display: "flex", gap: "8px" }}>
-                <span className="form-input" style={{ width: "64px", textAlign: "center", background: "var(--col-panel)" }}>+91</span>
-                <input
-                  type="tel"
-                  className="form-input"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Enter 10-digit mobile number"
-                  required
-                />
+                {/* Country Code Dropdown */}
+                <select
+                  className="form-select"
+                  value={countryCode}
+                  onChange={handleCountryChange}
+                  disabled={otpSent}
+                  style={{
+                    width: "170px",
+                    flexShrink: 0,
+                    fontWeight: "500",
+                  }}
+                >
+                  {SUPPORTED_COUNTRIES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.flag} {c.name} ({c.dialCode})
+                    </option>
+                  ))}
+                </select>
+
+                {/* National Phone Number Input */}
+                <div style={{ flex: 1 }}>
+                  <input
+                    type="tel"
+                    className="form-input"
+                    value={phone}
+                    onChange={handlePhoneChange}
+                    disabled={otpSent}
+                    placeholder={`e.g. ${currentCountry.placeholder}`}
+                    maxLength={currentCountry.maxLength}
+                    style={{
+                      borderColor: phone && !validationResult.isValid ? "var(--col-red)" : undefined,
+                    }}
+                    required
+                  />
+                </div>
               </div>
+
+              {/* Dynamic Validation & Error Messages */}
+              {!otpSent && phone && !validationResult.isValid && validationResult.errorMessage && (
+                <span style={{ fontSize: "11px", color: "var(--col-red)", marginTop: "4px", display: "block" }}>
+                  ⚠️ {validationResult.errorMessage}
+                </span>
+              )}
+              {!otpSent && validationResult.isValid && (
+                <span style={{ fontSize: "11px", color: "var(--col-green)", marginTop: "4px", display: "block" }}>
+                  ✓ Valid {currentCountry.name} mobile number ({validationResult.normalizedNumber})
+                </span>
+              )}
             </div>
 
             {otpSent && (
               <div className="form-group">
-                <label className="form-label">Enter OTP (Sent to +91 {phone}) *</label>
+                <label className="form-label">
+                  OTP (Sent to {validationResult.normalizedNumber || `${currentCountry.dialCode}${phone}`}) *
+                </label>
                 <input
                   type="text"
                   className="form-input"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
-                  placeholder="Enter 4-digit OTP (e.g. 1234)"
+                  placeholder="Enter OTP"
                   required
                 />
-                <span className="body-sm" style={{ color: "var(--col-green)", fontSize: "11px" }}>
-                  ✓ OTP dispatched successfully. Use test OTP: 1234
-                </span>
               </div>
             )}
 
             {!otpSent ? (
-              <button type="submit" className="service-card-btn service-card-btn-orange" style={{ width: "100%", justifyContent: "center" }}>
-                Send OTP →
+              <button
+                type="submit"
+                disabled={!validationResult.isValid}
+                className="service-card-btn service-card-btn-orange"
+                style={{
+                  width: "100%",
+                  justifyContent: "center",
+                  opacity: validationResult.isValid ? 1 : 0.5,
+                  cursor: validationResult.isValid ? "pointer" : "not-allowed",
+                }}
+              >
+                Send OTP
               </button>
             ) : (
-              <button type="submit" className="service-card-btn service-card-btn-orange" style={{ width: "100%", justifyContent: "center" }}>
-                Verify & Continue to Service →
+              <button
+                type="submit"
+                className="service-card-btn service-card-btn-orange"
+                style={{ width: "100%", justifyContent: "center" }}
+              >
+                Verify & Continue
               </button>
             )}
           </form>
 
           <div style={{ borderTop: "1px solid var(--col-border)", paddingTop: "14px", display: "flex", flexDirection: "column", gap: "10px" }}>
-            <button
-              type="button"
-              className="btn-outline"
-              style={{ fontSize: "11px", justifyContent: "center" }}
-              onClick={() => setIsNewAccount(!isNewAccount)}
-            >
-              {isNewAccount ? "Already registered? Sign in" : "New user? Create a new account"}
-            </button>
+            <span className="label-eyebrow" style={{ fontSize: "10px" }}>USE ANOTHER LOGIN METHOD</span>
 
-            {/* Alternative Prototype Integrations */}
-            <div style={{ background: "var(--col-panel)", padding: "10px", borderRadius: "6px", fontSize: "11px", color: "var(--col-text-muted)", display: "flex", flexDirection: "column", gap: "4px" }}>
-              <span className="label-eyebrow" style={{ fontSize: "9px" }}>ALTERNATIVE IDENTITY INTEGRATIONS (PROTOTYPE)</span>
-              <span>🔒 Login via DigiLocker / Aadhaar identity verification</span>
+            <div style={{ background: "var(--col-panel)", padding: "12px", borderRadius: "6px", fontSize: "12px", color: "var(--col-text-mid)", display: "flex", flexDirection: "column", gap: "4px" }}>
+              <div style={{ fontWeight: "600", color: "var(--col-navy)" }}>🆔 Aadhaar / DigiLocker Integration</div>
+              <div style={{ fontSize: "11px", color: "var(--col-text-muted)" }}>
+                Future Prototype Option — Identity integration coming in future release (Not active in demo).
+              </div>
             </div>
 
             <button type="button" className="btn-outline" style={{ border: "none", fontSize: "12px", color: "var(--col-text-muted)" }} onClick={onCancel}>

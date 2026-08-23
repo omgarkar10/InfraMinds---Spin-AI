@@ -33,14 +33,20 @@ export function PolicyDashboard() {
 
   return (
     <div className="dashboard">
+      {/* Policymaker Operational Header */}
       <header className="dashboard-header">
-        <div>
+        <div className="dashboard-title-group">
           <h1>POLICYMAKER / LIVE INTELLIGENCE</h1>
+          <span className="dashboard-subtitle">
+            Public Infrastructure Intelligence Command Center
+          </span>
         </div>
+
         <div className="dashboard-status">
           <span className="status-dot" />
           SYSTEM OPERATIONAL
         </div>
+
         <div className="header-controls">
           <select
             value={districtFilter}
@@ -53,33 +59,76 @@ export function PolicyDashboard() {
           >
             <option value="">All Districts</option>
             {districts.map((d) => (
-              <option key={d} value={d}>{d}</option>
+              <option key={d} value={d}>
+                {d}
+              </option>
             ))}
           </select>
-          <button className="refresh-btn" onClick={() => refresh(districtFilter || undefined)}>
-            Refresh
+          <button
+            className="refresh-btn"
+            onClick={() => refresh(districtFilter || undefined)}
+            disabled={loading}
+          >
+            {loading ? "Refreshing..." : "Refresh"}
           </button>
         </div>
       </header>
 
+      {/* Error Recovery Banner */}
       {error && (
         <div className="error-banner" role="alert">
-          {error}
+          <div className="error-banner-content">
+            <strong>LIVE INTELLIGENCE UNAVAILABLE</strong>
+            <span> — The dashboard could not retrieve the latest intelligence feed.</span>
+          </div>
+          <button className="error-retry-btn" onClick={() => refresh(districtFilter || undefined)}>
+            Retry
+          </button>
         </div>
       )}
 
+      {/* Main Grid: GIS Map Container + Right Intelligence Panels */}
       <main className="dashboard-main">
         <section className="map-section">
+          {/* Top Surrounding Overlay */}
           <div className="map-label">
-            <span className="red-dot" />
-            Red Zones — High Complaint Density
+            <div className="map-label-left">
+              <span className="red-dot" />
+              <span>LIVE CIVIC SIGNALS</span>
+              <span className="map-sub-tag">SPATIAL FEED</span>
+            </div>
+            <div className="map-label-right">
+              {districtFilter ? (
+                <span className="district-tag">District: {districtFilter}</span>
+              ) : (
+                <span className="district-tag">All Districts Coverage</span>
+              )}
+            </div>
           </div>
-          <HeatMap
-            redZones={redZones}
-            selectedDistrict={districtFilter || undefined}
-          />
+
+          {/* Locked Map Component Area */}
+          <div className="map-wrapper" style={{ position: "relative", flex: 1, minHeight: "520px" }}>
+            <HeatMap
+              redZones={redZones}
+              selectedDistrict={districtFilter || undefined}
+            />
+
+            {/* Bottom-Left Map Legend Overlay (Surrounding UI only) */}
+            <div className="map-legend-overlay">
+              <div className="legend-title">GIS LAYER LEGEND</div>
+              <div className="legend-item">
+                <span className="legend-dot red" />
+                <span>Red Zone Cluster — High Severity</span>
+              </div>
+              <div className="legend-item">
+                <span className="legend-dot blue" />
+                <span>Verified Civic Grievance Location</span>
+              </div>
+            </div>
+          </div>
         </section>
 
+        {/* Right Panel Stack */}
         <section className="side-panels">
           <ExecutiveSummaryPanel summary={summary} loading={loading} />
           <BudgetReallocationPanel
@@ -91,3 +140,4 @@ export function PolicyDashboard() {
     </div>
   );
 }
+
