@@ -207,3 +207,62 @@ async def staff_login(req: StaffLoginRequest, db: AsyncSession = Depends(get_db)
             "role":       user.role,
         },
     }
+
+
+# ──────────────────────────────────────────────
+# Citizen credential + JWT endpoint
+# ──────────────────────────────────────────────
+
+class CitizenLoginRequest(BaseModel):
+    identifier: str     # mobile number or email
+    password: str
+
+@router.post("/citizen-login")
+async def citizen_login(req: CitizenLoginRequest, db: AsyncSession = Depends(get_db)):
+    """
+    Citizen Portal login – password-based authentication.
+    Validates mobile number or email + password. Auto-creates account if not found.
+    """
+    stmt = select(User).where(
+        (User.email == req.identifier) | (User.phone_number == req.identifier)
+    )
+    result = await db.execute(stmt)
+    user = result.scalars().first()
+
+    if not user:
+        # Auto-create citizen user with hashed password
+        is_email = "@" in req.identifier
+        user = User(
+            email=req.identifier if is_email else None,
+            phone_number=req.identifier if not is_email else None,
+            password_hash=pwd_context.hash(req.password),
+            name="Citizen User",
+            role="citizen",
+            is_verified=True
+        )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+    else:
+        if user.password_hash and not pwd_context.verify(req.password, user.password_hash):
+            raise HTTPException(status_code=401, detail="Invalid credentials.")
+        elif not user.password_hash:
+            # Set initial password
+            user.password_hash = pwd_context.hash(req.password)
+            await db.commit()
+            await db.refresh(user)
+
+    token = create_access_token({"sub": user.id, "role": user.role})
+
+    return {
+        "status": "success",
+        "access_token": token,
+        "token_type": "bearer",
+        "user": {
+            "id":    user.id,
+            "phone": user.phone_number or req.identifier,
+            "email": user.email,
+            "name":  user.name or "Citizen User",
+            "role":  user.role,
+        },
+    }

@@ -6,7 +6,7 @@ interface HeroSectionProps {
   onOpenDemoModal?: () => void;
 }
 
-export function HeroSection({ onViewChange, onOpenDemoModal }: HeroSectionProps) {
+export function HeroSection({ onViewChange }: HeroSectionProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
