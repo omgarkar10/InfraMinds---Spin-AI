@@ -13,18 +13,18 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SHARED_PASSWORD = "SecureSPIN2026!"
 
 STAFF_ACCOUNTS = [
-    ("water.supply@government.gov.in", "Water Supply", "Water Supply Officer"),
-    ("electricity@government.gov.in", "Electricity", "Electricity Officer"),
-    ("roads.transport@government.gov.in", "Roads & Transport", "Roads & Transport Officer"),
-    ("sanitation@government.gov.in", "Sanitation", "Sanitation Officer"),
-    ("public.health@government.gov.in", "Public Health", "Public Health Officer"),
-    ("police.law@government.gov.in", "Police / Law & Order", "Police / Law & Order Officer"),
-    ("public.transport@government.gov.in", "Public Transport", "Public Transport Officer"),
-    ("education@government.gov.in", "Education", "Education Officer"),
-    ("housing.urban@government.gov.in", "Housing & Urban Development", "Housing & Urban Development Officer"),
-    ("environment.forestry@government.gov.in", "Environment & Forestry", "Environment & Forestry Officer"),
-    ("social.welfare@government.gov.in", "Social Welfare & Pensions", "Social Welfare & Pensions Officer"),
-    ("general.administration@government.gov.in", "General Administration", "General Administration Officer"),
+    ("water.supply", "Water Supply"),
+    ("electricity", "Electricity"),
+    ("roads.transport", "Roads & Transport"),
+    ("sanitation", "Sanitation"),
+    ("public.health", "Public Health"),
+    ("police.law", "Police / Law & Order"),
+    ("public.transport", "Public Transport"),
+    ("education", "Education"),
+    ("housing.urban", "Housing & Urban Development"),
+    ("environment.forestry", "Environment & Forestry"),
+    ("social.welfare", "Social Welfare & Pensions"),
+    ("general.administration", "General Administration"),
 ]
 
 async def create_admin():
@@ -41,7 +41,12 @@ async def create_admin():
             ("admin@government.gov.in", "General Administration", "System Administrator", "admin"),
             ("ministry@nic.in", "Ministry of Housing & Urban Affairs (MoHUA)", "Dr. R. K. Sharma (Joint Secretary)", "policymaker"),
         ]
-        accounts.extend((email, department, name, "department officer") for email, department, name in STAFF_ACCOUNTS)
+        for email_prefix, department in STAFF_ACCOUNTS:
+            accounts.extend([
+                (f"{email_prefix}.officer@government.gov.in", department, f"{department} Officer", "department officer"),
+                (f"{email_prefix}.field@government.gov.in", department, f"{department} Field Inspector", "staff"),
+                (f"{email_prefix}.policy@government.gov.in", department, f"{department} Policymaker", "policymaker"),
+            ])
 
         for email, department, name, role in accounts:
             stmt = select(User).where(User.email == email)
