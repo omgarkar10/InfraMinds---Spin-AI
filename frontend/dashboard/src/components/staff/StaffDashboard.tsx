@@ -212,9 +212,9 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
               <span className="label-eyebrow">CITIZEN COMPLAINT & EVIDENCE</span>
               <p className="body-md" style={{ color: "var(--col-navy)" }}>"{selectedGrievance.description}"</p>
               <div style={{ fontSize: "12px", color: "var(--col-text-mid)" }}>
-                <strong>Complainant:</strong> {selectedGrievance.citizenName} ({selectedGrievance.citizenPhone})
+                <strong>Complainant:</strong> Citizen (Identity Protected)
                 <br />
-                <strong>Address:</strong> {selectedGrievance.location.address}
+                <strong>Address:</strong> {selectedGrievance.location.address || selectedGrievance.location.district}
               </div>
             </div>
 

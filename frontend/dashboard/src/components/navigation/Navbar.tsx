@@ -13,12 +13,10 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
   const { country, setCountry } = useLanguage();
 
   const SECTIONS = [
-    { id: "overview",      label: "Overview"             },
-    { id: "how-it-works", label: "How SPIN Works"       },
-    { id: "intelligence",  label: "Data & AI"            },
-    { id: "spatial",       label: "Spatial Intelligence" },
-    { id: "architecture", label: "Global Architecture"  },
-    { id: "live",          label: "Live Intelligence"    },
+    { id: "overview", label: "Overview" },
+    { id: "why-spin", label: "Why SPIN" },
+    { id: "how-it-helps", label: "How It Helps You" },
+    { id: "categories", label: "What You Can Report" },
   ];
 
   const scrollTo = (id: string) => {
@@ -143,12 +141,6 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
             >
               Citizen Portal
             </button>
-            <button
-              className={`navbar-cta navbar-cta-primary ${view === "dashboard" ? "active" : ""}`}
-              onClick={() => onViewChange(view === "dashboard" ? "landing" : "dashboard")}
-            >
-              Policymaker Dashboard
-            </button>
           </div>
 
           {/* Mobile Hamburger */}
@@ -169,9 +161,6 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
 
             <button className="navbar-mobile-link" onClick={() => { onViewChange("citizen"); setMenuOpen(false); }}>
               Citizen Portal
-            </button>
-            <button className="navbar-mobile-link navbar-mobile-cta" onClick={() => { onViewChange("dashboard"); setMenuOpen(false); }}>
-              Policymaker Dashboard
             </button>
           </div>
         )}

@@ -3,16 +3,10 @@ import { APIProvider } from "@vis.gl/react-google-maps";
 import { LanguageProvider } from "./hooks/useLanguage";
 import { Navbar } from "./components/navigation/Navbar";
 import { HeroSection } from "./components/landing/HeroSection";
-import { ProblemSection } from "./components/landing/ProblemSection";
-import { TransformationSection } from "./components/landing/TransformationSection";
-import { ProcessSection } from "./components/landing/ProcessSection";
-import { EcosystemSection } from "./components/landing/EcosystemSection";
-import { AgentsSection } from "./components/landing/AgentsSection";
-import { GeospatialSection } from "./components/landing/GeospatialSection";
-import { FeedbackLoopSection } from "./components/landing/FeedbackLoopSection";
-import { PredictiveSection } from "./components/landing/PredictiveSection";
-import { BricsSection } from "./components/landing/BricsSection";
-import { ImpactSection } from "./components/landing/ImpactSection";
+import { WhySpinSection } from "./components/landing/WhySpinSection";
+import { HowItHelpsSection } from "./components/landing/HowItHelpsSection";
+import { WhatYouCanReportSection } from "./components/landing/WhatYouCanReportSection";
+import { FinalCtaSection } from "./components/landing/FinalCtaSection";
 import { Footer } from "./components/landing/Footer";
 import { DemoModal } from "./components/landing/DemoModal";
 import { PolicyDashboard } from "./components/PolicyDashboard";
@@ -25,7 +19,7 @@ import { TrackGrievances } from "./components/citizen/TrackGrievances";
 import { GrievanceDetail } from "./components/citizen/GrievanceDetail";
 import { StaffLogin } from "./components/staff/StaffLogin";
 import { StaffDashboard } from "./components/staff/StaffDashboard";
-import { getStoredCitizenUser, getStoredStaffUser } from "./services/grievanceService";
+import { getStoredCitizenUser, getStoredStaffUser, clearStoredCitizenUser } from "./services/grievanceService";
 import type { CitizenUser, StaffUser } from "./types";
 
 export type ViewState =
@@ -42,7 +36,7 @@ export type ViewState =
 function AppInner() {
   const [view, setView] = useState<ViewState>("landing");
   const [targetViewAfterLogin, setTargetViewAfterLogin] = useState<string>("citizen-raise");
-  const [selectedGrievanceId, setSelectedGrievanceId] = useState<string>("SPIN-2026-004821");
+  const [selectedGrievanceId, setSelectedGrievanceId] = useState<string>("");
 
   const [citizenUser, setCitizenUser] = useState<CitizenUser>(getStoredCitizenUser());
   const [staffUser, setStaffUser] = useState<StaffUser>(getStoredStaffUser());
@@ -52,6 +46,13 @@ function AppInner() {
   const handleNavigate = (newView: string, extraId?: string) => {
     if (extraId) {
       setSelectedGrievanceId(extraId);
+    }
+
+    if (newView === "citizen-logout") {
+      clearStoredCitizenUser();
+      setCitizenUser({ id: "cit-001", name: "", phone: "", isLoggedIn: false });
+      setView("citizen-login");
+      return;
     }
 
     // Require Citizen Login BEFORE "Raise Grievance" or "Track Grievances"
@@ -159,16 +160,10 @@ function AppInner() {
             onViewChange={(v) => handleNavigate(v)}
             onOpenDemoModal={() => setIsDemoModalOpen(true)}
           />
-          <ProblemSection />
-          <TransformationSection />
-          <ProcessSection />
-          <EcosystemSection />
-          <AgentsSection />
-          <GeospatialSection />
-          <FeedbackLoopSection />
-          <PredictiveSection />
-          <BricsSection />
-          <ImpactSection />
+          <WhySpinSection />
+          <HowItHelpsSection />
+          <WhatYouCanReportSection />
+          <FinalCtaSection onViewChange={(v) => handleNavigate(v)} />
           <Footer onViewChange={(v) => handleNavigate(v)} />
         </main>
       )}

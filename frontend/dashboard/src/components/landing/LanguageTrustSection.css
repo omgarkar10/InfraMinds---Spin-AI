@@ -1,0 +1,61 @@
+.language-trust-section {
+  padding: 4.5rem 0;
+  background: var(--surface-raised, #ffffff);
+  border-bottom: 1px solid var(--border-light, #e2e8f0);
+}
+
+.language-trust-card {
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.04) 0%, rgba(15, 23, 42, 0.03) 100%);
+  border: 1px solid rgba(2, 132, 199, 0.2);
+  border-radius: 20px;
+  padding: 3rem 2.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 2.5rem;
+}
+
+.trust-icon {
+  font-size: 3.5rem;
+  line-height: 1;
+}
+
+.trust-content {
+  flex: 1;
+}
+
+.trust-heading {
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.trust-desc {
+  color: var(--text-secondary, #475569);
+  max-width: 720px;
+  line-height: 1.65;
+  margin-bottom: 1.75rem;
+}
+
+.languages-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.lang-chip {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--col-navy, #0f172a);
+  background: var(--surface-raised, #ffffff);
+  border: 1px solid var(--border-light, #cbd5e1);
+  padding: 0.4rem 0.85rem;
+  border-radius: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+@media (max-width: 768px) {
+  .language-trust-card {
+    flex-direction: column;
+    padding: 2rem 1.5rem;
+    gap: 1.5rem;
+  }
+}
