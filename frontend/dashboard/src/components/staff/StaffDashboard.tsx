@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../../styles/citizen.css";
-import { getStoredGrievances, updateStaffDecision, updateGrievanceStatus } from "../../services/grievanceService";
+import { getStaffGrievances, getStaffGrievanceById, updateStaffDecision, updateGrievanceStatus } from "../../services/grievanceService";
 import type { StaffUser, Grievance, GrievanceStatus, GrievanceCategory } from "../../types";
 import { GrievanceKPIBar } from "./GrievanceKPIBar";
 
@@ -104,9 +104,6 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
     (g) => g.severity === "Critical" || g.severity === "High"
   );
   const topRedZoneGrievance = highSeverityGrievances[0] || null;
-
-  // Extract unique categories present in department queue for filter
-  const uniqueCategories = Array.from(new Set(grievances.map((g) => g.category)));
 
   return (
     <div className="citizen-portal-container">
@@ -232,6 +229,14 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
             </div>
 
             <div style={{ display: "flex", gap: "12px" }}>
+              <input
+                className="form-input"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search ID, description, or location"
+                aria-label="Search grievances"
+                style={{ width: "230px" }}
+              />
               <select
                 className="form-select"
                 value={categoryFilter}
@@ -260,6 +265,12 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
               </select>
             </div>
           </div>
+
+          {authError && (
+            <div role="alert" style={{ color: "var(--col-red)", marginBottom: "12px", fontSize: "12px" }}>
+              {authError}
+            </div>
+          )}
 
           {filteredGrievances.length === 0 ? (
             <div style={{ padding: "40px", textAlign: "center", color: "var(--col-text-muted)", background: "var(--col-panel)", borderRadius: "8px" }}>
@@ -303,7 +314,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
                       <button
                         className="service-card-btn"
                         style={{ padding: "4px 10px", fontSize: "11px" }}
-                        onClick={() => setSelectedGrievance(g)}
+                        onClick={() => handleOpenDossier(g)}
                       >
                         Open Dossier →
                       </button>
