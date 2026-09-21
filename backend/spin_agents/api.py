@@ -8,7 +8,6 @@ import uuid
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
 from sqlalchemy.future import select
 
 from spin_agents.auth import router as auth_router
@@ -16,6 +15,7 @@ from spin_agents.config import CONFIG
 from spin_agents.config_routes import router as config_router
 from spin_agents.db import AsyncSessionLocal, Base, engine
 from spin_agents.models import Grievance
+from spin_agents.schemas import CitizenMessage, PipelineRequest, PolicyAction, TranslateRequest
 from spin_agents.runner import run_pipeline
 from spin_agents.tools.bhashini import bhashini_asr, bhashini_translate
 from spin_agents.tools.bigquery import query_red_zones, query_weekly_summary
@@ -47,35 +47,6 @@ app.add_middleware(
 )
 
 
-class CitizenMessage(BaseModel):
-    user_id: str
-    text: str | None = None
-    audio_url: str | None = None
-    media_url: str | None = None
-    source_language: str = "hi"
-    location: dict | None = None
-
-
-class PolicyAction(BaseModel):
-    grievance_id: str
-    user_id: str
-    target_language: str = "hi"
-    action: str = Field(description="approved|rejected|reallocated")
-    budget_cr: float | None = None
-    message_en: str = "Your infrastructure grievance has been approved for action."
-
-
-class PipelineRequest(BaseModel):
-    user_id: str = "anonymous"
-    text: str
-    source_language: str = "hi"
-    location: dict | None = None
-    media_url: str | None = None
-    run_adk: bool = True
-
-class TranslateRequest(BaseModel):
-    text: str
-
 
 @app.get("/health")
 async def health():
@@ -92,6 +63,40 @@ async def translate_text(payload: TranslateRequest):
         "source_language": result.get("source_language", "unknown")
     }
 
+HITL_PROMPT = "Where is the issue located? Share GPS pin or nearest landmark."
+
+
+async def _translate_text(
+    text: str, source_language: str
+) -> dict[str, str]:
+    """Translate text to English, returning a translation dict. Shared by webhook and pipeline."""
+    if source_language != "en":
+        return await bhashini_translate(text, source_language, "en")
+    return {
+        "original_text": text,
+        "english_translation": text,
+        "source_language": "en",
+    }
+
+
+def _build_intake(
+    translation: dict[str, str],
+    user_id: str,
+    media_url: str | None,
+    location: dict | None,
+    source_language: str,
+) -> dict:
+    """Build normalized intake payload from translation result. Shared by webhook and pipeline."""
+    return {
+        "original_text": translation["original_text"],
+        "english_translation": translation["english_translation"],
+        "user_id": user_id,
+        "media_url": media_url,
+        "location_data": location,
+        "source_language": source_language,
+        "hitl_required": location is None,
+    }
+
 
 @app.post("/webhook/citizen")
 async def citizen_webhook(payload: CitizenMessage):
@@ -101,64 +106,32 @@ async def citizen_webhook(payload: CitizenMessage):
     if payload.audio_url:
         translation = await bhashini_asr(payload.audio_url, payload.source_language)
     elif payload.text:
-        if payload.source_language != "en":
-            translation = await bhashini_translate(
-                payload.text, payload.source_language, "en"
-            )
-        else:
-            translation = {
-                "original_text": payload.text,
-                "english_translation": payload.text,
-                "source_language": "en",
-            }
+        translation = await _translate_text(payload.text, payload.source_language)
     else:
         return {"error": "text or audio_url required", "session_id": session_id}
 
-    intake = {
-        "original_text": translation["original_text"],
-        "english_translation": translation["english_translation"],
-        "user_id": payload.user_id,
-        "media_url": payload.media_url,
-        "location_data": payload.location,
-        "source_language": payload.source_language,
-        "hitl_required": payload.location is None,
-    }
+    intake = _build_intake(
+        translation, payload.user_id, payload.media_url,
+        payload.location, payload.source_language,
+    )
 
     return {
         "session_id": session_id,
         "intake_payload": intake,
         "next_step": "awaiting_location" if intake["hitl_required"] else "run_pipeline",
-        "prompt": (
-            "Where is the issue located? Share GPS pin or nearest landmark."
-            if intake["hitl_required"]
-            else None
-        ),
+        "prompt": HITL_PROMPT if intake["hitl_required"] else None,
     }
 
 
 @app.post("/api/pipeline/run")
 async def pipeline_run(payload: PipelineRequest):
     """Run full ADK pipeline when location is available (skips HITL if missing)."""
-    if payload.source_language != "en":
-        translation = await bhashini_translate(
-            payload.text, payload.source_language, "en"
-        )
-    else:
-        translation = {
-            "original_text": payload.text,
-            "english_translation": payload.text,
-            "source_language": "en",
-        }
+    translation = await _translate_text(payload.text, payload.source_language)
 
-    intake = {
-        "original_text": translation["original_text"],
-        "english_translation": translation["english_translation"],
-        "user_id": payload.user_id,
-        "media_url": payload.media_url,
-        "location_data": payload.location,
-        "source_language": payload.source_language,
-        "hitl_required": payload.location is None,
-    }
+    intake = _build_intake(
+        translation, payload.user_id, payload.media_url,
+        payload.location, payload.source_language,
+    )
 
     if not payload.run_adk:
         return {"intake_payload": intake, "status": "intake_only"}
@@ -167,7 +140,7 @@ async def pipeline_run(payload: PipelineRequest):
         return {
             "status": "awaiting_location",
             "intake_payload": intake,
-            "prompt": "Where is the issue located? Share GPS pin or nearest landmark.",
+            "prompt": HITL_PROMPT,
         }
 
     result = await run_pipeline(
