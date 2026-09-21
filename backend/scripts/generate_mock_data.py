@@ -1,8 +1,9 @@
+import datetime
+import json
 import os
 import random
 import uuid
-import datetime
-import json
+
 from google.cloud import bigquery
 
 # Initialize BigQuery client
@@ -49,7 +50,7 @@ def generate_and_insert_mock_data(num_records=100):
 
     print(f"Generating {num_records} mock records...")
     rows_to_insert = [generate_mock_grievance() for _ in range(num_records)]
-    
+
     # Split into batches of 100 for insertion
     batch_size = 100
     for i in range(0, len(rows_to_insert), batch_size):

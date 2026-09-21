@@ -1,9 +1,10 @@
-import os
-import json
-import uuid
 import datetime
+import json
+import os
+import uuid
+from typing import Any, Dict, List, Optional
+
 from google.cloud import bigquery
-from typing import Dict, Any, List, Optional
 
 # Load environment variables or configuration for project and dataset
 # Assuming default project from environment if not specified
@@ -55,7 +56,7 @@ def insert_grievance_record(grievance_data: Dict[str, Any]) -> bool:
     }
 
     errors = client.insert_rows_json(TABLE_ID, [row_to_insert])
-    
+
     if not errors:
         return True
     else:
@@ -89,11 +90,11 @@ def query_weekly_summary(district: Optional[str] = None) -> List[Dict[str, Any]]
     """
 
     query_params = []
-    
+
     if district:
         query += "  AND district = @district\n"
         query_params.append(bigquery.ScalarQueryParameter("district", "STRING", district))
-        
+
     query += """
     GROUP BY district
     ORDER BY total_complaints DESC
@@ -106,7 +107,7 @@ def query_weekly_summary(district: Optional[str] = None) -> List[Dict[str, Any]]
 
     query_job = client.query(query, job_config=job_config)
     results = query_job.result()
-    
+
     return [dict(row) for row in results]
 
 def query_red_zones(min_severity: int = 8) -> List[Dict[str, Any]]:
@@ -141,5 +142,5 @@ def query_red_zones(min_severity: int = 8) -> List[Dict[str, Any]]:
 
     query_job = client.query(query, job_config=job_config)
     results = query_job.result()
-    
+
     return [dict(row) for row in results]

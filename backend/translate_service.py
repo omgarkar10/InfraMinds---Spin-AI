@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 import re
-import unicodedata
 from typing import Any, Dict
 
 # Automatically register service account credentials if available
@@ -61,7 +60,7 @@ CIVIC_LEXICON = {
     "दुर्गंध": "foul odor",
     "बंद": "not working / closed",
     "गंभीर": "critical / severe",
-    
+
     # Common transliterated words
     "paani": "water",
     "sadak": "road",
@@ -77,17 +76,17 @@ def detect_language(text: str) -> str:
     """Detects primary language code from text using script analysis."""
     if not text:
         return "en"
-    
+
     counts: Dict[str, int] = {}
     for char in text:
         code_point = ord(char)
         for _, (lang_code, _, start, end) in SCRIPT_MAP.items():
             if start <= code_point <= end:
                 counts[lang_code] = counts.get(lang_code, 0) + 1
-    
+
     if counts:
         return max(counts, key=counts.get)
-    
+
     # Check if mostly ASCII English / Hinglish
     return "en"
 
@@ -95,7 +94,7 @@ def detect_language(text: str) -> str:
 def _smart_translate_civic(text: str, source_lang: str) -> str:
     """Translates civic complaints accurately using contextual rule-based transformation."""
     working = text
-    
+
     # If already mostly English, return directly
     if source_lang == "en" and not any(k in text.lower() for k in ["paani", "sadak", "gaddha", "kachra", "bijli"]):
         return text
@@ -105,15 +104,15 @@ def _smart_translate_civic(text: str, source_lang: str) -> str:
         if key in working:
             translated_terms.append(val)
             working = working.replace(key, f"[{val}]")
-            
+
     # Clean up formatting
     cleaned = re.sub(r'\[([^\]]+)\]', r'\1', working)
-    
+
     # If key civic terms were identified, provide structured English synthesis
     if translated_terms:
         terms_str = ", ".join(list(dict.fromkeys(translated_terms)))
         return f"Civic issue reported ({terms_str}): {cleaned}"
-    
+
     return text
 
 

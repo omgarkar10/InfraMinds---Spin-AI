@@ -2,24 +2,26 @@
 
 from __future__ import annotations
 
-import json
 import os
+import sys
 import uuid
 
-from fastapi import FastAPI, Request, Header, HTTPException
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+from sqlalchemy.future import select
 
-from spin_agents.tools.bhashini import bhashini_asr, bhashini_translate
-from spin_agents.tools.bigquery import query_red_zones, query_weekly_summary
-from spin_agents.runner import run_pipeline
 from spin_agents.auth import router as auth_router
 from spin_agents.config_routes import router as config_router
-from spin_agents.db import Base, engine
-import sys
-import os
+from spin_agents.db import AsyncSessionLocal, Base, engine
+from spin_agents.models import Grievance
+from spin_agents.runner import run_pipeline
+from spin_agents.tools.bhashini import bhashini_asr, bhashini_translate
+from spin_agents.tools.bigquery import query_red_zones, query_weekly_summary
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from translate_service import translate_to_english
+
 
 async def init_db():
     async with engine.begin() as conn:
@@ -227,9 +229,6 @@ async def firebase_webhook(request: Request):
     )
     return await citizen_webhook(message)
 
-from sqlalchemy.future import select
-from spin_agents.db import AsyncSessionLocal
-from spin_agents.models import Grievance
 
 @app.get("/api/grievances")
 async def list_grievances(limit: int = 50):

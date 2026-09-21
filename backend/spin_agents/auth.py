@@ -6,15 +6,14 @@ Authentication module for SPIN Portal.
 """
 
 import os
-import uuid
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 import jwt
+from fastapi import APIRouter, Depends, HTTPException
 from passlib.context import CryptContext
+from pydantic import BaseModel
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from spin_agents.db import get_db
 from spin_agents.models import User
@@ -76,17 +75,17 @@ async def citizen_signup(req: CitizenSignupRequest, db: AsyncSession = Depends(g
     """
     # 1. Normalize phone if needed (frontend typically sends normalized format, but backend can enforce E.164 if configured)
     normalized_phone = req.phone
-    
+
     # 2. Check if user exists
     stmt = select(User).where(User.phone_number == normalized_phone)
     result = await db.execute(stmt)
     existing_user = result.scalars().first()
     if existing_user:
         raise HTTPException(status_code=400, detail="This phone number is already associated with an account.")
-    
+
     # 3. Hash password
     hashed_password = pwd_context.hash(req.password)
-    
+
     # 4. Create user
     new_user = User(
         name=req.name,
@@ -98,9 +97,9 @@ async def citizen_signup(req: CitizenSignupRequest, db: AsyncSession = Depends(g
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
-    
+
     token = create_access_token({"sub": new_user.id, "role": new_user.role})
-    
+
     return {
         "status": "success",
         "access_token": token,
@@ -159,7 +158,7 @@ async def citizen_forgot_password(req: CitizenForgotPasswordRequest, db: AsyncSe
     if not user:
         # Generic response to prevent phone number enumeration
         return {"status": "success", "message": "If an account exists, a reset link will be sent."}
-    
+
     # Here a secure token would normally be generated and sent via SMS/Email.
     return {"status": "success", "message": "Password reset initiated successfully."}
 
@@ -174,10 +173,10 @@ async def citizen_reset_password(req: CitizenResetPasswordRequest, db: AsyncSess
 
     if not user:
         raise HTTPException(status_code=400, detail="Unable to reset password for this account.")
-    
+
     user.password_hash = pwd_context.hash(req.password)
     await db.commit()
-    
+
     return {"status": "success", "message": "Password reset successfully."}
 
 
@@ -233,7 +232,7 @@ class CitizenLoginRequest(BaseModel):
     password: str
 
 @router.post("/citizen-login")
-async def citizen_login(req: CitizenLoginRequest, db: AsyncSession = Depends(get_db)):
+async def citizen_portal_login(req: CitizenLoginRequest, db: AsyncSession = Depends(get_db)):
     """
     Citizen Portal login – password-based authentication.
     Validates mobile number or email + password. Auto-creates account if not found.

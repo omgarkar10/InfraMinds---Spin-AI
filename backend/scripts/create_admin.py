@@ -4,9 +4,10 @@ import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from spin_agents.db import AsyncSessionLocal, engine, Base
-from spin_agents.models import User
 from passlib.context import CryptContext
+
+from spin_agents.db import AsyncSessionLocal, Base, engine
+from spin_agents.models import User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -31,7 +32,7 @@ async def create_admin():
     # Ensure tables exist
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        
+
     async with AsyncSessionLocal() as db:
         from sqlalchemy import select
 

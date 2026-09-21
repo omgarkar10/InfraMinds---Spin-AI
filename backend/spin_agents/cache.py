@@ -1,5 +1,5 @@
 import time
-from typing import Dict, Any
+from typing import Any, Dict
 
 # Simple in-memory cache to replace Redis for local SQLite prototype
 _cache: Dict[str, Dict[str, Any]] = {}

@@ -13,11 +13,15 @@ from typing import AsyncGenerator
 from google.adk.agents import LlmAgent, SequentialAgent
 from google.adk.agents.base_agent import BaseAgent
 from google.adk.agents.invocation_context import InvocationContext
-from google.adk.events import Event, EventActions
 from google.adk.agents.remote_a2a_agent import RemoteA2aAgent
+from google.adk.events import Event, EventActions
 
 from spin_agents.config import CONFIG
-from spin_agents.tools import analyze_infrastructure_image, insert_grievance_record, query_weekly_summary
+from spin_agents.tools import (
+    analyze_infrastructure_image,
+    insert_grievance_record,
+    query_weekly_summary,
+)
 from spin_agents.tools.bhashini import bhashini_notify_citizen, bhashini_translate_sync
 from spin_agents.tools.gati_shakti import query_gati_shakti_sync
 

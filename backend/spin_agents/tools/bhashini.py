@@ -43,8 +43,8 @@ async def bhashini_translate(
     """Translate regional text to English via Bhashini NMT pipeline."""
     if not CONFIG.bhashini_api_key or not CONFIG.bhashini_user_id:
         try:
-            import sys
             import os
+            import sys
             sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
             from translate_service import translate_to_english
             res = translate_to_english(text)

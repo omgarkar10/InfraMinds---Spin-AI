@@ -1,7 +1,10 @@
 import uuid
-from sqlalchemy import Column, String, Boolean, DateTime, Float, Integer, Text
+
+from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, Text
 from sqlalchemy.sql import func
+
 from spin_agents.db import Base
+
 
 class User(Base):
     __tablename__ = "users"
