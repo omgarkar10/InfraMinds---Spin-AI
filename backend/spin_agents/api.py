@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.future import select
 
 from spin_agents.auth import router as auth_router
+from spin_agents.config import CONFIG
 from spin_agents.config_routes import router as config_router
 from spin_agents.db import AsyncSessionLocal, Base, engine
 from spin_agents.models import Grievance
@@ -39,7 +40,7 @@ app.include_router(config_router)
 app.add_middleware(
     CORSMiddleware,
 
-    allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
+    allow_origins=CONFIG.cors_origins.split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

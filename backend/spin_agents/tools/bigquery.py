@@ -6,11 +6,11 @@ from typing import Any, Dict, List, Optional
 
 from google.cloud import bigquery
 
-# Load environment variables or configuration for project and dataset
-# Assuming default project from environment if not specified
-PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "your-project-id")
-DATASET_ID = os.getenv("BIGQUERY_DATASET", "spin_grievances")
-TABLE_ID = f"{PROJECT_ID}.{DATASET_ID}.citizen_complaints"
+from spin_agents.config import CONFIG
+
+PROJECT_ID = CONFIG.gcp_project
+DATASET_ID = CONFIG.bigquery_dataset
+TABLE_ID = f"{PROJECT_ID}.{DATASET_ID}.{CONFIG.bigquery_table}"
 
 # Initialize BigQuery client
 try:

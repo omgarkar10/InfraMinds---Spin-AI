@@ -114,7 +114,7 @@ async def bhashini_asr(
                 "taskType": "asr",
                 "config": {
                     "language": {"sourceLanguage": source_language},
-                    "serviceId": os.getenv("BHASHINI_ASR_SERVICE_ID", ""),
+                    "serviceId": CONFIG.bhashini_asr_service_id,
                     "audioFormat": "wav",
                 },
             }

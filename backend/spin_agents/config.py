@@ -24,6 +24,12 @@ class SpinConfig:
     gati_shakti_api_key: str = os.getenv("GATI_SHAKTI_API_KEY", "")
     firebase_project_id: str = os.getenv("FIREBASE_PROJECT_ID", "")
     dashboard_api_url: str = os.getenv("SPIN_DASHBOARD_API_URL", "http://localhost:8080/api")
+    database_url: str = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./spin.db")
+    jwt_secret: str = os.getenv("JWT_SECRET", "supersecretkey")
+    cors_origins: str = os.getenv("CORS_ORIGINS", "*")
+    bhashini_translation_service_id: str = os.getenv("BHASHINI_TRANSLATION_SERVICE_ID", "")
+    bhashini_asr_service_id: str = os.getenv("BHASHINI_ASR_SERVICE_ID", "")
+    google_application_credentials: str = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
 
     # A2A microservice endpoints (Cloud Run / Agent Engine)
     intake_agent_card: str = os.getenv(

@@ -2,8 +2,9 @@ import os
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
+from spin_agents.config import CONFIG
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./spin.db")
+DATABASE_URL = CONFIG.database_url
 
 engine = create_async_engine(DATABASE_URL, echo=False)
 AsyncSessionLocal = sessionmaker(

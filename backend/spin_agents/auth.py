@@ -15,13 +15,14 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from spin_agents.config import CONFIG
 from spin_agents.db import get_db
 from spin_agents.models import User
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-JWT_SECRET    = os.getenv("JWT_SECRET", "supersecretkey")
+JWT_SECRET    = CONFIG.jwt_secret
 JWT_ALGORITHM = "HS256"
 
 # ──────────────────────────────────────────────

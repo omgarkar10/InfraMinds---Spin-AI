@@ -1,7 +1,7 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+import { API_BASE } from "../config";
 
 export async function getCountriesConfig() {
-  const response = await fetch(`${API_URL}/config/countries`);
+  const response = await fetch(`${API_BASE}/config/countries`);
   if (!response.ok) {
     throw new Error("Failed to load country configuration");
   }
@@ -9,7 +9,7 @@ export async function getCountriesConfig() {
 }
 
 export async function getAuthConfig() {
-  const response = await fetch(`${API_URL}/config/auth`);
+  const response = await fetch(`${API_BASE}/config/auth`);
   if (!response.ok) {
     throw new Error("Failed to load authentication configuration");
   }
@@ -17,7 +17,7 @@ export async function getAuthConfig() {
 }
 
 export async function citizenSignup(payload: { name: string; countryCode: string; phone: string; password: string; }) {
-  const response = await fetch(`${API_URL}/auth/citizen/signup`, {
+  const response = await fetch(`${API_BASE}/auth/citizen/signup`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -34,7 +34,7 @@ export async function citizenSignup(payload: { name: string; countryCode: string
 }
 
 export async function citizenLogin(payload: { countryCode: string; phone: string; password: string; }) {
-  const response = await fetch(`${API_URL}/auth/citizen/login`, {
+  const response = await fetch(`${API_BASE}/auth/citizen/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -51,7 +51,7 @@ export async function citizenLogin(payload: { countryCode: string; phone: string
 }
 
 export async function citizenForgotPassword(payload: { countryCode: string; phone: string; }) {
-  const response = await fetch(`${API_URL}/auth/citizen/forgot-password`, {
+  const response = await fetch(`${API_BASE}/auth/citizen/forgot-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -64,7 +64,7 @@ export async function citizenForgotPassword(payload: { countryCode: string; phon
 }
 
 export async function citizenResetPassword(payload: { phone: string; password: string; }) {
-  const response = await fetch(`${API_URL}/auth/citizen/reset-password`, {
+  const response = await fetch(`${API_BASE}/auth/citizen/reset-password`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -81,7 +81,7 @@ export function citizenLogout() {
 }
 
 export async function staffLogin(identifier: string, password: string) {
-  const response = await fetch(`${API_URL}/auth/staff-login`, {
+  const response = await fetch(`${API_BASE}/auth/staff-login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
