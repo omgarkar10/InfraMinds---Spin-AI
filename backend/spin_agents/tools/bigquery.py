@@ -9,6 +9,7 @@ Isolation contract:
   - Protected: Do NOT change TABLE_ID schema without updating API_CONTRACTS.md.
 """
 
+import datetime
 import json
 import os
 import uuid
