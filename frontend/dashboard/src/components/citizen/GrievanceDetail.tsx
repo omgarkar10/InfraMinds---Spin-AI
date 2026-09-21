@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../../styles/citizen.css";
-import { getGrievanceById, addCitizenFeedback } from "../../services/grievanceService";
+import { fetchGrievanceById, addCitizenFeedback } from "../../services/grievanceService";
 import type { CitizenUser, Grievance } from "../../types";
 
 interface GrievanceDetailProps {
@@ -13,18 +13,39 @@ export const GrievanceDetail: React.FC<GrievanceDetailProps> = ({
   grievanceId,
   onNavigate,
 }) => {
-  const [grievance, setGrievance] = useState<Grievance | undefined>(() =>
-    getGrievanceById(grievanceId)
-  );
+  const [grievance, setGrievance] = useState<Grievance | undefined>(undefined);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    fetchGrievanceById(grievanceId)
+      .then(data => {
+        setGrievance(data);
+        if (data?.feedback) {
+          setFeedbackSubmitted(true);
+        }
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [grievanceId]);
 
   /* Feedback State */
   const [feedbackResolved, setFeedbackResolved] = useState<boolean | null>(null);
   const [rating, setRating] = useState<number>(5);
   const [feedbackComment, setFeedbackComment] = useState<string>("");
   const [reopenReason, setReopenReason] = useState<string>("");
-  const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(
-    Boolean(grievance?.feedback)
-  );
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(false);
+
+  if (loading) {
+    return (
+      <div className="citizen-portal-container">
+        <div className="container" style={{ maxWidth: "600px", textAlign: "center", padding: "60px 0" }}>
+          <div className="form-card">
+            <h2>Loading Grievance...</h2>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!grievance) {
     return (
@@ -42,8 +63,9 @@ export const GrievanceDetail: React.FC<GrievanceDetailProps> = ({
     );
   }
 
-  const handleFeedbackSubmit = (resolved: boolean) => {
-    const updated = addCitizenFeedback(
+  const handleFeedbackSubmit = async (resolved: boolean) => {
+    if (!grievance) return;
+    const updated = await addCitizenFeedback(
       grievance.id,
       resolved,
       resolved ? rating : undefined,

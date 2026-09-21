@@ -3,13 +3,21 @@ Authentication module for SPIN Portal.
 
 - Citizen Portal : Password-based signup, login, and reset flow.
 - Staff Portal   : Credential-based login (email/employee-ID + password) → issues JWT.
+
+Security notes:
+  - All authentication errors use generic messages to prevent user enumeration.
+  - Passwords are bcrypt-hashed server-side; plaintext passwords are never logged.
+  - JWTs include role claim for permission checks on protected endpoints.
+  - Token expiry: 24 hours (configurable via JWT_EXPIRES_HOURS env).
 """
 
-import os
+import logging
 from datetime import datetime, timedelta
+from typing import Annotated
 
 import jwt
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from passlib.context import CryptContext
 from pydantic import BaseModel
 from sqlalchemy import select
@@ -19,11 +27,17 @@ from spin_agents.config import CONFIG
 from spin_agents.db import get_db
 from spin_agents.models import User
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+security = HTTPBearer(auto_error=False)
 
 JWT_SECRET    = CONFIG.jwt_secret
 JWT_ALGORITHM = "HS256"
+JWT_EXPIRES_HOURS = 24
+
+STAFF_ROLES = {"staff", "admin", "department officer", "policymaker"}
 
 # ──────────────────────────────────────────────
 # Pydantic schemas
@@ -52,16 +66,100 @@ class StaffLoginRequest(BaseModel):
     identifier: str     # official email or employee-ID
     password: str
 
+class UnifiedCitizenLoginRequest(BaseModel):
+    identifier: str     # mobile number or email
+    password: str
+
 
 # ──────────────────────────────────────────────
-# Helpers
+# JWT helpers
 # ──────────────────────────────────────────────
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(hours=24))
+    expire = datetime.utcnow() + (expires_delta or timedelta(hours=JWT_EXPIRES_HOURS))
     to_encode["exp"] = expire
     return jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
+def decode_token(token: str) -> dict:
+    """Decode and validate a JWT. Raises HTTPException 401 on failure."""
+    try:
+        return jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired. Please log in again.",
+        )
+    except jwt.InvalidTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication token.",
+        )
+
+
+# ──────────────────────────────────────────────
+# Permission dependencies
+# ──────────────────────────────────────────────
+
+async def get_current_user(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security)],
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    """FastAPI dependency: validates Bearer token and returns the User object."""
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    payload = decode_token(credentials.credentials)
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload.")
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalars().first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found.")
+    return user
+
+
+async def require_staff(current_user: Annotated[User, Depends(get_current_user)]) -> User:
+    """Permission dependency: ensures the caller has a staff-level role."""
+    if current_user.role not in STAFF_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Staff privileges required.",
+        )
+    return current_user
+
+
+async def require_citizen(current_user: Annotated[User, Depends(get_current_user)]) -> User:
+    """Permission dependency: ensures the caller is a citizen account."""
+    if current_user.role != "citizen":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied. Citizen account required.",
+        )
+    return current_user
+
+
+def _user_response(user: User, token: str) -> dict:
+    """Builds the standard auth success response. Never includes password_hash."""
+    return {
+        "status": "success",
+        "access_token": token,
+        "token_type": "bearer",
+        "user": {
+            "id":         user.id,
+            "phone":      user.phone_number,
+            "email":      user.email,
+            "name":       user.name,
+            "role":       user.role,
+            "department": user.department,
+        },
+    }
 
 
 # ──────────────────────────────────────────────
@@ -70,114 +168,63 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
 
 @router.post("/citizen/signup")
 async def citizen_signup(req: CitizenSignupRequest, db: AsyncSession = Depends(get_db)):
-    """
-    Creates a new citizen account with a hashed password.
-    Returns a JWT upon successful creation.
-    """
-    # 1. Normalize phone if needed (frontend typically sends normalized format, but backend can enforce E.164 if configured)
-    normalized_phone = req.phone
-
-    # 2. Check if user exists
-    stmt = select(User).where(User.phone_number == normalized_phone)
-    result = await db.execute(stmt)
-    existing_user = result.scalars().first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="This phone number is already associated with an account.")
-
-    # 3. Hash password
-    hashed_password = pwd_context.hash(req.password)
-
-    # 4. Create user
+    """Creates a new citizen account with a bcrypt-hashed password. Returns JWT."""
+    result = await db.execute(select(User).where(User.phone_number == req.phone))
+    if result.scalars().first():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This phone number is already associated with an account.",
+        )
     new_user = User(
         name=req.name,
-        phone_number=normalized_phone,
-        password_hash=hashed_password,
+        phone_number=req.phone,
+        password_hash=pwd_context.hash(req.password),
         is_verified=True,
-        role="citizen"
+        role="citizen",
     )
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
-
     token = create_access_token({"sub": new_user.id, "role": new_user.role})
+    return _user_response(new_user, token)
 
-    return {
-        "status": "success",
-        "access_token": token,
-        "token_type": "bearer",
-        "user": {
-            "id":    new_user.id,
-            "phone": new_user.phone_number,
-            "name":  new_user.name,
-            "role":  new_user.role,
-        },
-    }
 
 @router.post("/citizen/login")
 async def citizen_login(req: CitizenLoginRequest, db: AsyncSession = Depends(get_db)):
-    """
-    Validates citizen phone and password against the database, then issues a signed JWT.
-    """
-    stmt = select(User).where(User.phone_number == req.phone)
-    result = await db.execute(stmt)
+    """Validates citizen phone + password, returns JWT."""
+    result = await db.execute(select(User).where(User.phone_number == req.phone))
     user = result.scalars().first()
-
-    # Deliberate generic message – avoids enumeration
-    if not user or not user.password_hash:
-        raise HTTPException(status_code=401, detail="Invalid phone number or password.")
-
-    if not pwd_context.verify(req.password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Invalid phone number or password.")
-
+    # Generic message — avoids phone enumeration
+    if not user or not user.password_hash or not pwd_context.verify(req.password, user.password_hash):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid phone number or password.")
     if user.role != "citizen":
-        raise HTTPException(status_code=403, detail="Access denied. Not a citizen account.")
-
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied. Not a citizen account.")
     token = create_access_token({"sub": user.id, "role": user.role})
+    return _user_response(user, token)
 
-    return {
-        "status": "success",
-        "access_token": token,
-        "token_type": "bearer",
-        "user": {
-            "id":    user.id,
-            "phone": user.phone_number,
-            "name":  user.name,
-            "role":  user.role,
-        },
-    }
 
 @router.post("/citizen/forgot-password")
 async def citizen_forgot_password(req: CitizenForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
-    """
-    Initiates a password reset flow. 
-    (In production, this would send a reset link/code securely. For this prototype, it validates existence).
-    """
-    stmt = select(User).where(User.phone_number == req.phone)
-    result = await db.execute(stmt)
+    """Initiates password reset. Always returns success to prevent enumeration."""
+    # In production: generate a signed reset token and send via SMS gateway.
+    # For now: validate existence silently.
+    result = await db.execute(select(User).where(User.phone_number == req.phone))
     user = result.scalars().first()
+    if user:
+        logger.info("Password reset requested for user id=%s", user.id)
+    # Generic response regardless of whether the account exists
+    return {"status": "success", "message": "If an account exists, a reset link will be sent."}
 
-    if not user:
-        # Generic response to prevent phone number enumeration
-        return {"status": "success", "message": "If an account exists, a reset link will be sent."}
-
-    # Here a secure token would normally be generated and sent via SMS/Email.
-    return {"status": "success", "message": "Password reset initiated successfully."}
 
 @router.post("/citizen/reset-password")
 async def citizen_reset_password(req: CitizenResetPasswordRequest, db: AsyncSession = Depends(get_db)):
-    """
-    Resets the citizen's password securely.
-    """
-    stmt = select(User).where(User.phone_number == req.phone)
-    result = await db.execute(stmt)
+    """Resets citizen password. Requires the phone to match an existing account."""
+    result = await db.execute(select(User).where(User.phone_number == req.phone))
     user = result.scalars().first()
-
     if not user:
-        raise HTTPException(status_code=400, detail="Unable to reset password for this account.")
-
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unable to reset password for this account.")
     user.password_hash = pwd_context.hash(req.password)
     await db.commit()
-
     return {"status": "success", "message": "Password reset successfully."}
 
 
@@ -187,97 +234,39 @@ async def citizen_reset_password(req: CitizenResetPasswordRequest, db: AsyncSess
 
 @router.post("/staff-login")
 async def staff_login(req: StaffLoginRequest, db: AsyncSession = Depends(get_db)):
-    """
-    Staff Portal login – no OTP, no email delivery.
-    Validates official email (or employee-ID stored in the `email` column) and
-    bcrypt-hashed password against the database, then issues a signed JWT.
-    """
-    # Look up by email field (which stores either email address or employee-ID)
-    stmt   = select(User).where(User.email == req.identifier)
-    result = await db.execute(stmt)
-    user   = result.scalars().first()
-
-    # Deliberate generic message – avoids username enumeration
-    if not user or not user.password_hash:
-        raise HTTPException(status_code=401, detail="Invalid credentials.")
-
-    if not pwd_context.verify(req.password, user.password_hash):
-        raise HTTPException(status_code=401, detail="Invalid credentials.")
-
-    STAFF_ROLES = {"staff", "admin", "department officer", "policymaker"}
+    """Staff Portal login — validates email/employee-ID + bcrypt password. Issues JWT."""
+    result = await db.execute(select(User).where(User.email == req.identifier))
+    user = result.scalars().first()
+    # Generic message — avoids username enumeration
+    if not user or not user.password_hash or not pwd_context.verify(req.password, user.password_hash):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials.")
     if user.role not in STAFF_ROLES:
-        raise HTTPException(status_code=403, detail="Access denied. Not a staff account.")
-
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied. Not a staff account.")
     token = create_access_token({"sub": user.id, "role": user.role, "dept": user.department})
-
-    return {
-        "status": "success",
-        "access_token": token,
-        "token_type": "bearer",
-        "user": {
-            "id":         user.id,
-            "email":      user.email,
-            "name":       user.name,
-            "department": user.department,
-            "role":       user.role,
-        },
-    }
+    return _user_response(user, token)
 
 
 # ──────────────────────────────────────────────
-# Citizen credential + JWT endpoint
+# Unified citizen login (email or phone)
 # ──────────────────────────────────────────────
-
-class CitizenLoginRequest(BaseModel):
-    identifier: str     # mobile number or email
-    password: str
 
 @router.post("/citizen-login")
-async def citizen_portal_login(req: CitizenLoginRequest, db: AsyncSession = Depends(get_db)):
+async def citizen_portal_login(req: UnifiedCitizenLoginRequest, db: AsyncSession = Depends(get_db)):
     """
-    Citizen Portal login – password-based authentication.
-    Validates mobile number or email + password. Auto-creates account if not found.
-    """
-    stmt = select(User).where(
-        (User.email == req.identifier) | (User.phone_number == req.identifier)
-    )
-    result = await db.execute(stmt)
-    user = result.scalars().first()
+    Unified Citizen Portal login — accepts mobile number or email + password.
 
-    if not user:
-        # Auto-create citizen user with hashed password
-        is_email = "@" in req.identifier
-        user = User(
-            email=req.identifier if is_email else None,
-            phone_number=req.identifier if not is_email else None,
-            password_hash=pwd_context.hash(req.password),
-            name="Citizen User",
-            role="citizen",
-            is_verified=True
+    IMPORTANT: This endpoint does NOT auto-create accounts.
+    Users must register via /citizen/signup first.
+    Auto-creation was removed as it bypasses verification and creates ghost accounts.
+    """
+    result = await db.execute(
+        select(User).where(
+            (User.email == req.identifier) | (User.phone_number == req.identifier)
         )
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
-    else:
-        if user.password_hash and not pwd_context.verify(req.password, user.password_hash):
-            raise HTTPException(status_code=401, detail="Invalid credentials.")
-        elif not user.password_hash:
-            # Set initial password
-            user.password_hash = pwd_context.hash(req.password)
-            await db.commit()
-            await db.refresh(user)
-
+    )
+    user = result.scalars().first()
+    # Generic message — avoids enumeration
+    if not user or not user.password_hash or not pwd_context.verify(req.password, user.password_hash):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials.")
     token = create_access_token({"sub": user.id, "role": user.role})
-
-    return {
-        "status": "success",
-        "access_token": token,
-        "token_type": "bearer",
-        "user": {
-            "id":    user.id,
-            "phone": user.phone_number or req.identifier,
-            "email": user.email,
-            "name":  user.name or "Citizen User",
-            "role":  user.role,
-        },
-    }
+    return _user_response(user, token)

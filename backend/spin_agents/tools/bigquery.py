@@ -1,4 +1,14 @@
-import datetime
+"""BigQuery wrapper for SPIN citizen complaint analytics.
+
+Isolation contract:
+  - ALL BigQuery reads/writes from the SPIN backend go through this module.
+  - If the BigQuery client cannot be initialized (no credentials),
+    insert_grievance_record() logs and returns True (non-fatal).
+    query_*() functions return empty/default structs.
+  - SQL queries are parameterized — never string-concatenated with user input.
+  - Protected: Do NOT change TABLE_ID schema without updating API_CONTRACTS.md.
+"""
+
 import json
 import os
 import uuid

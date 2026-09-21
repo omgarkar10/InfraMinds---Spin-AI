@@ -30,6 +30,7 @@ class SpinConfig:
     bhashini_translation_service_id: str = os.getenv("BHASHINI_TRANSLATION_SERVICE_ID", "")
     bhashini_asr_service_id: str = os.getenv("BHASHINI_ASR_SERVICE_ID", "")
     google_application_credentials: str = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
+    google_maps_api_key: str = os.getenv("GOOGLE_MAPS_API_KEY", "")
 
     # A2A microservice endpoints (Cloud Run / Agent Engine)
     intake_agent_card: str = os.getenv(

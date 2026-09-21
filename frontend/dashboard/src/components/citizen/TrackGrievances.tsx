@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../../styles/citizen.css";
-import { getStoredGrievances } from "../../services/grievanceService";
-import type { CitizenUser } from "../../types";
+import { fetchGrievances } from "../../services/grievanceService";
+import type { CitizenUser, Grievance } from "../../types";
 
 interface TrackGrievancesProps {
   user: CitizenUser;
@@ -9,11 +9,22 @@ interface TrackGrievancesProps {
 }
 
 export const TrackGrievances: React.FC<TrackGrievancesProps> = ({ onNavigate }) => {
-  const grievances = getStoredGrievances();
+  const [grievances, setGrievances] = useState<Grievance[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchId, setSearchId] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [selectedDistrict, setSelectedDistrict] = useState<string>("");
+
+  useEffect(() => {
+    fetchGrievances().then(data => {
+      setGrievances(data);
+      setLoading(false);
+    }).catch(err => {
+      console.error(err);
+      setLoading(false);
+    });
+  }, []);
 
   /* Filter Logic */
   const filtered = grievances.filter((g) => {
@@ -151,7 +162,11 @@ export const TrackGrievances: React.FC<TrackGrievancesProps> = ({ onNavigate }) 
 
         {/* Grievances List / Cards */}
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          {filtered.length === 0 ? (
+          {loading ? (
+            <div className="form-card" style={{ textAlign: "center", padding: "40px" }}>
+              <p className="portal-subtext">Loading grievances...</p>
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="form-card" style={{ textAlign: "center", padding: "40px" }}>
               <p className="portal-subtext">No grievances found matching your search criteria.</p>
             </div>

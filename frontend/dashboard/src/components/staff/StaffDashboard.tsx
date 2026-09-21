@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../../styles/citizen.css";
-import { getStaffGrievances, getStaffGrievanceById, updateStaffDecision, updateGrievanceStatus } from "../../services/grievanceService";
+import { fetchStaffGrievances, fetchStaffGrievanceById, updateStaffDecision, updateGrievanceStatus } from "../../services/grievanceService";
 import type { StaffUser, Grievance, GrievanceStatus, GrievanceCategory } from "../../types";
 import { GrievanceKPIBar } from "./GrievanceKPIBar";
 
@@ -24,7 +24,7 @@ interface StaffDashboardProps {
 }
 
 export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate }) => {
-  const [grievances, setGrievances] = useState<Grievance[]>(getStaffGrievances(user));
+  const [grievances, setGrievances] = useState<Grievance[]>([]);
   const [selectedGrievance, setSelectedGrievance] = useState<Grievance | null>(null);
   const [staffNote, setStaffNote] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -37,21 +37,25 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
     refreshData();
   }, [user.id, user.department, user.role]);
 
-  const refreshData = () => {
-    const list = getStaffGrievances(user);
-    setGrievances(list);
-    if (selectedGrievance) {
-      const authorized = getStaffGrievanceById(selectedGrievance.id, user);
-      if (authorized) {
-        setSelectedGrievance(authorized);
-      } else {
-        setSelectedGrievance(null);
+  const refreshData = async () => {
+    try {
+      const list = await fetchStaffGrievances(user);
+      setGrievances(list);
+      if (selectedGrievance) {
+        const authorized = await fetchStaffGrievanceById(selectedGrievance.id, user);
+        if (authorized) {
+          setSelectedGrievance(authorized);
+        } else {
+          setSelectedGrievance(null);
+        }
       }
+    } catch (err) {
+      console.error(err);
     }
   };
 
-  const handleOpenDossier = (g: Grievance) => {
-    const authorized = getStaffGrievanceById(g.id, user);
+  const handleOpenDossier = async (g: Grievance) => {
+    const authorized = await fetchStaffGrievanceById(g.id, user);
     if (authorized) {
       setSelectedGrievance(authorized);
       setAuthError("");
@@ -60,28 +64,28 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
     }
   };
 
-  const handleDecision = (decision: "ACCEPTED" | "MODIFIED" | "REJECTED") => {
+  const handleDecision = async (decision: "ACCEPTED" | "MODIFIED" | "REJECTED") => {
     if (!selectedGrievance) return;
-    const authorized = getStaffGrievanceById(selectedGrievance.id, user);
+    const authorized = await fetchStaffGrievanceById(selectedGrievance.id, user);
     if (!authorized) {
       setAuthError("Access Denied: Unauthorized modification attempt.");
       setSelectedGrievance(null);
       return;
     }
-    updateStaffDecision(selectedGrievance.id, decision, staffNote || `Officer ${decision.toLowerCase()} recommendation.`);
+    await updateStaffDecision(selectedGrievance.id, decision, staffNote || `Officer ${decision.toLowerCase()} recommendation.`);
     setStaffNote("");
     refreshData();
   };
 
-  const handleStatusChange = (newStatus: GrievanceStatus) => {
+  const handleStatusChange = async (newStatus: GrievanceStatus) => {
     if (!selectedGrievance) return;
-    const authorized = getStaffGrievanceById(selectedGrievance.id, user);
+    const authorized = await fetchStaffGrievanceById(selectedGrievance.id, user);
     if (!authorized) {
       setAuthError("Access Denied: Unauthorized status change attempt.");
       setSelectedGrievance(null);
       return;
     }
-    updateGrievanceStatus(selectedGrievance.id, newStatus, staffNote || `Officer changed status to ${newStatus}.`);
+    await updateGrievanceStatus(selectedGrievance.id, newStatus, staffNote || `Officer changed status to ${newStatus}.`);
     setStaffNote("");
     refreshData();
   };

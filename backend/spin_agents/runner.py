@@ -1,4 +1,15 @@
-"""ADK Runner integration for end-to-end pipeline execution with graceful fallback."""
+"""ADK Runner integration for end-to-end pipeline execution with graceful fallback.
+
+Inputs  → user_message (str), intake_payload (dict)
+Outputs → PipelineResult dict with keys:
+    session_id, pipeline_status, intake_payload,
+    parsed_payload, geospatial_result, policy_output, final_response
+
+Fallback: if ADK LLM is unavailable (missing API key, network error),
+    _fallback_structured_pipeline() runs a local heuristic classifier
+    and persists to SQLite. This is intentional offline/dev support,
+    NOT a production data path — prod always requires ADK to be healthy.
+"""
 
 from __future__ import annotations
 
@@ -21,12 +32,38 @@ _runner = Runner(
     session_service=_session_service,
 )
 
+# --- Domain classifier constants (fallback only) ---
+_DOMAIN_KEYWORDS: list[tuple[list[str], str, int]] = [
+    (["water", "pipe", "leak", "pani", "tap", "jal"], "Water Supply", 8),
+    (["road", "pothole", "sadak", "gaddha", "street"], "Roads & Potholes", 7),
+    (["electric", "power", "light", "bijli", "dark"], "Electricity/Power", 6),
+    (["garbage", "waste", "kachra", "trash", "clean"], "Waste Management & Sanitation", 6),
+]
+_DEFAULT_DOMAIN = ("Infrastructure", 7)
+
+
+def _classify_domain(message: str) -> tuple[str, int]:
+    """Keyword-based domain classifier used only in the offline fallback path."""
+    lower = message.lower()
+    for keywords, domain, severity in _DOMAIN_KEYWORDS:
+        if any(w in lower for w in keywords):
+            return domain, severity
+    return _DEFAULT_DOMAIN
+
 
 async def run_pipeline(
     user_message: str,
     intake_payload: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Execute the SPIN ADK pipeline and return funnelled JSON outputs."""
+    """Execute the SPIN ADK pipeline and return funnelled JSON outputs.
+
+    Args:
+        user_message: English-translated grievance text.
+        intake_payload: Normalized intake dict from the webhook handler.
+
+    Returns:
+        PipelineResult dict. See module docstring for key list.
+    """
     session_id = str(uuid.uuid4())
     user_id = (intake_payload or {}).get("user_id", "anonymous")
     initial_state: dict[str, Any] = {}
@@ -71,37 +108,34 @@ async def run_pipeline(
             "final_response": final_text,
         }
     except Exception as e:
-        # Fallback offline simulation when ADK LLM authentication or key is missing
-        print(f"[Pipeline Runner] ADK live LLM unavailable ({e}), using structured multi-agent fallback engine.")
-        return await _fallback_structured_pipeline(user_message, intake_payload or {}, session_id)
+        # Fallback: ADK live LLM unavailable (no API key, network error, quota)
+        # This is the intended behaviour for local development and CI.
+        print(
+            f"[Pipeline Runner] ADK live LLM unavailable ({type(e).__name__}: {e}), "
+            "using structured multi-agent fallback engine."
+        )
+        return await _fallback_structured_pipeline(
+            user_message, intake_payload or {}, session_id
+        )
 
 
 async def _fallback_structured_pipeline(
     user_message: str, intake: dict[str, Any], session_id: str
 ) -> dict[str, Any]:
-    loc = intake.get("location_data") or {"lat": 18.5204, "lng": 73.8567}
-    lat = loc.get("lat", 18.5204)
-    lng = loc.get("lng", 73.8567)
+    """Offline/dev fallback: heuristic classifier + local SQLite persistence.
 
-    # Domain classification heuristic
-    msg_lower = user_message.lower()
-    if any(w in msg_lower for w in ["water", "pipe", "leak", "pani", "tap", "jal"]):
-        domain = "Water Supply"
-        severity = 8
-    elif any(w in msg_lower for w in ["road", "pothole", "sadak", "gaddha", "street"]):
-        domain = "Roads & Potholes"
-        severity = 7
-    elif any(w in msg_lower for w in ["electric", "power", "light", "bijli", "dark"]):
-        domain = "Electricity/Power"
-        severity = 6
-    elif any(w in msg_lower for w in ["garbage", "waste", "kachra", "trash", "clean"]):
-        domain = "Waste Management & Sanitation"
-        severity = 6
-    else:
-        domain = "Infrastructure"
-        severity = 7
+    WARNING: This path produces approximate domain/severity values.
+    It is intentionally conservative (no red-zone fabrication).
+    The `policy_output.executive_summary` clearly labels it as a fallback result.
+    """
+    loc = intake.get("location_data") or {}
+    lat = float(loc.get("lat", 18.5204))
+    lng = float(loc.get("lng", 73.8567))
+    district = loc.get("district") or loc.get("landmark") or "Unknown"
 
-    parsed_payload = {
+    domain, severity = _classify_domain(user_message)
+
+    parsed_payload: dict[str, Any] = {
         "domain": domain,
         "category": domain,
         "issue_type": f"Reported issue in {domain}",
@@ -112,16 +146,17 @@ async def _fallback_structured_pipeline(
         "original_text": intake.get("original_text", user_message),
         "english_translation": intake.get("english_translation", user_message),
         "user_id": intake.get("user_id", "anon"),
-        "district": "Pune",
-        "state": "Maharashtra",
+        "district": district,
+        "state": loc.get("state", "Unknown"),
         "needs_human_review": False,
     }
 
     gati_overlap = await query_gati_shakti_layers(lat, lng, domain)
     insert_grievance_record(parsed_payload)
 
-    geospatial_result = {
-        "grievance_id": f"grievance-{uuid.uuid4().hex[:8]}",
+    grievance_id = f"grievance-{uuid.uuid4().hex[:8]}"
+    geospatial_result: dict[str, Any] = {
+        "grievance_id": grievance_id,
         "insert_status": "persisted",
         "gati_shakti_overlap": gati_overlap,
         "domain": domain,
@@ -131,47 +166,32 @@ async def _fallback_structured_pipeline(
         "priority_gap": gati_overlap.get("priority_gap", True),
     }
 
-    # Save to local SQLite database
-    try:
-        from spin_agents.db import AsyncSessionLocal
-        from spin_agents.models import Grievance
-        async with AsyncSessionLocal() as session:
-            new_g = Grievance(
-                grievance_id=geospatial_result["grievance_id"],
-                user_id=parsed_payload["user_id"],
-                domain=domain,
-                category=domain,
-                severity=severity,
-                priority=parsed_payload["priority"],
-                latitude=lat,
-                longitude=lng,
-                original_text=parsed_payload["original_text"],
-                english_translation=parsed_payload["english_translation"],
-                district=parsed_payload["district"],
-                state=parsed_payload["state"]
-            )
-            session.add(new_g)
-            await session.commit()
-    except Exception as e:
-        print(f"[Pipeline Runner] Failed to save grievance to local DB: {e}")
+    # Persist to local SQLite (dev/offline only)
+    from spin_agents.services.grievance_service import persist_grievance_to_db
+    await persist_grievance_to_db(grievance_id, parsed_payload, lat, lng)
 
-    weekly_stats = query_weekly_summary("Pune")
-    policy_output = {
-        "executive_summary": f"High-priority {domain} grievance recorded at [{lat:.4f}, {lng:.4f}]. Correlated with PM Gati Shakti GIS layers.",
-        "weekly_stats": weekly_stats or {"total_complaints": 1240, "top_domain": domain, "district": "Pune", "red_zone_count": 14},
-        "red_zone_alert": geospatial_result["priority_gap"],
-        "notification_sent": True,
-        "dashboard_update": {
-            "district": "Pune",
-            "total_complaints": 1240,
+    weekly_stats = query_weekly_summary(district if district != "Unknown" else None)
+    policy_output: dict[str, Any] = {
+        "executive_summary": (
+            f"[FALLBACK MODE] {domain} grievance recorded at "
+            f"[{lat:.4f}, {lng:.4f}] (district: {district}). "
+            "AI pipeline offline — classification is heuristic only. "
+            "Full AI analysis will run when the backend pipeline is online."
+        ),
+        "weekly_stats": weekly_stats or {
+            "total_complaints": 0,
             "top_domain": domain,
-            "recommended_action": f"Deploy municipal {domain} repair team.",
+            "district": district,
+            "red_zone_count": 0,
         },
+        "red_zone_alert": geospatial_result["priority_gap"],
+        "notification_sent": False,
+        "is_fallback": True,
     }
 
     return {
         "session_id": session_id,
-        "pipeline_status": "completed",
+        "pipeline_status": "fallback_completed",
         "intake_payload": intake,
         "parsed_payload": parsed_payload,
         "geospatial_result": geospatial_result,

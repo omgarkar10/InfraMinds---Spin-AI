@@ -1,4 +1,15 @@
-"""PM Gati Shakti National Master Plan GIS layer correlation."""
+"""PM Gati Shakti National Master Plan GIS layer correlation wrapper.
+
+Isolation contract:
+  - ALL Gati Shakti API calls from the SPIN backend go through this module.
+  - If CONFIG.gati_shakti_api_key is not set, _mock_gati_shakti_response()
+    returns deterministic demo data keyed on (lat, lng) coordinates.
+  - Protected: Do NOT change the request/response schema without updating
+    API_CONTRACTS.md and the consuming agent tools.
+  - The 'source' field on mock responses is always set to 'mock' so callers
+    can distinguish real data from demo data.
+"""
+
 
 from __future__ import annotations
 

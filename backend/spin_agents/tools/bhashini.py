@@ -1,4 +1,14 @@
-"""Bhashini API integration for ASR and translation across 22 Indian languages."""
+"""Bhashini API integration for ASR and translation across 22 Indian languages.
+
+Isolation contract:
+  - ALL multilingual ASR and NMT calls from the SPIN backend go through this module.
+  - If CONFIG.bhashini_api_key / bhashini_user_id are not set, falls back to
+    translate_service.translate_to_english() (Google Cloud Translate).
+  - If all translation providers are unavailable, returns the original text
+    as-is with source_language='unknown' — never raises.
+  - Protected: Do NOT change Bhashini request payload formats without verifying
+    compatibility with the active Bhashini API version.
+"""
 
 from __future__ import annotations
 

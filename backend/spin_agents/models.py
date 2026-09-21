@@ -34,8 +34,8 @@ class Grievance(Base):
     landmark = Column(String(255), nullable=True)
     original_text = Column(Text, nullable=True)
     english_translation = Column(Text, nullable=True)
-    district = Column(String(100), default="Pune")
-    state = Column(String(100), default="Maharashtra")
+    district = Column(String(100), nullable=True)
+    state = Column(String(100), nullable=True)
     status = Column(String(50), default="Submitted")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

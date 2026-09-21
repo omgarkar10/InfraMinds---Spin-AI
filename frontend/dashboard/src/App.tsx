@@ -8,7 +8,6 @@ import { HowItHelpsSection } from "./components/landing/HowItHelpsSection";
 import { WhatYouCanReportSection } from "./components/landing/WhatYouCanReportSection";
 import { FinalCtaSection } from "./components/landing/FinalCtaSection";
 import { Footer } from "./components/landing/Footer";
-import { DemoModal } from "./components/landing/DemoModal";
 import { PolicyDashboard } from "./components/PolicyDashboard";
 import { ChatbotWidget } from "./components/ChatbotWidget";
 
@@ -54,10 +53,9 @@ function AppInner() {
   // For Reset Password flow
   const [resetPhone, setResetPhone] = useState<string>("");
 
-  const [citizenUser, setCitizenUser] = useState<CitizenUser>(getStoredCitizenUser());
-  const [staffUser, setStaffUser] = useState<StaffUser>(getStoredStaffUser());
-  const [ministryUser, setMinistryUser] = useState<StaffUser>(getStoredStaffUser());
-  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+  const [citizenUser, setCitizenUser] = useState<CitizenUser>(getStoredCitizenUser() as CitizenUser);
+  const [staffUser, setStaffUser] = useState<StaffUser>(getStoredStaffUser() as StaffUser);
+  const [ministryUser, setMinistryUser] = useState<StaffUser>(getStoredStaffUser() as StaffUser);
 
   /* Navigation handler with Auth Protection */
   const handleNavigate = (newView: string, extraId?: string) => {
@@ -118,12 +116,6 @@ function AppInner() {
       <Navbar
         view={view}
         onViewChange={(v) => handleNavigate(v)}
-      />
-
-      <DemoModal
-        isOpen={isDemoModalOpen}
-        onClose={() => setIsDemoModalOpen(false)}
-        onOpenDashboard={() => handleNavigate("dashboard")}
       />
 
       {/* VIEW ROUTING */}

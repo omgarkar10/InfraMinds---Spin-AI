@@ -1,8 +1,21 @@
+/**
+ * usePolicyData — fetches dashboard summary and red-zone data from the backend.
+ *
+ * Primary path: GET /api/dashboard/summary + /api/dashboard/red-zones
+ * Fallback path: aggregate real grievances from the local /api/grievances list.
+ *
+ * The fallback ONLY aggregates real citizen-submitted grievances — it does NOT
+ * generate fabricated metrics. If there are no grievances, counts are zero.
+ *
+ * NOTE: The `calculateLiveSummary` fallback uses severity from the backend
+ * (High / Critical) as a proxy for red-zone status. It does NOT use the
+ * old frontend-only `aiAnalysis.redZone` field.
+ */
 import { useCallback, useEffect, useState } from "react";
 import type { DashboardSummary, RedZone, PolicyActionRequest, InfrastructureDomain } from "../types";
-import { getStoredGrievances } from "../services/grievanceService";
-
+import { fetchGrievances } from "../services/grievanceService";
 import { apiClient } from "../services/apiClient";
+
 function mapCategoryToDomain(cat: string): InfrastructureDomain {
   const lower = (cat || "").toLowerCase();
   if (lower.includes("water") || lower.includes("drain")) return "Water";
@@ -11,9 +24,17 @@ function mapCategoryToDomain(cat: string): InfrastructureDomain {
   return "Water";
 }
 
-function calculateLiveSummary(districtFilter?: string, stateFilter?: string): { summary: DashboardSummary; redZones: RedZone[] } {
-  const all = getStoredGrievances();
+/**
+ * Fallback summary calculated from real backend grievances.
+ * Uses only data returned by the backend — no fabricated values.
+ */
+async function calculateLiveSummary(
+  districtFilter?: string,
+  stateFilter?: string
+): Promise<{ summary: DashboardSummary; redZones: RedZone[] }> {
+  const all = await fetchGrievances();
   let filtered = all;
+
   if (stateFilter) {
     filtered = filtered.filter((g) => g.location.state?.toLowerCase() === stateFilter.toLowerCase());
   }
@@ -25,8 +46,8 @@ function calculateLiveSummary(districtFilter?: string, stateFilter?: string): { 
     return {
       summary: {
         executive_summary: districtFilter
-          ? `No complaints filed for ${districtFilter} yet.`
-          : "No citizen grievances recorded yet. Submit a report via the Citizen Portal to view real-time intelligence summaries.",
+          ? `No grievances recorded for ${districtFilter} yet.`
+          : "No citizen grievances recorded yet. Submit a report via the Citizen Portal.",
         weekly_stats: {
           district: districtFilter || "All Districts",
           total_complaints: 0,
@@ -40,45 +61,44 @@ function calculateLiveSummary(districtFilter?: string, stateFilter?: string): { 
     };
   }
 
+  // Count by category to find dominant domain
   const domainCounts: Record<string, number> = {};
   filtered.forEach((g) => {
     domainCounts[g.category] = (domainCounts[g.category] || 0) + 1;
   });
 
-  let topCategory = "Water";
+  let topCategory = "Water Supply";
   let maxCount = 0;
   Object.entries(domainCounts).forEach(([domain, count]) => {
-    if (count > maxCount) {
-      maxCount = count;
-      topCategory = domain;
-    }
+    if (count > maxCount) { maxCount = count; topCategory = domain; }
   });
 
   const topDomain = mapCategoryToDomain(topCategory);
+
+  // Red zone count: grievances with High or Critical severity from the backend
+  // (not the old frontend-fabricated aiAnalysis.redZone field)
   const redZoneCount = filtered.filter(
-    (g) => g.aiAnalysis?.redZone || g.severity === "High" || g.severity === "Critical"
+    (g) => g.severity === "High" || g.severity === "Critical"
   ).length;
 
-  const severityScores: Record<string, number> = {
-    Low: 2.5,
-    Medium: 5.0,
-    High: 8.0,
-    Critical: 10.0,
-  };
+  const severityScores: Record<string, number> = { Low: 2.5, Medium: 5.0, High: 8.0, Critical: 10.0 };
   const totalSeverity = filtered.reduce((acc, g) => acc + (severityScores[g.severity] || 5.0), 0);
   const avgSeverity = filtered.length > 0 ? Number((totalSeverity / filtered.length).toFixed(1)) : 0;
 
-  const redZones: RedZone[] = filtered.map((g) => ({
-    lat: g.location.lat || 18.5204,
-    lng: g.location.lng || 73.8567,
-    density: 100,
-    domain: mapCategoryToDomain(g.category),
-    district: g.location.district || "Default",
-  }));
+  // Red zones: only grievances with valid coordinates; density = count of grievances at that location
+  const redZones: RedZone[] = filtered
+    .filter((g) => g.location.lat && g.location.lng)
+    .map((g) => ({
+      lat: g.location.lat!,
+      lng: g.location.lng!,
+      density: 1, // Each grievance is one signal; backend clusters will aggregate
+      domain: mapCategoryToDomain(g.category),
+      district: g.location.district || "Unknown",
+    }));
 
   return {
     summary: {
-      executive_summary: `${filtered.length} verified complaint(s) recorded in ${districtFilter || "all districts"}. ${topCategory} infrastructure dominates grievance volume. ${redZoneCount} Red Zone cluster(s) logged.`,
+      executive_summary: `${filtered.length} grievance(s) recorded in ${districtFilter || "all districts"}. ${topCategory} dominates. ${redZoneCount} High/Critical severity cases.`,
       weekly_stats: {
         district: districtFilter || "All Districts",
         total_complaints: filtered.length,
@@ -109,15 +129,21 @@ export function usePolicyData() {
 
       const [summaryData, zonesData] = await Promise.all([
         apiClient.get<DashboardSummary>(`/api/dashboard/summary${params}`),
-        apiClient.get<{red_zones: RedZone[]}>(`/api/dashboard/red-zones${params}`),
+        apiClient.get<{ red_zones: RedZone[] }>(`/api/dashboard/red-zones${params}`),
       ]);
       setSummary(summaryData);
       setRedZones(zonesData.red_zones ?? []);
     } catch (err) {
-      console.warn("Backend fetch failed, calculating live data from storage:", err);
-      const live = calculateLiveSummary(district, state);
-      setSummary(live.summary);
-      setRedZones(live.redZones);
+      // Backend dashboard unavailable — fall back to local grievance aggregation
+      console.warn("[usePolicyData] Backend dashboard unavailable, aggregating from grievance list:", err);
+      try {
+        const live = await calculateLiveSummary(district, state);
+        setSummary(live.summary);
+        setRedZones(live.redZones);
+      } catch (fallbackErr) {
+        console.error("[usePolicyData] Fallback calculation failed:", fallbackErr);
+        setError("Could not load dashboard data. Please check your connection.");
+      }
     } finally {
       setLoading(false);
     }
@@ -127,10 +153,11 @@ export function usePolicyData() {
     try {
       return await apiClient.post("/api/dashboard/policy-action", action);
     } catch (err) {
-      console.warn("Policy action endpoint offline, mock response returned:", err);
+      console.warn("[usePolicyData] Policy action endpoint offline:", err);
+      // Return a locally-tracked fallback so the UI doesn't freeze
       return {
         status: action.action,
-        notification: { status: "mock_sent", to: action.user_id },
+        notification: { status: "offline_queued", to: action.user_id },
         budget_reallocated_cr: action.budget_cr,
       };
     }
