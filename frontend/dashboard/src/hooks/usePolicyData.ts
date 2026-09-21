@@ -2,8 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { DashboardSummary, RedZone, PolicyActionRequest, InfrastructureDomain } from "../types";
 import { getStoredGrievances } from "../services/grievanceService";
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "";
-
+import { apiClient } from "../services/apiClient";
 function mapCategoryToDomain(cat: string): InfrastructureDomain {
   const lower = (cat || "").toLowerCase();
   if (lower.includes("water") || lower.includes("drain")) return "Water";
@@ -108,13 +107,10 @@ export function usePolicyData() {
       if (state) queryParts.push(`state=${encodeURIComponent(state)}`);
       const params = queryParts.length > 0 ? `?${queryParts.join("&")}` : "";
 
-      const [summaryRes, zonesRes] = await Promise.all([
-        fetch(`${API_BASE}/api/dashboard/summary${params}`),
-        fetch(`${API_BASE}/api/dashboard/red-zones${params}`),
+      const [summaryData, zonesData] = await Promise.all([
+        apiClient.get<DashboardSummary>(`/api/dashboard/summary${params}`),
+        apiClient.get<{red_zones: RedZone[]}>(`/api/dashboard/red-zones${params}`),
       ]);
-      if (!summaryRes.ok || !zonesRes.ok) throw new Error("Backend server unreachable");
-      const summaryData: DashboardSummary = await summaryRes.json();
-      const zonesData = await zonesRes.json();
       setSummary(summaryData);
       setRedZones(zonesData.red_zones ?? []);
     } catch (err) {
@@ -129,13 +125,7 @@ export function usePolicyData() {
 
   const approvePolicyAction = useCallback(async (action: PolicyActionRequest) => {
     try {
-      const res = await fetch(`${API_BASE}/api/dashboard/policy-action`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(action),
-      });
-      if (!res.ok) throw new Error("Policy action failed");
-      return await res.json();
+      return await apiClient.post("/api/dashboard/policy-action", action);
     } catch (err) {
       console.warn("Policy action endpoint offline, mock response returned:", err);
       return {

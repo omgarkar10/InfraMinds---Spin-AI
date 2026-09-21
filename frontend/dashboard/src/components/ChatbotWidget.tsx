@@ -1,13 +1,12 @@
 import { useState } from "react";
 import { CitizenChat } from "./CitizenChat";
-import { API_URL } from "../config";
+
 
 export function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleChat = () => setIsOpen((prev) => !prev);
 
-  const apiUrl = API_URL;
 
   return (
     <div className="chatbot-widget-container">
@@ -18,7 +17,7 @@ export function ChatbotWidget() {
             <button className="close-chat-btn" onClick={toggleChat} title="Close chat">
               &times;
             </button>
-            <CitizenChat apiUrl={apiUrl} />
+            <CitizenChat />
           </div>
         </div>
       )}

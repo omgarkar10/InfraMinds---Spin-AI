@@ -1,32 +1,15 @@
-import { API_BASE } from "../config";
+import { apiClient } from "./apiClient";
 
 export async function getCountriesConfig() {
-  const response = await fetch(`${API_BASE}/config/countries`);
-  if (!response.ok) {
-    throw new Error("Failed to load country configuration");
-  }
-  return response.json();
+  return apiClient.get<any>("/config/countries");
 }
 
 export async function getAuthConfig() {
-  const response = await fetch(`${API_BASE}/config/auth`);
-  if (!response.ok) {
-    throw new Error("Failed to load authentication configuration");
-  }
-  return response.json();
+  return apiClient.get<any>("/config/auth");
 }
 
 export async function citizenSignup(payload: { name: string; countryCode: string; phone: string; password: string; }) {
-  const response = await fetch(`${API_BASE}/auth/citizen/signup`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Unable to create your account.");
-  }
-  const data = await response.json();
+  const data = await apiClient.post<any>("/auth/citizen/signup", payload);
   if (data.access_token) {
     localStorage.setItem("citizen_token", data.access_token);
   }
@@ -34,16 +17,7 @@ export async function citizenSignup(payload: { name: string; countryCode: string
 }
 
 export async function citizenLogin(payload: { countryCode: string; phone: string; password: string; }) {
-  const response = await fetch(`${API_BASE}/auth/citizen/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Invalid phone number or password.");
-  }
-  const data = await response.json();
+  const data = await apiClient.post<any>("/auth/citizen/login", payload);
   if (data.access_token) {
     localStorage.setItem("citizen_token", data.access_token);
   }
@@ -51,29 +25,11 @@ export async function citizenLogin(payload: { countryCode: string; phone: string
 }
 
 export async function citizenForgotPassword(payload: { countryCode: string; phone: string; }) {
-  const response = await fetch(`${API_BASE}/auth/citizen/forgot-password`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Failed to process request.");
-  }
-  return response.json();
+  return apiClient.post<any>("/auth/citizen/forgot-password", payload);
 }
 
 export async function citizenResetPassword(payload: { phone: string; password: string; }) {
-  const response = await fetch(`${API_BASE}/auth/citizen/reset-password`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Failed to reset password.");
-  }
-  return response.json();
+  return apiClient.post<any>("/auth/citizen/reset-password", payload);
 }
 
 export function citizenLogout() {
@@ -81,18 +37,7 @@ export function citizenLogout() {
 }
 
 export async function staffLogin(identifier: string, password: string) {
-  const response = await fetch(`${API_BASE}/auth/staff-login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ identifier, password }),
-  });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Invalid credentials");
-  }
-  const data = await response.json();
+  const data = await apiClient.post<any>("/auth/staff-login", { identifier, password });
   if (data.access_token) {
     localStorage.setItem("staff_token", data.access_token);
   }

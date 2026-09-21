@@ -1,8 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-
-interface CitizenChatProps {
-  apiUrl?: string;
-}
+import { apiClient } from "../services/apiClient";
+interface CitizenChatProps {}
 
 interface ChatMessage {
   role: "bot" | "user";
@@ -83,7 +81,7 @@ const FEEDBACK_OPTIONS = [
   "👎 Needs Improvement",
 ];
 
-export function CitizenChat({ apiUrl = "" }: CitizenChatProps) {
+export function CitizenChat(_props: CitizenChatProps = {}) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: "bot", text: "Hello! Welcome to SPIN civic portal." },
     { role: "bot", text: "Would you like to register a grievance?" },
@@ -165,17 +163,12 @@ export function CitizenChat({ apiUrl = "" }: CitizenChatProps) {
     const generatedId = `GRV-${Math.floor(1000 + Math.random() * 9000)}`;
 
     try {
-      const res = await fetch(`${apiUrl}/api/pipeline/run`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: `citizen-${Date.now()}`,
-          text: fullIssueText,
-          source_language: "auto",
-          location: typeof loc === "string" ? { landmark: loc } : loc,
-        }),
+      const data = await apiClient.post<any>("/api/pipeline/run", {
+        user_id: `citizen-${Date.now()}`,
+        text: fullIssueText,
+        source_language: "auto",
+        location: typeof loc === "string" ? { landmark: loc } : loc,
       });
-      const data = await res.json();
       
       const summary = data.policy_output?.executive_summary;
       let confirmationText = `✅ Grievance recorded successfully with ID: ${generatedId}.`;
