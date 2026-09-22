@@ -12,13 +12,33 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
     <div className="citizen-portal-container">
       {/* Top Government Service Header */}
       <div className="portal-header-bar">
-        <div className="container portal-header-inner">
-          <div className="portal-title-group">
-            <span className="portal-org">SPIN · SYMBIOTIC PUBLIC INFRASTRUCTURE NETWORK</span>
-            <h1 className="portal-heading">Citizen Grievance Services</h1>
-            <p className="portal-subtext">
-              Report a public infrastructure issue or track the progress of a grievance you have already submitted.
-            </p>
+        <div className="container portal-header-inner" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            <button
+              className="btn-outline"
+              style={{
+                color: "#fff",
+                borderColor: "rgba(255,255,255,0.4)",
+                background: "rgba(255,255,255,0.1)",
+                fontSize: "12px",
+                fontWeight: "700",
+                padding: "6px 12px",
+                borderRadius: "6px",
+                cursor: "pointer",
+                whiteSpace: "nowrap"
+              }}
+              onClick={() => onNavigate("landing")}
+            >
+              ← Back to Home
+            </button>
+
+            <div className="portal-title-group">
+              <span className="portal-org">SPIN · SYMBIOTIC PUBLIC INFRASTRUCTURE NETWORK</span>
+              <h1 className="portal-heading">Infrastructure Demand Services</h1>
+              <p className="portal-subtext">
+                Report a public infrastructure issue or track the progress of a request you have already submitted.
+              </p>
+            </div>
           </div>
 
           {user.isLoggedIn ? (
@@ -39,7 +59,7 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
           {/* CARD 1: RAISE A NEW GRIEVANCE */}
           <div className="service-card">
             <span className="service-card-tag">SERVICE 01 · INTAKE</span>
-            <h2 className="service-card-title">RAISE A NEW GRIEVANCE</h2>
+            <h2 className="service-card-title">SUBMIT DEVELOPMENT NEED</h2>
             <p className="service-card-desc">
               Report a public infrastructure issue affecting your area directly to municipal authorities.
             </p>
@@ -55,19 +75,19 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
               className="service-card-btn service-card-btn-orange"
               onClick={() => onNavigate("citizen-raise")}
             >
-              Raise a Grievance →
+              Submit Request →
             </button>
           </div>
 
           {/* CARD 2: TRACK A GRIEVANCE */}
           <div className="service-card">
             <span className="service-card-tag">SERVICE 02 · STATUS</span>
-            <h2 className="service-card-title">TRACK A GRIEVANCE</h2>
+            <h2 className="service-card-title">TRACK A REQUEST</h2>
             <p className="service-card-desc">
-              Check the live status, department assignment, and official updates of grievances you have submitted.
+              Check the live status, department assignment, and official updates of requests you have submitted.
             </p>
             <ul className="service-card-examples">
-              <li>• Search by Grievance ID (e.g. SPIN-2026-123456)</li>
+              <li>• Search by Request ID (e.g. SPIN-2026-123456)</li>
               <li>• Real-time department routing status</li>
               <li>• AI Spatial Cluster correlation breakdown</li>
               <li>• Official resolution timeline</li>
@@ -77,7 +97,7 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
               className="service-card-btn"
               onClick={() => onNavigate("citizen-track")}
             >
-              Track My Grievance →
+              Track My Request →
             </button>
           </div>
         </div>
@@ -86,7 +106,7 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
         <div className="process-flow-box">
           <span className="label-eyebrow">TRANSPARENT PROCESS FLOW</span>
           <h3 className="editorial-h3" style={{ fontSize: "20px", marginTop: "4px" }}>
-            How SPIN processes your grievance
+            How SPIN processes your request
           </h3>
 
           <div className="process-stepper-line">

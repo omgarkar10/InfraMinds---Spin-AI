@@ -24,13 +24,20 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
   }, [languageQuery]);
 
   const SECTIONS = [
-    { id: "overview", label: "Overview" },
+    { id: "home", label: "Home" },
     { id: "why-spin", label: "Why SPIN" },
     { id: "how-it-helps", label: "How It Helps You" },
     { id: "categories", label: "What You Can Report" },
   ];
 
   const scrollTo = (id: string) => {
+    if (id === "home") {
+      onViewChange("landing");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      setMenuOpen(false);
+      return;
+    }
+
     if (view !== "landing") {
       onViewChange("landing");
       setTimeout(() => {
@@ -139,15 +146,6 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
                 </>
               )}
             </div>
-
-            <a href="#accessibility" className="gov-top-link">Accessibility</a>
-            <a href="#help" className="gov-top-link">Help</a>
-            <button
-              className="navbar-cta navbar-cta-primary"
-              onClick={() => onViewChange("staff-login")}
-            >
-              Staff Portal
-            </button>
           </div>
         </div>
       </div>
@@ -176,9 +174,9 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
           <div className="navbar-actions">
             <button
               className={`navbar-cta ${isCitizenView ? "active" : ""}`}
-              onClick={() => onViewChange("citizen")}
+              onClick={() => onViewChange("citizen-login")}
             >
-              Citizen Portal
+              Sign In
             </button>
           </div>
 
@@ -198,8 +196,8 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
               </button>
             ))}
 
-            <button className="navbar-mobile-link" onClick={() => { onViewChange("citizen"); setMenuOpen(false); }}>
-              Citizen Portal
+            <button className="navbar-mobile-link" onClick={() => { onViewChange("citizen-login"); setMenuOpen(false); }}>
+              Sign In
             </button>
           </div>
         )}

@@ -44,12 +44,19 @@ function AppInner() {
   const [view, setView] = useState<ViewState>("landing");
   const [targetViewAfterLogin, setTargetViewAfterLogin] = useState<string>("citizen-raise");
   const [selectedGrievanceId, setSelectedGrievanceId] = useState<string>("");
-  
+
   // For Reset Password flow
   const [resetPhone, setResetPhone] = useState<string>("");
 
-  const [citizenUser, setCitizenUser] = useState<CitizenUser>(getStoredCitizenUser());
-  const [staffUser, setStaffUser] = useState<StaffUser>(getStoredStaffUser());
+  const [citizenUser, setCitizenUser] = useState<CitizenUser>(
+    (getStoredCitizenUser() as CitizenUser) || { id: "cit-001", name: "", phone: "", isLoggedIn: false }
+  );
+  const [staffUser, setStaffUser] = useState<StaffUser>(
+    (getStoredStaffUser() as StaffUser) || { id: "", name: "", employeeId: "", email: "", department: "", role: "Department Officer", isLoggedIn: false }
+  );
+  const [ministryUser, setMinistryUser] = useState<StaffUser>(
+    (getStoredStaffUser() as StaffUser) || { id: "", name: "", employeeId: "", email: "", department: "", role: "Policymaker", isLoggedIn: false }
+  );
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
 
   /* Navigation handler with Citizen Auth Protection */
@@ -122,19 +129,20 @@ function AppInner() {
         <CitizenLogin
           onLoginSuccess={handleCitizenLoginSuccess}
           targetViewAfterLogin={targetViewAfterLogin}
-          onCancel={() => setView("citizen")}
+          onCancel={() => setView("landing")}
           onSignupClick={() => setView("citizen-signup")}
           onForgotPasswordClick={() => setView("citizen-forgot-password")}
+          onSwitchToStaff={() => setView("staff-login")}
         />
       )}
-      
+
       {view === "citizen-signup" && (
         <CitizenSignup
           onLoginClick={() => setView("citizen-login")}
           onSignupSuccess={handleCitizenLoginSuccess}
         />
       )}
-      
+
       {view === "citizen-forgot-password" && (
         <CitizenForgotPassword
           onBackToLogin={() => setView("citizen-login")}
@@ -144,7 +152,7 @@ function AppInner() {
           }}
         />
       )}
-      
+
       {view === "citizen-reset-password" && (
         <CitizenResetPassword
           phone={resetPhone}
@@ -175,11 +183,11 @@ function AppInner() {
         />
       )}
 
-      {/* STAFF PORTAL VIEWS */}
       {view === "staff-login" && (
         <StaffLogin
           onLoginSuccess={handleStaffLoginSuccess}
           onCancel={() => setView("landing")}
+          onSwitchToCitizen={() => setView("citizen-login")}
         />
       )}
 
@@ -213,7 +221,7 @@ function AppInner() {
 
 export function App() {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? "";
-  
+
   return (
     <APIProvider apiKey={apiKey}>
       <LanguageProvider>

@@ -15,14 +15,14 @@ export function Footer({ onViewChange }: FooterProps) {
             <span className="footer-wordmark">SPIN</span>
             <span className="footer-descriptor">SYMBIOTIC PUBLIC INFRASTRUCTURE NETWORK</span>
             <p className="footer-tagline">
-              Connecting citizen grievance reporting with municipal infrastructure decision-makers.
+              Connecting community demand signals with municipal infrastructure decision-makers.
             </p>
           </div>
 
           <div className="footer-links-col">
             <span className="label-eyebrow">CITIZEN SERVICES</span>
             <button className="footer-link" onClick={() => onViewChange("citizen-raise")}>Report a Problem</button>
-            <button className="footer-link" onClick={() => onViewChange("citizen-track")}>Track My Grievance</button>
+            <button className="footer-link" onClick={() => onViewChange("citizen-track")}>Track My Request</button>
             <button className="footer-link" onClick={() => onViewChange("citizen")}>Citizen Portal Home</button>
           </div>
 

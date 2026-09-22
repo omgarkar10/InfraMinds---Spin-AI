@@ -33,17 +33,37 @@ export const TrackGrievances: React.FC<TrackGrievancesProps> = ({ onNavigate }) 
     <div className="citizen-portal-container">
       {/* Top Header */}
       <div className="portal-header-bar">
-        <div className="container portal-header-inner">
-          <div className="portal-title-group">
-            <span className="portal-org">SPIN · CITIZEN SERVICES</span>
-            <h1 className="portal-heading">My Submitted Grievances</h1>
-            <p className="portal-subtext">
-              Track real-time resolution progress, department routing, and spatial cluster analysis.
-            </p>
+        <div className="container portal-header-inner" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+            <button
+              className="btn-outline"
+              style={{
+                color: "#fff",
+                borderColor: "rgba(255,255,255,0.4)",
+                background: "rgba(255,255,255,0.1)",
+                fontSize: "12px",
+                fontWeight: "700",
+                padding: "6px 12px",
+                borderRadius: "6px",
+                cursor: "pointer",
+                whiteSpace: "nowrap"
+              }}
+              onClick={() => onNavigate("landing")}
+            >
+              ← Back to Home
+            </button>
+
+            <div className="portal-title-group">
+              <span className="portal-org">SPIN · CITIZEN SERVICES</span>
+              <h1 className="portal-heading">My Submitted Requests</h1>
+              <p className="portal-subtext">
+                Track real-time resolution progress, department routing, and spatial cluster analysis.
+              </p>
+            </div>
           </div>
 
           <button className="service-card-btn service-card-btn-orange" onClick={() => onNavigate("citizen-raise")}>
-            + Raise New Grievance
+            + Submit New Request
           </button>
         </div>
       </div>
@@ -52,7 +72,7 @@ export const TrackGrievances: React.FC<TrackGrievancesProps> = ({ onNavigate }) 
         {/* Top 4 Summary Cards */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" }}>
           <div className="stat-card">
-            <span className="stat-label">TOTAL GRIEVANCES</span>
+            <span className="stat-label">TOTAL REQUESTS</span>
             <span className="stat-value">{totalCount}</span>
           </div>
           <div className="stat-card accent">
@@ -73,7 +93,7 @@ export const TrackGrievances: React.FC<TrackGrievancesProps> = ({ onNavigate }) 
         <div className="form-card" style={{ padding: "16px", marginBottom: "24px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: "12px" }}>
             <div className="form-group">
-              <label className="form-label">Search Grievance ID</label>
+              <label className="form-label">Search Request ID</label>
               <input
                 type="text"
                 className="form-input"
@@ -129,11 +149,11 @@ export const TrackGrievances: React.FC<TrackGrievancesProps> = ({ onNavigate }) 
           </div>
         </div>
 
-        {/* Grievances List / Cards */}
+        {/* Requests List / Cards */}
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           {filtered.length === 0 ? (
             <div className="form-card" style={{ textAlign: "center", padding: "40px" }}>
-              <p className="portal-subtext">No grievances found matching your search criteria.</p>
+              <p className="portal-subtext">No requests found matching your search criteria.</p>
             </div>
           ) : (
             filtered.map((g) => (
@@ -172,7 +192,7 @@ export const TrackGrievances: React.FC<TrackGrievancesProps> = ({ onNavigate }) 
                 <div style={{ background: "var(--col-panel)", padding: "10px 14px", borderRadius: "6px", fontSize: "12px", color: "var(--col-text-mid)", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "8px" }}>
                   <span><strong>Assigned Department:</strong> {g.department}</span>
                   <span><strong>Severity:</strong> <span style={{ color: "var(--col-red)", fontWeight: "600" }}>{g.severity}</span></span>
-                  <span><strong>Nearby Grievances:</strong> {g.aiAnalysis.nearbyGrievances} signals</span>
+                  <span><strong>Nearby Signals:</strong> {g.aiAnalysis.nearbyGrievances} signals</span>
                 </div>
               </div>
             ))

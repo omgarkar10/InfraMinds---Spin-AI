@@ -13,6 +13,7 @@ interface CitizenLoginProps {
   onCancel: () => void;
   onSignupClick?: () => void;
   onForgotPasswordClick?: () => void;
+  onSwitchToStaff?: () => void;
 }
 
 export const CitizenLogin: React.FC<CitizenLoginProps> = ({
@@ -20,6 +21,7 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
   onCancel,
   onSignupClick,
   onForgotPasswordClick,
+  onSwitchToStaff,
 }) => {
   const [countries, setCountries] = useState<CountryPhoneConfig[]>([]);
   const [loadingConfig, setLoadingConfig] = useState(true);
@@ -117,6 +119,10 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
     <div className="citizen-portal-container">
       <div className="container">
         <div className="login-card">
+          <div style={{ display: "flex", borderBottom: "1px solid #eee", marginBottom: "20px" }}>
+            <button style={{ flex: 1, padding: "12px", borderBottom: "2px solid var(--col-orange)", fontWeight: 700, color: "var(--col-orange)", background: "transparent", borderTop: "none", borderLeft: "none", borderRight: "none" }}>Citizen Login</button>
+            <button type="button" style={{ flex: 1, padding: "12px", borderBottom: "2px solid transparent", color: "var(--col-text-muted)", background: "transparent", borderTop: "none", borderLeft: "none", borderRight: "none", cursor: "pointer" }} onClick={onSwitchToStaff}>Staff Login</button>
+          </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span className="label-eyebrow">GOVERNMENT SERVICE LOGIN</span>
           </div>

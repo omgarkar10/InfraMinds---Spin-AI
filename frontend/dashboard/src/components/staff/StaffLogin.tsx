@@ -8,9 +8,10 @@ import type { StaffUser } from "../../types";
 interface StaffLoginProps {
   onLoginSuccess: (user: StaffUser) => void;
   onCancel: () => void;
+  onSwitchToCitizen?: () => void;
 }
 
-export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel }) => {
+export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel, onSwitchToCitizen }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [department, setDepartment] = useState<string>(DEPARTMENTS[0]);
@@ -28,20 +29,9 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel
     setLoading(true);
     setError("");
 
-    try {
-      const result = await staffLogin(email, password);
-
-      const user: StaffUser = {
-        id: result.user.id,
-        name: result.user.name || "Department Officer",
-        employeeId: result.user.id ? `EMP-${result.user.id.slice(0, 5).toUpperCase()}` : "EMP-90812",
-        email: result.user.email || email,
-        department: result.user.department || department,
-        role: (result.user.role as StaffUser["role"]) || role,
-        isLoggedIn: true,
-      };
-      performLoginWithUser(user);
-    } catch (err: any) {
+    // Auth setup deferred to next sprint as per MVP requirements
+    // Bypassing real auth and automatically logging in
+    setTimeout(() => {
       const empId = `EMP-${Math.floor(10000 + Math.random() * 90000)}`;
       const fallbackUser: StaffUser = {
         id: `staff-${Date.now()}`,
@@ -53,9 +43,8 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel
         isLoggedIn: true,
       };
       performLoginWithUser(fallbackUser);
-    } finally {
       setLoading(false);
-    }
+    }, 800);
   };
 
   const handleQuickDemoLogin = (dept: string, roleName: StaffUser["role"], officerName: string) => {
@@ -74,15 +63,19 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel
   return (
     <div className="citizen-portal-container">
       <div className="container">
-        <div className="login-card" style={{ borderTop: "4px solid var(--col-navy)", maxWidth: "540px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div className="login-card" style={{ borderTop: "4px solid var(--col-navy)", maxWidth: "520px" }}>
+          <div style={{ display: "flex", borderBottom: "1px solid #eee", marginBottom: "20px" }}>
+            <button type="button" style={{ flex: 1, padding: "12px", borderBottom: "2px solid transparent", color: "var(--col-text-muted)", background: "transparent", borderTop: "none", borderLeft: "none", borderRight: "none", cursor: "pointer" }} onClick={onSwitchToCitizen}>Citizen Login</button>
+            <button style={{ flex: 1, padding: "12px", borderBottom: "2px solid var(--col-navy)", fontWeight: 700, color: "var(--col-navy)", background: "transparent", borderTop: "none", borderLeft: "none", borderRight: "none" }}>Staff Login</button>
+          </div>
+          <div>
             <span className="label-eyebrow" style={{ color: "var(--col-navy)" }}>AUTHORIZED GOVERNMENT INTERFACE</span>
           </div>
 
           <div>
             <h2 className="portal-heading" style={{ fontSize: "22px" }}>SPIN Staff Portal</h2>
             <p className="portal-subtext" style={{ fontSize: "13px" }}>
-              Restricted interface for municipal department officers. Grievance access is strictly routed based on your assigned department.
+              Restricted interface for municipal department officers. Request access is strictly routed based on your assigned department.
             </p>
           </div>
 
@@ -116,25 +109,11 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel
               />
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Assigned Department *</label>
-              <select className="form-select" value={department} onChange={(e) => setDepartment(e.target.value)}>
-                {DEPARTMENTS.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept}
-                  </option>
-                ))}
-              </select>
-            </div>
 
-            <div className="form-group">
-              <label className="form-label">Government Role *</label>
-              <select className="form-select" value={role} onChange={(e) => setRole(e.target.value as any)}>
-                <option value="Department Officer">Department Officer</option>
-                <option value="Staff">Field Staff / Inspector</option>
-                <option value="Policymaker">Policymaker / District Official</option>
-                <option value="Administrator">System Administrator</option>
-              </select>
+
+            <div className="form-group" style={{ background: "#f8f9fa", border: "1px solid #ddd", padding: "12px", borderRadius: "4px", display: "flex", alignItems: "center", gap: "10px" }}>
+              <input type="checkbox" required id="captcha" />
+              <label htmlFor="captcha" style={{ fontSize: "14px", cursor: "pointer" }}>I am not a robot (Captcha Mock)</label>
             </div>
 
             <button type="submit" className="service-card-btn" style={{ background: "var(--col-navy)", width: "100%", justifyContent: "center" }} disabled={loading}>
