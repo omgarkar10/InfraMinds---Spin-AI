@@ -60,4 +60,4 @@ Thumbs.db
 *.swp
 *.swo
 *.log
-**/*.log
+**/*.lognode_modules/
