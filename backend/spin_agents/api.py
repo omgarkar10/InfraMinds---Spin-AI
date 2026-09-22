@@ -1,10 +1,9 @@
-"""FastAPI webhook server for Citizen Edge (WhatsApp/Telegram/Firebase).
+"""FastAPI webhook server for Citizen Edge (WhatsApp/Telegram/Firebase/PWA) and A2A Agents.
 
-Error handling contract:
-  - HTTPException propagates as-is (structured JSON with 'detail').
-  - Unhandled exceptions return 500 with a safe generic message.
-  - Raw exception messages are NEVER returned to the client in production.
-  - All unhandled exceptions are logged server-side with traceback.
+Exposes:
+- Citizen intake webhooks
+- Decoupled A2A Microservice endpoints for Agent 1, Agent 2, Agent 3
+- Dashboard summaries & policy actions
 """
 
 from __future__ import annotations
@@ -18,27 +17,39 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+# Add paths
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
+from schemas.data_models import (
+    ChannelType,
+    GrievanceSchema,
+    IngestionRequest,
+    SemanticParsingOutput,
+)
+from spin_agents.agents.dynamic_verification import execute_dynamic_verification
+from spin_agents.agents.policy_routing import execute_policy_routing
+from spin_agents.agents.semantic_parsing import execute_semantic_parsing
 from spin_agents.auth import router as auth_router
 from spin_agents.config import CONFIG
 from spin_agents.config_routes import router as config_router
 from spin_agents.db import Base, engine
+from spin_agents.pipeline.orchestrator import run_sequential_pipeline
 from spin_agents.routers.dashboard_router import router as dashboard_router
 from spin_agents.routers.grievance_router import router as grievance_router
-from spin_agents.schemas import CitizenMessage, TranslateRequest
+from spin_agents.schemas import CitizenMessage, PipelineRequest, TranslateRequest
 from spin_agents.services.grievance_service import process_citizen_webhook
-
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-try:
-    from translate_service import translate_to_english as _translate_to_english
-except ImportError:
-    _translate_to_english = None  # type: ignore
+from spin_agents.tools.mcp_bindings import cloud_translate_text
 
 logger = logging.getLogger(__name__)
 
 # ── App ───────────────────────────────────────────────────────────────────────
 
-app = FastAPI(title="SPIN Citizen Edge API", version="1.0.0")
+app = FastAPI(
+    title="SPIN 3-Agent Decoupled Citizen Grievance Engine",
+    description="ADK & A2A Microservice Architecture for Multilingual Civic Intelligence",
+    version="2.0.0",
+)
 
 # ── Global error handler ──────────────────────────────────────────────────────
 
@@ -58,7 +69,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 
 # ── Startup ───────────────────────────────────────────────────────────────────
 
-@app.on_event("startup")  # TODO: migrate to lifespan= when ADK runner supports it
+@app.on_event("startup")
 async def on_startup() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -80,28 +91,34 @@ app.include_router(config_router)
 app.include_router(grievance_router)
 app.include_router(dashboard_router)
 
-# ── Standalone endpoints ──────────────────────────────────────────────────────
+# ── Standalone & Backward-Compatible Endpoints ────────────────────────────────
 
 @app.get("/health")
 async def health() -> dict:
-    return {"status": "ok", "service": "spin-citizen-edge"}
+    return {
+        "status": "ok",
+        "service": "spin-3-agent-grievance-pipeline",
+        "version": "2.0.0",
+        "agents": [
+            "semantic_parsing_agent",
+            "dynamic_verification_agent",
+            "policy_routing_agent",
+        ],
+    }
 
 
 @app.post("/api/translate")
 async def translate_text(payload: TranslateRequest) -> dict:
-    """Translates text to English using Google Cloud Translate."""
-    if _translate_to_english is None:
-        return {
-            "original_text": payload.text,
-            "english_translation": payload.text,
-            "source_language": "unknown",
-            "error": "translate_service not available",
-        }
-    result = _translate_to_english(payload.text)
+    """Translates text to English or requested language via Cloud Translation API."""
+    res = cloud_translate_text(
+        text=payload.text,
+        target_language=payload.target_language,
+        source_language=payload.source_language,
+    )
     return {
-        "original_text": payload.text,
-        "english_translation": result.get("translated_text", payload.text),
-        "source_language": result.get("source_language", "unknown"),
+        "original_text": res["original_text"],
+        "english_translation": res["translated_text"],
+        "source_language": res["source_language"],
     }
 
 
@@ -116,5 +133,38 @@ async def firebase_webhook(request: Request) -> dict:
         media_url=body.get("mediaUrl"),
         source_language=body.get("language", "hi"),
         location=body.get("location"),
+        channel=body.get("channel", "pwa"),
+        proxy_filed_for=body.get("proxy_filed_for"),
     )
     return await process_citizen_webhook(message.model_dump())
+
+
+# ── Decoupled Agent-to-Agent (A2A) Microservice Endpoints ─────────────────────
+
+@app.post("/a2a/semantic-parsing")
+async def a2a_semantic_parsing_endpoint(request: IngestionRequest) -> dict:
+    """A2A Endpoint for Agent 1: Semantic Parsing & Multimodal Ingestion."""
+    output = execute_semantic_parsing(request)
+    return output.model_dump()
+
+
+@app.post("/a2a/dynamic-verification")
+async def a2a_dynamic_verification_endpoint(payload: dict) -> dict:
+    """A2A Endpoint for Agent 2: Dynamic Verification & Read-Back."""
+    parsed_dict = payload.get("parsed") or payload
+    parsed = SemanticParsingOutput.model_validate(parsed_dict)
+    corrections = payload.get("citizen_corrections")
+    confirmed = payload.get("explicitly_confirmed", False)
+    output = execute_dynamic_verification(
+        parsed=parsed,
+        citizen_corrections=corrections,
+        explicitly_confirmed=confirmed,
+    )
+    return output.model_dump()
+
+
+@app.post("/a2a/policy-routing")
+async def a2a_policy_routing_endpoint(grievance: GrievanceSchema) -> dict:
+    """A2A Endpoint for Agent 3: Policy & Deterministic Routing."""
+    output = execute_policy_routing(grievance)
+    return output.model_dump()

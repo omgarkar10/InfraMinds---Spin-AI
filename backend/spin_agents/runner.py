@@ -1,211 +1,96 @@
-"""ADK Runner integration for end-to-end pipeline execution with graceful fallback.
-
-Inputs  → user_message (str), intake_payload (dict)
-Outputs → PipelineResult dict with keys:
-    session_id, pipeline_status, intake_payload,
-    parsed_payload, geospatial_result, policy_output, final_response
-
-Fallback: if ADK LLM is unavailable (missing API key, network error),
-    _fallback_structured_pipeline() runs a local heuristic classifier
-    and persists to SQLite. This is intentional offline/dev support,
-    NOT a production data path — prod always requires ADK to be healthy.
-"""
+"""ADK Runner integration for the 3-agent pipeline with graceful execution and persistence."""
 
 from __future__ import annotations
 
 import json
 import uuid
-from typing import Any
+from typing import Any, Dict, Optional
 
-from google.adk.runners import Runner
-from google.adk.sessions import InMemorySessionService
-from google.genai import types
-
-from spin_agents.agent import root_agent
-from spin_agents.tools.bigquery import insert_grievance_record, query_weekly_summary
-from spin_agents.tools.gati_shakti import query_gati_shakti_layers
-
-_session_service = InMemorySessionService()
-_runner = Runner(
-    agent=root_agent,
-    app_name="spin",
-    session_service=_session_service,
-)
-
-# --- Domain classifier constants (fallback only) ---
-_DOMAIN_KEYWORDS: list[tuple[list[str], str, int]] = [
-    (["water", "pipe", "leak", "pani", "tap", "jal"], "Water Supply", 8),
-    (["road", "pothole", "sadak", "gaddha", "street"], "Roads & Potholes", 7),
-    (["electric", "power", "light", "bijli", "dark"], "Electricity/Power", 6),
-    (["garbage", "waste", "kachra", "trash", "clean"], "Waste Management & Sanitation", 6),
-]
-_DEFAULT_DOMAIN = ("Infrastructure", 7)
-
-
-def _classify_domain(message: str) -> tuple[str, int]:
-    """Keyword-based domain classifier used only in the offline fallback path."""
-    lower = message.lower()
-    for keywords, domain, severity in _DOMAIN_KEYWORDS:
-        if any(w in lower for w in keywords):
-            return domain, severity
-    return _DEFAULT_DOMAIN
+from schemas.data_models import ChannelType, IngestionRequest
+from spin_agents.pipeline.orchestrator import run_sequential_pipeline
 
 
 async def run_pipeline(
     user_message: str,
-    intake_payload: dict[str, Any] | None = None,
-) -> dict[str, Any]:
-    """Execute the SPIN ADK pipeline and return funnelled JSON outputs.
+    intake_payload: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """Execute the SPIN 3-Agent pipeline and return funnelled JSON outputs.
 
-    Args:
-        user_message: English-translated grievance text.
-        intake_payload: Normalized intake dict from the webhook handler.
-
-    Returns:
-        PipelineResult dict. See module docstring for key list.
+    Backward-compatible adapter matching runner signatures.
     """
-    session_id = str(uuid.uuid4())
-    user_id = (intake_payload or {}).get("user_id", "anonymous")
-    initial_state: dict[str, Any] = {}
-    if intake_payload:
-        initial_state["intake_payload"] = intake_payload
-
+    intake = intake_payload or {}
+    user_id = intake.get("user_id", "anonymous")
+    channel_str = intake.get("channel", "pwa")
     try:
-        await _session_service.create_session(
-            app_name="spin",
-            user_id=user_id,
-            session_id=session_id,
-            state=initial_state,
+        channel = ChannelType(channel_str.lower())
+    except Exception:
+        channel = ChannelType.PWA
+
+    lang = intake.get("source_language") or intake.get("language") or "hi"
+    location = intake.get("location_data") or intake.get("location")
+    media_url = intake.get("media_url")
+    proxy_for = intake.get("proxy_filed_for")
+
+    request = IngestionRequest(
+        citizen_id=user_id,
+        channel=channel,
+        text=user_message or intake.get("original_text") or "",
+        audio_url=intake.get("audio_url"),
+        media_url=media_url,
+        language=lang,
+        location_hint=location,
+        proxy_filed_for=proxy_for,
+    )
+
+    result = run_sequential_pipeline(request)
+    sem = result.semantic_output
+    ver = result.verification_output
+    pol = result.policy_output
+
+    final_resp = (
+        pol.notification_payload.message_native
+        if pol
+        else (
+            ver.read_back_card.confirmation_prompt
+            if ver.read_back_card
+            else "Please answer the verification questions to proceed."
         )
-
-        final_text = ""
-        async for event in _runner.run_async(
-            user_id=user_id,
-            session_id=session_id,
-            new_message=types.Content(
-                role="user",
-                parts=[types.Part(text=user_message)],
-            ),
-        ):
-            if event.content and event.content.parts:
-                for part in event.content.parts:
-                    if part.text:
-                        final_text = part.text
-
-        session = await _session_service.get_session(
-            app_name="spin",
-            user_id=user_id,
-            session_id=session_id,
-        )
-        state = session.state if session else {}
-        return {
-            "session_id": session_id,
-            "pipeline_status": state.get("pipeline_status", "completed"),
-            "intake_payload": _parse_json(state.get("intake_payload")),
-            "parsed_payload": _parse_json(state.get("parsed_payload")),
-            "geospatial_result": _parse_json(state.get("geospatial_result")),
-            "policy_output": _parse_json(state.get("policy_output")),
-            "final_response": final_text,
-        }
-    except Exception as e:
-        # Fallback: ADK live LLM unavailable (no API key, network error, quota)
-        # This is the intended behaviour for local development and CI.
-        print(
-            f"[Pipeline Runner] ADK live LLM unavailable ({type(e).__name__}: {e}), "
-            "using structured multi-agent fallback engine."
-        )
-        return await _fallback_structured_pipeline(
-            user_message, intake_payload or {}, session_id
-        )
-
-
-async def _fallback_structured_pipeline(
-    user_message: str, intake: dict[str, Any], session_id: str
-) -> dict[str, Any]:
-    """Offline/dev fallback: heuristic classifier + local SQLite persistence.
-
-    WARNING: This path produces approximate domain/severity values.
-    It is intentionally conservative (no red-zone fabrication).
-    The `policy_output.executive_summary` clearly labels it as a fallback result.
-    """
-    loc = intake.get("location_data") or {}
-    lat = float(loc.get("lat", 18.5204))
-    lng = float(loc.get("lng", 73.8567))
-    district = loc.get("district") or loc.get("landmark") or "Unknown"
-
-    domain, severity = _classify_domain(user_message)
-
-    parsed_payload: dict[str, Any] = {
-        "domain": domain,
-        "category": domain,
-        "issue_type": f"Reported issue in {domain}",
-        "severity": severity,
-        "priority": "High" if severity >= 7 else "Medium",
-        "image_verified": bool(intake.get("media_url")),
-        "lat_long": {"lat": lat, "lng": lng},
-        "original_text": intake.get("original_text", user_message),
-        "english_translation": intake.get("english_translation", user_message),
-        "user_id": intake.get("user_id", "anon"),
-        "district": district,
-        "state": loc.get("state", "Unknown"),
-        "needs_human_review": False,
-    }
-
-    gati_overlap = await query_gati_shakti_layers(lat, lng, domain)
-    insert_grievance_record(parsed_payload)
-
-    grievance_id = f"grievance-{uuid.uuid4().hex[:8]}"
-    geospatial_result: dict[str, Any] = {
-        "grievance_id": grievance_id,
-        "insert_status": "persisted",
-        "gati_shakti_overlap": gati_overlap,
-        "domain": domain,
-        "severity": severity,
-        "lat_long": {"lat": lat, "lng": lng},
-        "user_id": parsed_payload["user_id"],
-        "priority_gap": gati_overlap.get("priority_gap", True),
-    }
-
-    # Persist to local SQLite (dev/offline only)
-    from spin_agents.services.grievance_service import persist_grievance_to_db
-    await persist_grievance_to_db(grievance_id, parsed_payload, lat, lng)
-
-    weekly_stats = query_weekly_summary(district if district != "Unknown" else None)
-    policy_output: dict[str, Any] = {
-        "executive_summary": (
-            f"[FALLBACK MODE] {domain} grievance recorded at "
-            f"[{lat:.4f}, {lng:.4f}] (district: {district}). "
-            "AI pipeline offline — classification is heuristic only. "
-            "Full AI analysis will run when the backend pipeline is online."
-        ),
-        "weekly_stats": weekly_stats or {
-            "total_complaints": 0,
-            "top_domain": domain,
-            "district": district,
-            "red_zone_count": 0,
-        },
-        "red_zone_alert": geospatial_result["priority_gap"],
-        "notification_sent": False,
-        "is_fallback": True,
-    }
+    )
 
     return {
-        "session_id": session_id,
-        "pipeline_status": "fallback_completed",
+        "session_id": str(uuid.uuid4()),
+        "pipeline_status": "completed" if pol else "needs_verification",
         "intake_payload": intake,
-        "parsed_payload": parsed_payload,
-        "geospatial_result": geospatial_result,
-        "policy_output": policy_output,
-        "final_response": policy_output["executive_summary"],
+        "semantic_parsing_output": sem.model_dump(),
+        "dynamic_verification_output": ver.model_dump(),
+        "policy_routing_output": pol.model_dump() if pol else None,
+        "final_response": final_resp,
+        # Backward-compatible keys for existing dashboards
+        "parsed_payload": {
+            "domain": sem.category.value.title(),
+            "category": sem.category.value,
+            "severity": sem.severity or 5,
+            "confidence": sem.confidence_scores.category,
+            "district": sem.location.district or "Unknown",
+            "state": sem.location.state or "Unknown",
+            "needs_human_review": sem.needs_clarification,
+            "image_verified": sem.vision_alignment_status == "aligned",
+            "lat_long": {
+                "lat": sem.location.latitude or 0.0,
+                "lng": sem.location.longitude or 0.0,
+            },
+        },
+        "geospatial_result": {
+            "grievance_id": pol.query_id if pol else "PENDING",
+            "domain": sem.category.value.title(),
+            "severity": sem.severity or 5,
+            "user_id": user_id,
+            "priority_gap": pol.is_red_zone_priority if pol else False,
+        },
+        "policy_output": {
+            "executive_summary": pol.executive_summary.three_sentence_summary if (pol and pol.executive_summary) else "",
+            "red_zone_alert": pol.is_red_zone_priority if pol else False,
+            "notification_sent": bool(pol),
+            "department": pol.department if pol else "Pending",
+        },
     }
-
-
-def _parse_json(value: Any) -> Any:
-    if value is None:
-        return None
-    if isinstance(value, str):
-        try:
-            return json.loads(value)
-        except json.JSONDecodeError:
-            return value
-    return value
