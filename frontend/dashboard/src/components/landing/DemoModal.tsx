@@ -91,7 +91,7 @@ const DEMO_STEPS: Step[] = [
       processLabel: "THRESHOLD ANALYSIS",
       processValue: "Cluster density exceeds 3.0 grievances/km² (Baseline threshold: 0.8)",
       outputLabel: "CRITICAL ALERT",
-      outputValue: "🔴 RED ZONE FLAG: Pune East Water Infrastructure Deficit",
+      outputValue: "RED ZONE FLAG: Pune East Water Infrastructure Deficit",
     },
   },
   {

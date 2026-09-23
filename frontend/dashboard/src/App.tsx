@@ -104,6 +104,7 @@ function AppInner() {
     <>
       <Navbar
         view={view}
+        user={citizenUser.isLoggedIn ? citizenUser : undefined}
         onViewChange={(v) => handleNavigate(v)}
       />
 

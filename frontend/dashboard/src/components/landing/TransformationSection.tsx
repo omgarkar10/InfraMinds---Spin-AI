@@ -138,7 +138,7 @@ export function TransformationSection() {
               <div className="stage-info">
                 <span className="label-eyebrow tag-red">STAGE 05 / {t.trans_stage_4_label}</span>
                 <div className="redzone-banner">
-                  <strong className="redzone-title">🔴 {t.trans_red_zone}: {t.trans_spatial_tag}</strong>
+                  <strong className="redzone-title"><span className="red-circle-dot" style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#ef4444', marginRight: '6px' }}></span>{t.trans_red_zone}: {t.trans_spatial_tag}</strong>
                   <p>{t.trans_pending}</p>
                   <div className="policy-rec-strip">
                     <span>{t.trans_recommended}: {t.trans_action}</span>

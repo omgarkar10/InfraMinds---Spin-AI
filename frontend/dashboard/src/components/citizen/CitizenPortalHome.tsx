@@ -11,8 +11,6 @@ interface CitizenPortalHomeProps {
 export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNavigate }) => {
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [showProfile, setShowProfile] = useState<boolean>(false);
-  const [searchRequestId, setSearchRequestId] = useState<string>("");
 
   useEffect(() => {
     async function loadRequests() {
@@ -70,63 +68,10 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-            {user.isLoggedIn ? (
-              <>
-                <button
-                  type="button"
-                  className="btn-outline"
-                  style={{ color: "#fff", borderColor: "rgba(255,255,255,0.4)", fontSize: "12px" }}
-                  onClick={() => setShowProfile(!showProfile)}
-                >
-                  👤 My Profile
-                </button>
-                <button
-                  type="button"
-                  className="btn-outline"
-                  style={{ color: "#fff", borderColor: "rgba(255,255,255,0.4)", fontSize: "12px" }}
-                  onClick={() => onNavigate("citizen-logout")}
-                >
-                  Sign Out
-                </button>
-              </>
-            ) : (
-              <button
-                type="button"
-                className="btn-outline"
-                style={{ color: "#fff", borderColor: "rgba(255,255,255,0.4)", fontSize: "12px" }}
-                onClick={() => onNavigate("citizen-login")}
-              >
-                Sign In / Citizen Login
-              </button>
-            )}
-          </div>
         </div>
       </div>
 
       <div className="container">
-        {/* Profile Card Modal / Drawer */}
-        {showProfile && user.isLoggedIn && (
-          <div className="form-card" style={{ marginBottom: "24px", borderLeft: "4px solid var(--col-orange)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-              <span className="label-eyebrow">CITIZEN PROFILE DETAILS</span>
-              <button
-                type="button"
-                onClick={() => setShowProfile(false)}
-                style={{ background: "none", border: "none", fontSize: "16px", cursor: "pointer", color: "var(--col-text-muted)" }}
-              >
-                ✕
-              </button>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px", fontSize: "13px" }}>
-              <div><strong>Full Name:</strong> {user.name || "Citizen User"}</div>
-              <div><strong>Registered Phone:</strong> {user.phone || "Not specified"}</div>
-              <div><strong>Citizen ID:</strong> {user.id || "cit-verified"}</div>
-              <div><strong>Account Role:</strong> Citizen Verified</div>
-            </div>
-          </div>
-        )}
-
         {/* Real Account-Specific Metrics (0 for new user, no fake seed numbers) */}
         {user.isLoggedIn && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "24px" }}>
@@ -149,34 +94,6 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
           </div>
         )}
 
-        {/* Quick Search & Track By Request ID */}
-        <div className="form-card" style={{ padding: "16px", marginBottom: "24px", display: "flex", gap: "12px", alignItems: "center" }}>
-          <div style={{ flex: 1 }}>
-            <label className="form-label" style={{ fontSize: "12px" }}>Track Specific Request</label>
-            <input
-              type="text"
-              className="form-input"
-              value={searchRequestId}
-              onChange={(e) => setSearchRequestId(e.target.value)}
-              placeholder="Enter genuine Request ID (e.g., SPIN-2026-XXXXXX)..."
-              style={{ fontSize: "13px" }}
-            />
-          </div>
-          <button
-            type="button"
-            className="service-card-btn service-card-btn-orange"
-            style={{ marginTop: "18px", padding: "10px 18px", fontSize: "13px" }}
-            onClick={() => {
-              if (searchRequestId.trim()) {
-                onNavigate("citizen-detail", searchRequestId.trim());
-              } else {
-                onNavigate("citizen-track");
-              }
-            }}
-          >
-            Track Status →
-          </button>
-        </div>
 
         {/* Primary Service Cards */}
         <div className="service-cards-grid" style={{ marginBottom: "24px" }}>
@@ -317,64 +234,6 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
           </div>
         )}
 
-        {/* Transparent Process Flow */}
-        <div className="process-flow-box">
-          <span className="label-eyebrow">TRANSPARENT PROCESS FLOW</span>
-          <h3 className="editorial-h3" style={{ fontSize: "20px", marginTop: "4px" }}>
-            How SPIN processes your request
-          </h3>
-
-          <div className="process-stepper-line">
-            <div className="process-step-node">
-              <span style={{ fontSize: "10px", color: "var(--col-orange)" }}>STEP 01</span>
-              Citizen submission
-            </div>
-            <span className="process-arrow">→</span>
-
-            <div className="process-step-node">
-              <span style={{ fontSize: "10px", color: "var(--col-orange)" }}>STEP 02</span>
-              Language &amp; evidence intake
-            </div>
-            <span className="process-arrow">→</span>
-
-            <div className="process-step-node">
-              <span style={{ fontSize: "10px", color: "var(--col-orange)" }}>STEP 03</span>
-              Location verification
-            </div>
-            <span className="process-arrow">→</span>
-
-            <div className="process-step-node">
-              <span style={{ fontSize: "10px", color: "var(--col-orange)" }}>STEP 04</span>
-              AI semantic parsing
-            </div>
-            <span className="process-arrow">→</span>
-
-            <div className="process-step-node">
-              <span style={{ fontSize: "10px", color: "var(--col-orange)" }}>STEP 05</span>
-              Spatial clustering
-            </div>
-            <span className="process-arrow">→</span>
-
-            <div className="process-step-node">
-              <span style={{ fontSize: "10px", color: "var(--col-orange)" }}>STEP 06</span>
-              Government review
-            </div>
-            <span className="process-arrow">→</span>
-
-            <div className="process-step-node">
-              <span style={{ fontSize: "10px", color: "var(--col-orange)" }}>STEP 07</span>
-              Resolution &amp; update
-            </div>
-          </div>
-        </div>
-
-        {/* Disclaimer Callout */}
-        <div className="gov-disclaimer-callout">
-          <span>🏛️</span>
-          <div>
-            <strong>RESPONSIBLE AI GOVERNANCE DISCLAIMER:</strong> AI assists municipal officials by parsing civic demand, mapping geographic locations, and identifying community clusters. Final policy prioritization, budget allocation, and infrastructure commissioning remain strictly with authorized government authorities.
-          </div>
-        </div>
       </div>
     </div>
   );

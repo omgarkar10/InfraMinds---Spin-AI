@@ -22,13 +22,7 @@ export function FinalCtaSection({ onViewChange }: FinalCtaSectionProps) {
               className="btn-cta-primary"
               onClick={() => onViewChange("citizen-raise")}
             >
-              Report a Problem →
-            </button>
-            <button
-              className="btn-cta-secondary"
-              onClick={() => onViewChange("citizen-track")}
-            >
-              Track My Grievance →
+              Submit your request
             </button>
           </div>
         </div>

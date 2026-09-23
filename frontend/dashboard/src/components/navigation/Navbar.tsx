@@ -1,17 +1,47 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useLanguage, COUNTRIES, type CountryCode } from "../../hooks/useLanguage";
+import type { CitizenUser } from "../../types";
 import "../navigation/Navbar.css";
 
 interface NavbarProps {
   view: string;
+  user?: CitizenUser;
   onViewChange: (view: string) => void;
 }
 
-export function Navbar({ view, onViewChange }: NavbarProps) {
+export function Navbar({ view, user, onViewChange }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [languageQuery, setLanguageQuery] = useState("");
+  const [toastMessage, setToastMessage] = useState("");
   const { country, setCountry } = useLanguage();
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const profileModalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setProfileMenuOpen(false);
+      }
+      if (profileModalRef.current && !profileModalRef.current.contains(event.target as Node)) {
+        setProfileModalOpen(false);
+      }
+    }
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setProfileMenuOpen(false);
+        setProfileModalOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
 
   const filteredCountries = useMemo(() => {
     const query = languageQuery.trim().toLocaleLowerCase();
@@ -57,6 +87,12 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
     setCountry(code);
     setLanguageQuery("");
     setLangOpen(false);
+  };
+
+  const handleCopyId = (id: string) => {
+    navigator.clipboard.writeText(id);
+    setToastMessage("Citizen ID copied");
+    setTimeout(() => setToastMessage(""), 3000);
   };
 
   const isCitizenView = view.startsWith("citizen");
@@ -171,38 +207,58 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
           </div>
 
           {/* Right Action CTAs */}
-          <div className="navbar-actions" style={{ display: "flex", gap: "8px" }}>
-            {(() => {
-              const storedCitizen = typeof window !== "undefined" ? localStorage.getItem("spin_citizen_user") : null;
-              let isLogged = false;
-              if (storedCitizen) {
-                try { isLogged = !!JSON.parse(storedCitizen).isLoggedIn; } catch {}
-              }
-              return isLogged ? (
-                <>
-                  <button
-                    className={`navbar-cta ${isCitizenView ? "active" : ""}`}
-                    onClick={() => onViewChange("citizen")}
-                  >
-                    Citizen Portal
-                  </button>
-                  <button
-                    className="btn-outline"
-                    style={{ fontSize: "12px", padding: "6px 12px" }}
-                    onClick={() => onViewChange("citizen-logout")}
-                  >
-                    Sign Out
-                  </button>
-                </>
-              ) : (
+          <div className="navbar-actions">
+            {user?.isLoggedIn ? (
+              <div className="navbar-profile-wrapper" ref={profileMenuRef}>
                 <button
-                  className={`navbar-cta ${isCitizenView ? "active" : ""}`}
-                  onClick={() => onViewChange("citizen-login")}
+                  className="navbar-profile-btn"
+                  onClick={() => {
+                    setProfileMenuOpen(!profileMenuOpen);
+                    setMenuOpen(false);
+                    setLangOpen(false);
+                  }}
+                  aria-label="Citizen profile menu"
+                  aria-expanded={profileMenuOpen}
                 >
-                  Sign In
+                  <span className="navbar-profile-icon" aria-hidden="true">👤</span>
+                  <span className="navbar-profile-name">{user.name || "Citizen"}</span>
+                  <span className="navbar-profile-chevron" aria-hidden="true">▾</span>
                 </button>
-              );
-            })()}
+
+                {profileMenuOpen && (
+                  <div className="navbar-profile-dropdown" role="menu">
+                    <button
+                      className="navbar-profile-item"
+                      role="menuitem"
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        setProfileModalOpen(true);
+                      }}
+                    >
+                      👤 My Profile
+                    </button>
+                    <div className="navbar-profile-divider"></div>
+                    <button
+                      className="navbar-profile-item logout-item"
+                      role="menuitem"
+                      onClick={() => {
+                        setProfileMenuOpen(false);
+                        onViewChange("citizen-logout");
+                      }}
+                    >
+                      Log Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button
+                className={`navbar-cta ${isCitizenView ? "active" : ""}`}
+                onClick={() => onViewChange("citizen-login")}
+              >
+                Sign In
+              </button>
+            )}
           </div>
 
           {/* Mobile Hamburger */}
@@ -221,25 +277,93 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
               </button>
             ))}
 
-            {(() => {
-              const storedCitizen = typeof window !== "undefined" ? localStorage.getItem("spin_citizen_user") : null;
-              let isLogged = false;
-              if (storedCitizen) {
-                try { isLogged = !!JSON.parse(storedCitizen).isLoggedIn; } catch {}
-              }
-              return isLogged ? (
+            {user?.isLoggedIn ? (
+              <>
+                <button className="navbar-mobile-link" onClick={() => { setProfileModalOpen(true); setMenuOpen(false); }}>
+                  👤 My Profile
+                </button>
                 <button className="navbar-mobile-link" onClick={() => { onViewChange("citizen-logout"); setMenuOpen(false); }}>
-                  Sign Out
+                  Log Out
                 </button>
-              ) : (
-                <button className="navbar-mobile-link" onClick={() => { onViewChange("citizen-login"); setMenuOpen(false); }}>
-                  Sign In
-                </button>
-              );
-            })()}
+              </>
+            ) : (
+              <button className="navbar-mobile-link" onClick={() => { onViewChange("citizen-login"); setMenuOpen(false); }}>
+                Sign In
+              </button>
+            )}
           </div>
         )}
       </nav>
+
+      {/* Citizen Profile Inline Modal */}
+      {profileModalOpen && user && (
+        <div className="profile-modal-overlay">
+          <div className="profile-modal-box" ref={profileModalRef} role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
+            <div className="profile-modal-header">
+              <div>
+                <h2 id="profile-modal-title" className="profile-modal-title">CITIZEN PROFILE</h2>
+                <p className="profile-modal-subtitle">Your registered account information</p>
+              </div>
+              <button className="profile-modal-close" onClick={() => setProfileModalOpen(false)} aria-label="Close profile">✕</button>
+            </div>
+
+            <div className="profile-modal-body">
+              <div className="profile-modal-identity">
+                <div className="profile-modal-avatar">👤</div>
+                <div className="profile-modal-user-info">
+                  <div className="profile-modal-name">{user.name || "Not provided"}</div>
+                  <div className="profile-modal-role">
+                    <span className="status-dot"></span> Verified Citizen
+                  </div>
+                </div>
+              </div>
+
+              <div className="profile-modal-section">
+                <h3 className="profile-modal-section-title">PERSONAL INFORMATION</h3>
+
+                <div className="profile-modal-field">
+                  <span className="profile-modal-label">Full Name</span>
+                  <span className="profile-modal-val">{user.name || "Not provided"}</span>
+                </div>
+
+                <div className="profile-modal-field">
+                  <span className="profile-modal-label">Registered Phone</span>
+                  <span className="profile-modal-val">{user.phone || "Not provided"}</span>
+                </div>
+
+                <div className="profile-modal-field">
+                  <span className="profile-modal-label">Citizen ID</span>
+                  <div className="profile-modal-id-row">
+                    <span className="profile-modal-val id-val">{user.id || "Not provided"}</span>
+                    {user.id && (
+                      <button className="profile-copy-btn" onClick={() => handleCopyId(user.id)}>
+                        Copy ID
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="profile-modal-field">
+                  <span className="profile-modal-label">Account Role</span>
+                  <span className="profile-modal-val">Citizen Verified</span>
+                </div>
+
+                <div className="profile-modal-field">
+                  <span className="profile-modal-label">Preferred Language</span>
+                  <span className="profile-modal-val">{country.language || "English"}</span>
+                </div>
+              </div>
+
+              <div className="profile-modal-footer">
+                <p>Your profile information is managed through your registered authentication account.</p>
+              </div>
+            </div>
+          </div>
+          {toastMessage && (
+            <div className="profile-toast">{toastMessage}</div>
+          )}
+        </div>
+      )}
     </header>
   );
 }

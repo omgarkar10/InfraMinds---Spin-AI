@@ -26,13 +26,6 @@ export function Footer({ onViewChange }: FooterProps) {
             <button className="footer-link" onClick={() => onViewChange("citizen")}>Citizen Portal Home</button>
           </div>
 
-          <div className="footer-links-col">
-            <span className="label-eyebrow">OFFICIAL ACCESS</span>
-            <button className="footer-link" onClick={() => onViewChange("dashboard")}>Policymaker Dashboard</button>
-            <button className="footer-link" style={{ marginTop: "8px", color: "var(--col-orange)", fontSize: "12px", fontWeight: "600" }} onClick={() => onViewChange("staff-login")}>
-              🔒 Staff / Government Login
-            </button>
-          </div>
         </div>
 
         <div className="footer-bottom">

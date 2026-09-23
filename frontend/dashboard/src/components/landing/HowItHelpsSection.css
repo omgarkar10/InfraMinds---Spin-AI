@@ -117,3 +117,90 @@
     margin: 0.5rem 0;
   }
 }
+
+/* -- New Styles for Government Flow Redesign -- */
+.system-flow-label {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--col-navy, #0f172a);
+  background: var(--surface-raised, #ffffff);
+  border: 1px solid var(--border-light, #e2e8f0);
+  padding: 6px 14px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.journey-step-card.group {
+  overflow: hidden;
+}
+
+.step-card-default {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: opacity 0.3s ease;
+}
+
+.step-card-hover-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--col-navy, #0f172a);
+  color: #ffffff;
+  padding: 1.5rem;
+  border-radius: 15px; /* slightly smaller than 16px to prevent border leaking */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.journey-step-card:hover .step-card-hover-overlay {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.journey-step-card:hover .step-card-default {
+  opacity: 0;
+}
+
+.hover-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--col-orange, #ea580c);
+  text-transform: uppercase;
+  margin: 0 0 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 8px;
+}
+
+.hover-detail-row {
+  margin-bottom: 10px;
+}
+
+.hover-detail-row:last-child {
+  margin-bottom: 0;
+}
+
+.hover-detail-label {
+  display: block;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.hover-detail-val {
+  display: block;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.95);
+  line-height: 1.3;
+}
