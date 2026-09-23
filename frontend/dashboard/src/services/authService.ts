@@ -16,7 +16,22 @@ export async function getAuthConfig() {
   return response.json();
 }
 
-export async function citizenSignup(payload: { name: string; countryCode: string; phone: string; password: string; }) {
+export async function getCaptchaChallenge() {
+  const response = await fetch(`${API_URL}/auth/captcha`);
+  if (!response.ok) {
+    throw new Error("Failed to load CAPTCHA challenge");
+  }
+  return response.json();
+}
+
+export async function citizenSignup(payload: {
+  name: string;
+  countryCode: string;
+  phone: string;
+  password: string;
+  captcha_token?: string;
+  captcha_answer?: string;
+}) {
   const response = await fetch(`${API_URL}/auth/citizen/signup`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -25,6 +40,23 @@ export async function citizenSignup(payload: { name: string; countryCode: string
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.detail || "Unable to create your account.");
+  }
+  const data = await response.json();
+  if (data.access_token) {
+    localStorage.setItem("citizen_token", data.access_token);
+  }
+  return data;
+}
+
+export async function citizenGoogleLogin(idToken: string) {
+  const response = await fetch(`${API_URL}/auth/citizen/google`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id_token: idToken }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Google authentication failed.");
   }
   const data = await response.json();
   if (data.access_token) {

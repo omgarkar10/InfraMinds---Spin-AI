@@ -155,6 +155,21 @@ export const STATE_DISTRICT_MAP: Record<string, string[]> = {
 export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, onNavigate }) => {
   const [step, setStep] = useState<number>(1);
 
+  // ── Pre-Step / Intake Choice State ───────────────────────────────────────
+  const [intakeMode, setIntakeMode] = useState<"choose" | "voice" | "manual">("choose");
+  const [detectedLanguage, setDetectedLanguage] = useState<string>("");
+  const [isVoiceConfirmCardVisible, setIsVoiceConfirmCardVisible] = useState<boolean>(false);
+
+  // Calculate today's LOCAL date in YYYY-MM-DD format (avoids UTC offset shift)
+  const getTodayLocalDateStr = () => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
+  const localTodayStr = getTodayLocalDateStr();
+
   // ── Step 1 State ─────────────────────────────────────────────────────────
   const [requestType, setRequestType] = useState<"existing_problem" | "new_development">("existing_problem");
   const [category, setCategory] = useState<string>("Water Supply");
@@ -225,12 +240,16 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
         rec.onresult = (event: any) => {
           const text = event.results[0][0].transcript;
           setSpeechTranscript((prev) => (prev ? `${prev} ${text}` : text));
+          // If in manual mode, dictation appends directly into description
+          if (intakeMode === "manual") {
+            setDescription((prev) => (prev ? `${prev}\n${text}` : text));
+          }
           setIsListening(false);
         };
 
         rec.onerror = (e: any) => {
           setIsListening(false);
-          setAiMessage(`Microphone input note: ${e.error || "unavailable"}. You can type directly below.`);
+          setAiMessage(`Microphone note: ${e.error || "unavailable"}. You can type directly.`);
         };
 
         rec.onend = () => {
@@ -243,7 +262,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
         setSpeechSupported(false);
       }
     }
-  }, [speechLanguage]);
+  }, [speechLanguage, intakeMode]);
 
   // Update speech recognition language when changed
   const handleLanguageChange = (lang: string) => {
@@ -289,7 +308,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
     }
   };
 
-  // Google AI Interpretation Trigger
+  // SPIN AI Interpretation Trigger
   const handleAnalyzeWithGemini = async () => {
     const textToAnalyze = (description.trim() || speechTranscript.trim());
     if (textToAnalyze.length < 5) {
@@ -308,14 +327,19 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
       setAiMessage(res.message);
 
       if (res.status === "success" && res.data) {
+        if (res.data.request_type) {
+          const cleanReqType = res.data.request_type.toLowerCase().includes("new") ? "new_development" : "existing_problem";
+          setRequestType(cleanReqType);
+        }
+        if (res.data.detected_language) {
+          setDetectedLanguage(res.data.detected_language);
+        }
         if (res.data.category && CATEGORY_ISSUE_MAP[res.data.category]) {
           setCategory(res.data.category);
         }
         if (res.data.specific_issue) {
           setSpecificIssue(res.data.specific_issue);
-          if (requestType === "new_development") {
-            setProposedFacility(res.data.specific_issue);
-          }
+          setProposedFacility(res.data.specific_issue);
         }
         if (res.data.description && !description) {
           setDescription(res.data.description);
@@ -329,10 +353,10 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
         if (res.data.landmark && !landmark) {
           setLandmark(res.data.landmark);
         }
-        if (res.data.reason && requestType === "new_development") {
+        if (res.data.reason) {
           setReason(res.data.reason);
         }
-        if (res.data.intended_beneficiaries && requestType === "new_development") {
+        if (res.data.intended_beneficiaries) {
           setIntendedBeneficiaries(res.data.intended_beneficiaries);
         }
       }
@@ -646,352 +670,637 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
 
         {/* STEP 1: DESCRIBE YOUR NEED */}
         {step === 1 && (
-          <div className="form-card">
-            <h2 className="editorial-h3" style={{ fontSize: "18px", marginBottom: "16px" }}>
-              Step 1 — Describe Your Infrastructure Need
-            </h2>
+          <>
+            {/* PRE-STEP: INTAKE CHOICE */}
+            {intakeMode === "choose" && (
+              <div className="form-card" style={{ textAlign: "center", padding: "32px 24px" }}>
+                <span className="label-eyebrow">INTAKE OPTION SELECTION</span>
+                <h2 className="portal-heading" style={{ fontSize: "22px", marginTop: "6px", marginBottom: "8px" }}>
+                  How would you like to describe your infrastructure need?
+                </h2>
+                <p className="portal-subtext" style={{ fontSize: "14px", maxWidth: "580px", margin: "0 auto 28px auto" }}>
+                  Select your preferred way to provide details. Both paths lead to the same official SPIN request registry.
+                </p>
 
-            {/* Request Type Selector */}
-            <div className="form-group" style={{ marginBottom: "20px" }}>
-              <label className="form-label" style={{ fontWeight: 700 }}>
-                What type of submission are you making? <span style={{ color: "#e53e3e" }}>*</span>
-              </label>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "8px" }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setRequestType("existing_problem");
-                    handleCategoryChange(category);
-                  }}
-                  style={{
-                    padding: "16px",
-                    borderRadius: "8px",
-                    border: requestType === "existing_problem" ? "2px solid var(--col-orange)" : "1px solid var(--col-border)",
-                    background: requestType === "existing_problem" ? "rgba(224, 90, 43, 0.08)" : "#fff",
-                    textAlign: "left",
-                    cursor: "pointer",
-                  }}
-                >
-                  <div style={{ fontWeight: 700, color: "var(--col-navy)", fontSize: "14px" }}>
-                    ⚠️ Existing Infrastructure Problem
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", maxWidth: "740px", margin: "0 auto" }}>
+                  {/* OPTION A: Describe by Voice */}
+                  <div
+                    onClick={() => {
+                      setIntakeMode("voice");
+                      setSpeechTranscript("");
+                      setAiMessage(null);
+                      setIsVoiceConfirmCardVisible(false);
+                      if (recognitionInstance) {
+                        try {
+                          recognitionInstance.start();
+                          setIsListening(true);
+                        } catch {
+                          setIsListening(false);
+                        }
+                      }
+                    }}
+                    style={{
+                      padding: "24px",
+                      borderRadius: "12px",
+                      border: "2px solid var(--col-orange)",
+                      background: "rgba(224, 90, 43, 0.04)",
+                      textAlign: "left",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                      boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)",
+                    }}
+                  >
+                    <div style={{ fontSize: "36px", marginBottom: "12px" }}>🎙️</div>
+                    <div style={{ fontSize: "16px", fontWeight: "700", color: "var(--col-navy)", marginBottom: "6px" }}>
+                      Describe by Voice
+                    </div>
+                    <div style={{ fontSize: "13px", color: "var(--col-text-muted)", lineHeight: "1.5" }}>
+                      Speak naturally in Hindi, English, Marathi, Tamil, or any regional language. Speech is converted to text and structured automatically.
+                    </div>
+                    <div style={{ marginTop: "16px", color: "var(--col-orange)", fontWeight: 700, fontSize: "13px" }}>
+                      Select Voice Intake →
+                    </div>
                   </div>
-                  <div style={{ fontSize: "12px", color: "var(--col-text-muted)", marginTop: "4px" }}>
-                    Report broken pipes, potholes, power cuts, waterlogging, or damaged public assets.
-                  </div>
-                </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setRequestType("new_development");
-                    handleCategoryChange(category);
-                  }}
-                  style={{
-                    padding: "16px",
-                    borderRadius: "8px",
-                    border: requestType === "new_development" ? "2px solid var(--col-orange)" : "1px solid var(--col-border)",
-                    background: requestType === "new_development" ? "rgba(224, 90, 43, 0.08)" : "#fff",
-                    textAlign: "left",
-                    cursor: "pointer",
-                  }}
-                >
-                  <div style={{ fontWeight: 700, color: "var(--col-navy)", fontSize: "14px" }}>
-                    🏗️ New Infrastructure Development Request
+                  {/* OPTION B: Enter Details Manually */}
+                  <div
+                    onClick={() => {
+                      setIntakeMode("manual");
+                    }}
+                    style={{
+                      padding: "24px",
+                      borderRadius: "12px",
+                      border: "1px solid var(--col-border)",
+                      background: "#ffffff",
+                      textAlign: "left",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                      boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)",
+                    }}
+                  >
+                    <div style={{ fontSize: "36px", marginBottom: "12px" }}>✍️</div>
+                    <div style={{ fontSize: "16px", fontWeight: "700", color: "var(--col-navy)", marginBottom: "6px" }}>
+                      Enter Details Manually
+                    </div>
+                    <div style={{ fontSize: "13px", color: "var(--col-text-muted)", lineHeight: "1.5" }}>
+                      Standard step-by-step form. Select request type, infrastructure category, and enter details using text or optional dictation.
+                    </div>
+                    <div style={{ marginTop: "16px", color: "var(--col-navy)", fontWeight: 700, fontSize: "13px" }}>
+                      Select Manual Entry →
+                    </div>
                   </div>
-                  <div style={{ fontSize: "12px", color: "var(--col-text-muted)", marginTop: "4px" }}>
-                    Propose a new school room, clinic, paved road, water line, or community center.
-                  </div>
-                </button>
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Voice Intake (Speak Your Request) */}
-            <div style={{ background: "var(--col-panel)", padding: "16px", borderRadius: "8px", marginBottom: "20px", border: "1px solid var(--col-border)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                <span className="label-eyebrow">SPEAK YOUR REQUEST (MULTILINGUAL VOICE INTAKE)</span>
-                <select
-                  value={speechLanguage}
-                  onChange={(e) => handleLanguageChange(e.target.value)}
-                  className="form-input"
-                  style={{ width: "auto", padding: "4px 8px", fontSize: "12px" }}
-                >
-                  <option value="hi-IN">Hindi (हिन्दी)</option>
-                  <option value="en-IN">English (India)</option>
-                  <option value="mr-IN">Marathi (मराठी)</option>
-                  <option value="ta-IN">Tamil (தமிழ்)</option>
-                  <option value="te-IN">Telugu (తెలుగు)</option>
-                  <option value="bn-IN">Bengali (বাংলা)</option>
-                  <option value="gu-IN">Gujarati (ગુજરાતી)</option>
-                  <option value="kn-IN">Kannada (ಕನ್ನಡ)</option>
-                  <option value="ml-IN">Malayalam (മലയാളം)</option>
-                  <option value="pa-IN">Punjabi (ਪੰਜਾਬੀ)</option>
-                </select>
-              </div>
+            {/* OPTION A FLOW: DESCRIBE BY VOICE */}
+            {intakeMode === "voice" && (
+              <div className="form-card">
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                  <button
+                    type="button"
+                    className="btn-outline"
+                    onClick={() => setIntakeMode("choose")}
+                    style={{ fontSize: "12px", padding: "4px 10px" }}
+                  >
+                    ← Change Intake Choice
+                  </button>
+                  <span className="label-eyebrow">OPTION A · VOICE-FIRST INTAKE</span>
+                </div>
 
-              <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-                <button
-                  type="button"
-                  onClick={toggleListening}
-                  className="btn-primary"
-                  style={{
-                    background: isListening ? "#dc2626" : "var(--col-orange)",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    padding: "8px 16px",
-                    fontSize: "13px",
-                  }}
-                >
-                  <span>{isListening ? "⏹ Stop Speaking" : "🎙️ Speak Your Request"}</span>
-                </button>
-                <span style={{ fontSize: "12px", color: "var(--col-text-muted)" }}>
-                  {isListening
-                    ? "Listening... Speak clearly into your microphone."
-                    : speechSupported
-                    ? "Click to speak in your preferred regional language."
-                    : "Browser speech recognition unavailable; please type your request."}
-                </span>
-              </div>
+                <h2 className="editorial-h3" style={{ fontSize: "18px", marginBottom: "8px" }}>
+                  Describe Your Infrastructure Need by Voice
+                </h2>
+                <p className="portal-subtext" style={{ fontSize: "13px", marginBottom: "20px" }}>
+                  Speak naturally into your device's microphone in any supported Indian language.
+                </p>
 
-              {speechTranscript && (
-                <div style={{ marginTop: "12px" }}>
-                  <label className="form-label" style={{ fontSize: "12px" }}>
-                    Recognized Voice Transcript (Editable):
-                  </label>
-                  <textarea
-                    className="form-input"
-                    rows={2}
-                    value={speechTranscript}
-                    onChange={(e) => setSpeechTranscript(e.target.value)}
-                    style={{ fontSize: "13px", marginTop: "4px" }}
-                  />
-                  <div style={{ marginTop: "6px", display: "flex", gap: "8px" }}>
+                {/* Voice Recording Control */}
+                <div style={{ background: "var(--col-panel)", padding: "20px", borderRadius: "10px", marginBottom: "20px", border: "1px solid var(--col-border)", textAlign: "center" }}>
+                  <button
+                    type="button"
+                    onClick={toggleListening}
+                    className="btn-primary"
+                    style={{
+                      background: isListening ? "#dc2626" : "var(--col-orange)",
+                      padding: "12px 28px",
+                      fontSize: "15px",
+                      fontWeight: 700,
+                      margin: "0 auto 12px auto",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "10px",
+                    }}
+                  >
+                    <span>{isListening ? "⏹ Stop Recording" : "🎙️ Start Speaking"}</span>
+                  </button>
+                  <div style={{ fontSize: "12px", color: "var(--col-text-muted)" }}>
+                    {isListening
+                      ? "Listening... Speak clearly into your microphone in any Indian language."
+                      : speechSupported
+                      ? "Click to start recording your voice description."
+                      : "Speech recognition unavailable in this browser; you can type in the transcript box below."}
+                  </div>
+
+                  <div style={{ marginTop: "16px", textAlign: "left" }}>
+                    <label className="form-label" style={{ fontSize: "12px", fontWeight: 700 }}>
+                      Recognized Voice Transcript (Editable):
+                    </label>
+                    <textarea
+                      className="form-input"
+                      rows={3}
+                      value={speechTranscript}
+                      onChange={(e) => setSpeechTranscript(e.target.value)}
+                      placeholder="Your spoken transcript will appear here automatically. You can also type or edit it directly..."
+                      style={{ fontSize: "14px", marginTop: "4px" }}
+                    />
+                  </div>
+
+                  <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "12px" }}>
                     <button
                       type="button"
                       className="btn-outline"
-                      onClick={handleUseTranscriptAsDescription}
-                      style={{ fontSize: "12px", padding: "4px 10px" }}
-                    >
-                      Use Transcript as Description ↓
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-outline"
-                      onClick={() => setSpeechTranscript("")}
-                      style={{ fontSize: "12px", padding: "4px 10px" }}
+                      onClick={() => {
+                        setSpeechTranscript("");
+                        setIsVoiceConfirmCardVisible(false);
+                      }}
+                      style={{ fontSize: "12px" }}
                     >
                       Clear Transcript
                     </button>
+                    <button
+                      type="button"
+                      className="service-card-btn service-card-btn-orange"
+                      onClick={async () => {
+                        if (speechTranscript.trim().length < 5) {
+                          setAiMessage("Please provide at least 5 characters in your spoken transcript before analyzing.");
+                          setAiStatus("error");
+                          return;
+                        }
+                        setDescription(speechTranscript.trim());
+                        await handleAnalyzeWithGemini();
+                        setIsVoiceConfirmCardVisible(true);
+                      }}
+                      disabled={isAiLoading || speechTranscript.trim().length < 5}
+                      style={{ fontSize: "13px", padding: "8px 16px" }}
+                    >
+                      {isAiLoading ? "Analyzing Voice Input..." : "Analyze Transcript with SPIN AI →"}
+                    </button>
                   </div>
                 </div>
-              )}
-            </div>
 
-            {/* Description Text Area */}
-            <div className="form-group" style={{ marginBottom: "16px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <label className="form-label" htmlFor="description">
-                  {requestType === "existing_problem" ? "Describe the Problem in Detail" : "Describe the Proposed Development Project"}{" "}
-                  <span style={{ color: "#e53e3e" }}>*</span>
-                </label>
-                <button
-                  type="button"
-                  className="btn-outline"
-                  onClick={handleAnalyzeWithGemini}
-                  disabled={isAiLoading || description.trim().length < 5}
-                  style={{
-                    fontSize: "12px",
-                    padding: "4px 10px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                  }}
-                >
-                  {isAiLoading ? "Analyzing with Gemini..." : "✨ Auto-Classify with Google AI"}
-                </button>
-              </div>
-
-              <textarea
-                id="description"
-                className="form-input"
-                rows={4}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder={
-                  requestType === "existing_problem"
-                    ? "e.g., The main drinking water pipeline on Station Road has ruptured near the community hospital. Water is flooding the road and 400 households have had no water for 2 days."
-                    : "e.g., Our village needs an Anganwadi and primary study center. Currently, 250 children must walk 7 km along the highway to reach the nearest preschool facility."
-                }
-                required
-                style={{ marginTop: "6px" }}
-              />
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: "4px", fontSize: "11px", color: "var(--col-text-muted)" }}>
-                <span>Minimum 5 characters required.</span>
-                <span>{description.trim().length} characters</span>
-              </div>
-            </div>
-
-            {/* AI Status / Notification Banner */}
-            {aiMessage && (
-              <div
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: "6px",
-                  marginBottom: "16px",
-                  fontSize: "12px",
-                  background:
-                    aiStatus === "success"
-                      ? "rgba(16, 185, 129, 0.1)"
-                      : aiStatus === "unavailable"
-                      ? "rgba(245, 158, 11, 0.1)"
-                      : "rgba(239, 68, 68, 0.1)",
-                  border:
-                    aiStatus === "success"
-                      ? "1px solid #10b981"
-                      : aiStatus === "unavailable"
-                      ? "1px solid #f59e0b"
-                      : "1px solid #ef4444",
-                  color: "var(--col-navy)",
-                }}
-              >
-                {aiStatus === "success" && <strong>✓ Google AI: </strong>}
-                {aiStatus === "unavailable" && <strong>ℹ️ Notice: </strong>}
-                {aiStatus === "error" && <strong>⚠️ Notice: </strong>}
-                {aiMessage}
-              </div>
-            )}
-
-            {/* Category and Specific Issue Selection */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
-              <div className="form-group">
-                <label className="form-label" htmlFor="category">
-                  Infrastructure Category <span style={{ color: "#e53e3e" }}>*</span>
-                </label>
-                <select
-                  id="category"
-                  className="form-input"
-                  value={category}
-                  onChange={(e) => handleCategoryChange(e.target.value)}
-                >
-                  {Object.keys(CATEGORY_ISSUE_MAP).map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="specificIssue">
-                  {requestType === "existing_problem" ? "Specific Issue" : "Proposed Facility"}{" "}
-                  <span style={{ color: "#e53e3e" }}>*</span>
-                </label>
-                {requestType === "existing_problem" ? (
-                  <select
-                    id="specificIssue"
-                    className="form-input"
-                    value={specificIssue}
-                    onChange={(e) => setSpecificIssue(e.target.value)}
+                {/* AI Notification Banner */}
+                {aiMessage && (
+                  <div
+                    style={{
+                      padding: "10px 14px",
+                      borderRadius: "6px",
+                      marginBottom: "16px",
+                      fontSize: "12px",
+                      background:
+                        aiStatus === "success"
+                          ? "rgba(16, 185, 129, 0.1)"
+                          : aiStatus === "unavailable"
+                          ? "rgba(245, 158, 11, 0.1)"
+                          : "rgba(239, 68, 68, 0.1)",
+                      border:
+                        aiStatus === "success"
+                          ? "1px solid #10b981"
+                          : aiStatus === "unavailable"
+                          ? "1px solid #f59e0b"
+                          : "1px solid #ef4444",
+                      color: "var(--col-navy)",
+                    }}
                   >
-                    {(CATEGORY_ISSUE_MAP[category] || ["Other"]).map((item) => (
-                      <option key={item} value={item}>
-                        {item}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    id="specificIssue"
-                    type="text"
-                    className="form-input"
-                    value={proposedFacility}
-                    onChange={(e) => setProposedFacility(e.target.value)}
-                    placeholder="e.g., Primary Health Sub-Centre or 2km All-Weather Road"
-                    required
-                  />
+                    {aiStatus === "success" && <strong>✓ SPIN AI Analysis: </strong>}
+                    {aiStatus === "unavailable" && <strong>ℹ️ Notice: </strong>}
+                    {aiStatus === "error" && <strong>⚠️ Notice: </strong>}
+                    {aiMessage}
+                  </div>
+                )}
+
+                {/* "We understood this as:" Confirmation Card */}
+                {isVoiceConfirmCardVisible && (
+                  <div style={{ background: "#f8fafc", padding: "20px", borderRadius: "10px", border: "2px solid var(--col-orange)", marginBottom: "20px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                      <span className="label-eyebrow" style={{ color: "var(--col-orange)" }}>AI CLASSIFICATION SUMMARY</span>
+                      {detectedLanguage && (
+                        <span style={{ fontSize: "11px", background: "#e2e8f0", padding: "2px 8px", borderRadius: "4px", color: "var(--col-navy)", fontWeight: 600 }}>
+                          Language: {detectedLanguage}
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 style={{ fontSize: "16px", fontWeight: 700, color: "var(--col-navy)", marginBottom: "16px" }}>
+                      We understood your request as:
+                    </h3>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                      <div>
+                        <label className="form-label" style={{ fontSize: "12px" }}>Request Type:</label>
+                        <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+                          <button
+                            type="button"
+                            onClick={() => setRequestType("existing_problem")}
+                            style={{
+                              flex: 1,
+                              padding: "8px",
+                              fontSize: "12px",
+                              borderRadius: "6px",
+                              border: requestType === "existing_problem" ? "2px solid var(--col-orange)" : "1px solid var(--col-border)",
+                              background: requestType === "existing_problem" ? "rgba(224, 90, 43, 0.1)" : "#fff",
+                              fontWeight: requestType === "existing_problem" ? 700 : 400,
+                              cursor: "pointer",
+                            }}
+                          >
+                            ⚠️ Existing Problem
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setRequestType("new_development")}
+                            style={{
+                              flex: 1,
+                              padding: "8px",
+                              fontSize: "12px",
+                              borderRadius: "6px",
+                              border: requestType === "new_development" ? "2px solid var(--col-orange)" : "1px solid var(--col-border)",
+                              background: requestType === "new_development" ? "rgba(224, 90, 43, 0.1)" : "#fff",
+                              fontWeight: requestType === "new_development" ? 700 : 400,
+                              cursor: "pointer",
+                            }}
+                          >
+                            🏗️ New Development
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="form-label" style={{ fontSize: "12px" }}>Infrastructure Category:</label>
+                        <select
+                          className="form-input"
+                          value={category}
+                          onChange={(e) => handleCategoryChange(e.target.value)}
+                          style={{ marginTop: "4px", fontSize: "13px" }}
+                        >
+                          {Object.keys(CATEGORY_ISSUE_MAP).map((cat) => (
+                            <option key={cat} value={cat}>
+                              {cat}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div style={{ marginBottom: "16px" }}>
+                      <label className="form-label" style={{ fontSize: "12px" }}>
+                        {requestType === "existing_problem" ? "Specific Issue:" : "Proposed Facility / Development:"}
+                      </label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={requestType === "existing_problem" ? specificIssue : proposedFacility}
+                        onChange={(e) => {
+                          setSpecificIssue(e.target.value);
+                          setProposedFacility(e.target.value);
+                        }}
+                        style={{ marginTop: "4px", fontSize: "13px" }}
+                      />
+                    </div>
+
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: "12px", borderTop: "1px solid #e2e8f0" }}>
+                      <button
+                        type="button"
+                        className="btn-outline"
+                        onClick={() => setIntakeMode("manual")}
+                        style={{ fontSize: "12px" }}
+                      >
+                        Edit Details Manually
+                      </button>
+                      <button
+                        type="button"
+                        className="service-card-btn service-card-btn-orange"
+                        onClick={handleNext}
+                        style={{ fontSize: "13px", padding: "8px 20px" }}
+                      >
+                        Confirm &amp; Proceed to Location (Step 2) →
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {!isVoiceConfirmCardVisible && (
+                  <div style={{ textAlign: "center", marginTop: "16px" }}>
+                    <button
+                      type="button"
+                      className="btn-outline"
+                      onClick={() => setIntakeMode("manual")}
+                      style={{ fontSize: "12px" }}
+                    >
+                      Switch to Standard Form Entry →
+                    </button>
+                  </div>
                 )}
               </div>
-            </div>
+            )}
 
-            {/* Conditional Type A Fields (Existing Problem) */}
-            {requestType === "existing_problem" && (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
-                <div className="form-group">
-                  <label className="form-label" htmlFor="startDate">
-                    When did this problem start? (Optional)
-                  </label>
-                  <input
-                    id="startDate"
-                    type="date"
-                    className="form-input"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label" htmlFor="frequency">
-                    Frequency of Occurrence (Optional)
-                  </label>
-                  <select
-                    id="frequency"
-                    className="form-input"
-                    value={frequency}
-                    onChange={(e) => setFrequency(e.target.value)}
+            {/* OPTION B FLOW: ENTER DETAILS MANUALLY */}
+            {intakeMode === "manual" && (
+              <div className="form-card">
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                  <h2 className="editorial-h3" style={{ fontSize: "18px", margin: 0 }}>
+                    Step 1 — Describe Your Infrastructure Need
+                  </h2>
+                  <button
+                    type="button"
+                    className="btn-outline"
+                    onClick={() => setIntakeMode("choose")}
+                    style={{ fontSize: "12px", padding: "4px 10px" }}
                   >
-                    <option value="Continuous">Continuous / Persistent</option>
-                    <option value="Daily">Daily during peak hours</option>
-                    <option value="Occasional">Occasional / Recurring</option>
-                    <option value="During Monsoon / Rain">During rain / monsoon</option>
-                  </select>
+                    ← Change Intake Choice
+                  </button>
+                </div>
+
+                {/* Request Type Selector */}
+                <div className="form-group" style={{ marginBottom: "20px" }}>
+                  <label className="form-label" style={{ fontWeight: 700 }}>
+                    What type of infrastructure need are you reporting? <span style={{ color: "#e53e3e" }}>*</span>
+                  </label>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "8px" }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRequestType("existing_problem");
+                        handleCategoryChange(category);
+                      }}
+                      style={{
+                        padding: "16px",
+                        borderRadius: "8px",
+                        border: requestType === "existing_problem" ? "2px solid var(--col-orange)" : "1px solid var(--col-border)",
+                        background: requestType === "existing_problem" ? "rgba(224, 90, 43, 0.08)" : "#fff",
+                        textAlign: "left",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <div style={{ fontWeight: 700, color: "var(--col-navy)", fontSize: "14px" }}>
+                        ⚠️ Existing Infrastructure Problem
+                      </div>
+                      <div style={{ fontSize: "12px", color: "var(--col-text-muted)", marginTop: "4px" }}>
+                        Report broken pipes, potholes, power cuts, waterlogging, or damaged public assets.
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRequestType("new_development");
+                        handleCategoryChange(category);
+                      }}
+                      style={{
+                        padding: "16px",
+                        borderRadius: "8px",
+                        border: requestType === "new_development" ? "2px solid var(--col-orange)" : "1px solid var(--col-border)",
+                        background: requestType === "new_development" ? "rgba(224, 90, 43, 0.08)" : "#fff",
+                        textAlign: "left",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <div style={{ fontWeight: 700, color: "var(--col-navy)", fontSize: "14px" }}>
+                        🏗️ New Infrastructure Development Request
+                      </div>
+                      <div style={{ fontSize: "12px", color: "var(--col-text-muted)", marginTop: "4px" }}>
+                        Propose a new school room, clinic, paved road, water line, or community center.
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Description Text Area with Dictation Microphone */}
+                <div className="form-group" style={{ marginBottom: "16px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <label className="form-label" htmlFor="description">
+                      {requestType === "existing_problem" ? "Describe the Problem in Detail" : "Describe the Proposed Development Project"}{" "}
+                      <span style={{ color: "#e53e3e" }}>*</span>
+                    </label>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <button
+                        type="button"
+                        className="btn-outline"
+                        onClick={toggleListening}
+                        style={{
+                          fontSize: "12px",
+                          padding: "4px 10px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          borderColor: isListening ? "#dc2626" : undefined,
+                          color: isListening ? "#dc2626" : undefined,
+                        }}
+                      >
+                        {isListening ? "⏹ Stop Dictation" : "🎙️ Dictate Text"}
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn-outline"
+                        onClick={handleAnalyzeWithGemini}
+                        disabled={isAiLoading || description.trim().length < 5}
+                        style={{
+                          fontSize: "12px",
+                          padding: "4px 10px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        {isAiLoading ? "Analyzing..." : "✨ Analyze with SPIN AI"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <textarea
+                    id="description"
+                    className="form-input"
+                    rows={4}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder={
+                      requestType === "existing_problem"
+                        ? "e.g., The main drinking water pipeline on Station Road has ruptured near the community hospital. Water is flooding the road and 400 households have had no water for 2 days."
+                        : "e.g., Our village needs an Anganwadi and primary study center. Currently, 250 children must walk 7 km along the highway to reach the nearest preschool facility."
+                    }
+                    required
+                    style={{ marginTop: "6px" }}
+                  />
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: "4px", fontSize: "11px", color: "var(--col-text-muted)" }}>
+                    <span>Minimum 5 characters required.</span>
+                    <span>{description.trim().length} characters</span>
+                  </div>
+                </div>
+
+                {/* AI Status Banner */}
+                {aiMessage && (
+                  <div
+                    style={{
+                      padding: "10px 14px",
+                      borderRadius: "6px",
+                      marginBottom: "16px",
+                      fontSize: "12px",
+                      background:
+                        aiStatus === "success"
+                          ? "rgba(16, 185, 129, 0.1)"
+                          : aiStatus === "unavailable"
+                          ? "rgba(245, 158, 11, 0.1)"
+                          : "rgba(239, 68, 68, 0.1)",
+                      border:
+                        aiStatus === "success"
+                          ? "1px solid #10b981"
+                          : aiStatus === "unavailable"
+                          ? "1px solid #f59e0b"
+                          : "1px solid #ef4444",
+                      color: "var(--col-navy)",
+                    }}
+                  >
+                    {aiStatus === "success" && <strong>✓ SPIN AI: </strong>}
+                    {aiStatus === "unavailable" && <strong>ℹ️ Notice: </strong>}
+                    {aiStatus === "error" && <strong>⚠️ Notice: </strong>}
+                    {aiMessage}
+                  </div>
+                )}
+
+                {/* Category and Specific Issue / Proposed Facility Selection */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="category">
+                      Infrastructure Category <span style={{ color: "#e53e3e" }}>*</span>
+                    </label>
+                    <select
+                      id="category"
+                      className="form-input"
+                      value={category}
+                      onChange={(e) => handleCategoryChange(e.target.value)}
+                    >
+                      {Object.keys(CATEGORY_ISSUE_MAP).map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label" htmlFor="specificIssue">
+                      {requestType === "existing_problem" ? "Specific Issue" : "Proposed Facility"}{" "}
+                      <span style={{ color: "#e53e3e" }}>*</span>
+                    </label>
+                    {requestType === "existing_problem" ? (
+                      <select
+                        id="specificIssue"
+                        className="form-input"
+                        value={specificIssue}
+                        onChange={(e) => setSpecificIssue(e.target.value)}
+                      >
+                        {(CATEGORY_ISSUE_MAP[category] || ["Other"]).map((item) => (
+                          <option key={item} value={item}>
+                            {item}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        id="specificIssue"
+                        type="text"
+                        className="form-input"
+                        value={proposedFacility}
+                        onChange={(e) => setProposedFacility(e.target.value)}
+                        placeholder="e.g., Primary Health Sub-Centre or 2km All-Weather Road"
+                        required
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* Conditional Type A Fields (Existing Problem Only) */}
+                {requestType === "existing_problem" && (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                    <div className="form-group">
+                      <label className="form-label" htmlFor="startDate">
+                        When did this problem start? (Optional)
+                      </label>
+                      <input
+                        id="startDate"
+                        type="date"
+                        className="form-input"
+                        value={startDate}
+                        max={localTodayStr}
+                        onChange={(e) => setStartDate(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label" htmlFor="frequency">
+                        Frequency of Occurrence (Optional)
+                      </label>
+                      <select
+                        id="frequency"
+                        className="form-input"
+                        value={frequency}
+                        onChange={(e) => setFrequency(e.target.value)}
+                      >
+                        <option value="Continuous">Continuous / Persistent</option>
+                        <option value="Daily">Daily during peak hours</option>
+                        <option value="Occasional">Occasional / Recurring</option>
+                        <option value="During Monsoon / Rain">During rain / monsoon</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {/* Conditional Type B Fields (New Development Only) */}
+                {requestType === "new_development" && (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                    <div className="form-group">
+                      <label className="form-label" htmlFor="reason">
+                        Civic Justification / Need for Proposal
+                      </label>
+                      <input
+                        id="reason"
+                        type="text"
+                        className="form-input"
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                        placeholder="e.g., No healthcare facility within 12 km radius."
+                      />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label" htmlFor="intendedBeneficiaries">
+                        Intended Beneficiaries (Target Population)
+                      </label>
+                      <input
+                        id="intendedBeneficiaries"
+                        type="text"
+                        className="form-input"
+                        value={intendedBeneficiaries}
+                        onChange={(e) => setIntendedBeneficiaries(e.target.value)}
+                        placeholder="e.g., 650 rural families, school children, daily commuters"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "20px" }}>
+                  <button
+                    type="button"
+                    className="service-card-btn service-card-btn-orange"
+                    onClick={handleNext}
+                    disabled={!validateStep(1)}
+                  >
+                    Next: Verify Location →
+                  </button>
                 </div>
               </div>
             )}
-
-            {/* Conditional Type B Fields (New Development) */}
-            {requestType === "new_development" && (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
-                <div className="form-group">
-                  <label className="form-label" htmlFor="reason">
-                    Civic Justification / Need for Proposal
-                  </label>
-                  <input
-                    id="reason"
-                    type="text"
-                    className="form-input"
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    placeholder="e.g., No healthcare facility within 12 km radius."
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label" htmlFor="intendedBeneficiaries">
-                    Intended Beneficiaries (Target Population)
-                  </label>
-                  <input
-                    id="intendedBeneficiaries"
-                    type="text"
-                    className="form-input"
-                    value={intendedBeneficiaries}
-                    onChange={(e) => setIntendedBeneficiaries(e.target.value)}
-                    placeholder="e.g., 650 rural families, school children, daily commuters"
-                  />
-                </div>
-              </div>
-            )}
-
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "20px" }}>
-              <button
-                type="button"
-                className="service-card-btn service-card-btn-orange"
-                onClick={handleNext}
-                disabled={!validateStep(1)}
-              >
-                Next: Verify Location →
-              </button>
-            </div>
-          </div>
+          </>
         )}
 
         {/* STEP 2: VERIFY LOCATION */}
