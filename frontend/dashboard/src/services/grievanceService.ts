@@ -603,15 +603,19 @@ export function addCitizenFeedback(id: string, resolved: boolean, rating?: numbe
 /* User Session Helpers */
 export function getStoredCitizenUser(): CitizenUser {
   const data = localStorage.getItem(STORAGE_CITIZEN_KEY);
-  if (data) {
+  const token = localStorage.getItem("citizen_token");
+  if (data && token) {
     try {
-      return JSON.parse(data);
+      const u = JSON.parse(data);
+      if (u && u.isLoggedIn) {
+        return u;
+      }
     } catch (e) {
       /* fallback below */
     }
   }
   return {
-    id: "cit-001",
+    id: "",
     name: "",
     phone: "",
     isLoggedIn: false,
@@ -624,6 +628,7 @@ export function setStoredCitizenUser(user: CitizenUser): void {
 
 export function clearStoredCitizenUser(): void {
   localStorage.removeItem(STORAGE_CITIZEN_KEY);
+  localStorage.removeItem("citizen_token");
 }
 
 export function getStoredStaffUser(): StaffUser {
@@ -649,3 +654,164 @@ export function getStoredStaffUser(): StaffUser {
 export function setStoredStaffUser(user: StaffUser): void {
   localStorage.setItem(STORAGE_STAFF_KEY, JSON.stringify(user));
 }
+
+/* ============================================================================
+ * Authoritative Backend REST API Client for Citizen Portal
+ * ============================================================================ */
+
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+
+export interface SubmitRequestPayload {
+  request_type: "existing_problem" | "new_development";
+  category: string;
+  specific_issue?: string;
+  description: string;
+  state?: string;
+  district?: string;
+  landmark?: string;
+  address?: string;
+  pincode?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  start_date?: string;
+  frequency?: string;
+  reason?: string;
+  intended_beneficiaries?: string;
+  evidence_urls?: string[];
+  source_language?: string;
+}
+
+export async function submitRequestToBackend(payload: SubmitRequestPayload): Promise<{
+  status: string;
+  grievance_id: string;
+  request_id: string;
+  created_at: string;
+  bigquery_synced: boolean;
+  message: string;
+}> {
+  const token = localStorage.getItem("citizen_token");
+  if (!token) {
+    throw new Error("Authentication required. Please log in before submitting.");
+  }
+
+  const response = await fetch(`${API_BASE}/requests/submit`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Failed to submit request to official registry.");
+  }
+
+  return response.json();
+}
+
+export async function getMyRequestsFromBackend(): Promise<any[]> {
+  const token = localStorage.getItem("citizen_token");
+  if (!token) {
+    return [];
+  }
+
+  const response = await fetch(`${API_BASE}/requests/my`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Unable to fetch your requests.");
+  }
+
+  return response.json();
+}
+
+export async function getRequestDetailFromBackend(id: string): Promise<any> {
+  const token = localStorage.getItem("citizen_token");
+  if (!token) {
+    throw new Error("Authentication required to view this request.");
+  }
+
+  const response = await fetch(`${API_BASE}/requests/${encodeURIComponent(id)}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Request not found or access denied.");
+  }
+
+  return response.json();
+}
+
+export async function uploadEvidenceToBackend(file: File): Promise<{
+  status: string;
+  url: string;
+  filename: string;
+  size_bytes: number;
+}> {
+  const token = localStorage.getItem("citizen_token");
+  if (!token) {
+    throw new Error("Authentication required to upload attachments.");
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_BASE}/requests/upload`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "File upload failed.");
+  }
+
+  return response.json();
+}
+
+export async function analyzeRequestWithGemini(
+  text: string,
+  requestType: "existing_problem" | "new_development" = "existing_problem"
+): Promise<{
+  status: "success" | "unavailable" | "error";
+  message: string;
+  data: any;
+}> {
+  const token = localStorage.getItem("citizen_token");
+  if (!token) {
+    throw new Error("Authentication required for AI analysis.");
+  }
+
+  const response = await fetch(`${API_BASE}/requests/analyze`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      text,
+      request_type: requestType,
+      source_language: "auto",
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "AI analysis service error.");
+  }
+
+  return response.json();
+}
+

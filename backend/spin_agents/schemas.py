@@ -29,6 +29,9 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 # Reusable Value Objects & Sub-Models
 # ============================================================================
 
+RequestType = Literal["existing_problem", "new_development"]
+
+
 class Location(BaseModel):
     """
     Canonical location model for SPIN.
@@ -149,7 +152,8 @@ class EvidenceItem(BaseModel):
 class CitizenRequest(BaseModel):
     """
     Model 1: Represents an incoming citizen infrastructure request before AI intake.
-    Collects raw description, source language, intake channel, and optional GPS location.
+    Supports both Type A (Existing Infrastructure Problem) and Type B (New Infrastructure Development Request).
+    Collects raw description, source language, intake channel, optional GPS location, and request-type metadata.
     """
     request_id: str = Field(
         default_factory=lambda: f"REQ-{uuid.uuid4().hex[:10].upper()}",
@@ -159,11 +163,41 @@ class CitizenRequest(BaseModel):
         default="anonymous",
         description="Citizen user ID or phone number (anonymized in analytical views)"
     )
+    request_type: RequestType = Field(
+        default="existing_problem",
+        description="Type of request: 'existing_problem' (Grievance/Problem) or 'new_development' (New Infrastructure Need)"
+    )
+    category: str | None = Field(
+        default=None,
+        description="Infrastructure category (e.g. Roads & Potholes, Water Supply, Healthcare, Education)"
+    )
+    specific_issue: str | None = Field(
+        default=None,
+        description="Specific problem for existing issues, or proposed facility for new development"
+    )
+    # Type A specific fields
+    start_date: str | None = Field(
+        default=None,
+        description="When the problem started if known (e.g. '2026-09-01' or 'Past week')"
+    )
+    frequency: str | None = Field(
+        default=None,
+        description="Occurrence frequency if applicable (e.g. 'Continuous', 'Recurring', 'During monsoon')"
+    )
+    # Type B specific fields
+    reason: str | None = Field(
+        default=None,
+        description="Justification or civic purpose for new development request"
+    )
+    intended_beneficiaries: str | None = Field(
+        default=None,
+        description="Target community or population benefiting from the proposed infrastructure"
+    )
     description: str = Field(
         ...,
         min_length=5,
         max_length=5000,
-        description="Citizen's textual grievance description"
+        description="Citizen's textual grievance description or development need"
     )
     source_language: str = Field(
         default="auto",
@@ -186,6 +220,17 @@ class CitizenRequest(BaseModel):
         default_factory=lambda: datetime.now(timezone.utc),
         description="UTC timestamp of submission"
     )
+
+    @field_validator("request_type", mode="before")
+    @classmethod
+    def normalize_request_type(cls, v: Any) -> str:
+        if isinstance(v, str):
+            clean = v.strip().lower()
+            if clean in ("problem", "existing_problem", "grievance", "issue"):
+                return "existing_problem"
+            if clean in ("new_need", "new_development", "development", "proposal"):
+                return "new_development"
+        return v
 
     @field_validator("description")
     @classmethod
@@ -227,8 +272,13 @@ class ParsedRequest(BaseModel):
     """
     Model 2: Represents a normalized, semantically parsed grievance after
     language translation, category/issue classification, and location confirmation.
+    Supports both Type A (Existing Infrastructure Problem) and Type B (New Infrastructure Development Request).
     """
     request_id: str = Field(description="Corresponding CitizenRequest ID")
+    request_type: RequestType = Field(
+        default="existing_problem",
+        description="Type of request: 'existing_problem' or 'new_development'"
+    )
     original_text: str = Field(description="Original unedited citizen text")
     normalized_description: str = Field(description="English-translated and normalized grievance text")
     detected_language: str = Field(
@@ -237,7 +287,7 @@ class ParsedRequest(BaseModel):
     )
     category: str = Field(
         ...,
-        description="Infrastructure category (e.g. Water Supply, Roads & Potholes, Drainage / Flooding)"
+        description="Infrastructure category (e.g. Water Supply, Roads & Potholes, Drainage / Flooding, Healthcare)"
     )
     department: str = Field(
         ...,
@@ -245,7 +295,23 @@ class ParsedRequest(BaseModel):
     )
     issue_type: str = Field(
         ...,
-        description="Specific civic sub-issue (e.g. Pipeline leakage / burst)"
+        description="Specific civic sub-issue or proposed facility name"
+    )
+    reason: str | None = Field(
+        default=None,
+        description="Parsed justification for new infrastructure requests"
+    )
+    intended_beneficiaries: str | None = Field(
+        default=None,
+        description="Parsed target beneficiary community"
+    )
+    start_date: str | None = Field(
+        default=None,
+        description="Parsed start date if existing problem"
+    )
+    frequency: str | None = Field(
+        default=None,
+        description="Parsed occurrence frequency if existing problem"
     )
     intent: str = Field(
         default="report_civic_issue",
@@ -291,6 +357,17 @@ class ParsedRequest(BaseModel):
         default=False,
         description="Flagged true if classification is ambiguous or confidence is low. NOTE: Automatic threshold enforcement (e.g. confidence < 0.70) is PENDING TEAM APPROVAL."
     )
+
+    @field_validator("request_type", mode="before")
+    @classmethod
+    def normalize_request_type(cls, v: Any) -> str:
+        if isinstance(v, str):
+            clean = v.strip().lower()
+            if clean in ("problem", "existing_problem", "grievance", "issue"):
+                return "existing_problem"
+            if clean in ("new_need", "new_development", "development", "proposal"):
+                return "new_development"
+        return v
 
     @model_validator(mode="after")
     def validate_location_completeness_for_completed(self) -> "ParsedRequest":

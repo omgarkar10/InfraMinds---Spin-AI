@@ -1,6 +1,62 @@
 # SPIN Session Handoff (Continuity)
 
-## Current Session — Day 1 M1 Final Closure & Verified Handover (22 Sep 2026)
+## Current Session — Complete Citizen Portal Implementation (23 Sep 2026)
+
+### What was done
+1. **Stage B-F: Complete Citizen Portal** — Full implementation of all Citizen Portal features in one continuous run.
+2. **Backend API Endpoints** (`api.py`):
+   - `POST /api/requests/submit` — Dual-type validation, genuine `SPIN-2026-XXXXXX` ID, SQLite persistence, safe BigQuery sync.
+   - `GET /api/requests/my` — Returns logged-in citizen's own requests (JWT-protected).
+   - `GET /api/requests/citizen/{user_id}` — Ownership check (403 if not self or staff).
+   - `GET /api/requests/{request_id}` — With ownership check (403 if not owner or staff).
+   - `POST /api/requests/upload` — File format + 5 MB validation, disk persistence at `backend/uploads/`.
+   - `POST /api/requests/analyze` — Genuine Gemini analysis if API key present; graceful `unavailable` if not.
+   - Static files at `/uploads`.
+3. **Frontend Components** (`frontend/dashboard/src/components/citizen/`):
+   - `CitizenLogin.tsx` — Removed fake demo-user fallback; displays real error banner on failed login.
+   - `CitizenSignup.tsx` — Persists `isLoggedIn: true` and saves session on signup.
+   - `CitizenPortalHome.tsx` — Displays real account info (Name, Phone, ID); real request counts from backend; clean empty state for 0 requests.
+   - `RaiseGrievanceForm.tsx` — 4-step dual-type form: voice intake (Web Speech API) + text; Gemini auto-classify; nationwide 36 States/UTs; optional confirmed GPS; evidence upload; review summary; double-click protection; real backend submission.
+   - `TrackGrievances.tsx` — Loads real submissions from backend; clean empty state; dual-type pills; real status.
+   - `GrievanceDetail.tsx` — Loads genuine request data from backend; dual-type particulars; confirmed location; evidence links; official timeline.
+4. **Frontend Services** (`grievanceService.ts`): Added `submitRequestToBackend`, `getMyRequestsFromBackend`, `getRequestDetailFromBackend`, `uploadEvidenceToBackend`, `analyzeRequestWithGemini`.
+5. **`App.tsx`**: `targetViewAfterLogin` updated to `"citizen"` (Citizen Dashboard).
+6. **Test suite**: `test_citizen_endpoints.py` created (6 tests). Total: **50/50 tests passed**.
+7. **Live E2E**: All 11 live verification tests passed against running backend.
+8. **Frontend build**: `npm run build` — 0 TypeScript errors, `dist/` generated clean.
+
+### What's left
+- GEMINI_API_KEY not set in local `.env` → AI analysis returns `unavailable` (correct graceful fallback). Set key for live AI extraction.
+- Production deployment: Switch `VITE_API_URL` to production domain; set `JWT_SECRET` to 32+ byte random string.
+- SMS OTP for password reset: remains disabled (501) until Twilio/MSG91 is configured.
+- BigQuery sync: requires `GOOGLE_APPLICATION_CREDENTIALS` GCP service account; currently logs safe no-op.
+
+### Watch out for
+- Backend runs on `http://127.0.0.1:8080`. Frontend `.env` must have `VITE_API_URL=http://localhost:8080/api`.
+- `CATEGORY_ISSUE_MAP` must NOT be exported from `RaiseGrievanceForm.tsx` — Vite Fast Refresh requires consistent component exports.
+- `backend/uploads/` directory must exist before `POST /api/requests/upload`; created lazily by the endpoint on first call.
+- SQLite `spin.db` lives at `backend/spin.db`. Idempotent migration runs at startup.
+
+---
+
+## Previous Session — Stage A: Backend Canonical Contracts & Security Baseline (23 Sep 2026)
+- **What was done**:
+  1. **Canonical Contract Extension (A1)**: Extended `CitizenRequest` and `ParsedRequest` in [`schemas.py`](file:///c:/Users/Skmaa/SPIN-citizen-integration/backend/spin_agents/schemas.py) with dual request type support: `request_type: RequestType = Literal["existing_problem", "new_development"]` with synonym normalization, Type A fields (`start_date`, `frequency`), Type B fields (`reason`, `intended_beneficiaries`), and `category`/`specific_issue`. All 28 original tests preserved + 2 new tests added.
+  2. **Persistence Models (A2)**: Extended [`models.py`](file:///c:/Users/Skmaa/SPIN-citizen-integration/backend/spin_agents/models.py) `Grievance` model with 12 new columns including dual request type fields. Removed silent defaults to `"Pune"` and `"Maharashtra"`. Added safe idempotent SQLite `migrate_db()` in [`db.py`](file:///c:/Users/Skmaa/SPIN-citizen-integration/backend/spin_agents/db.py) using `ALTER TABLE ... ADD COLUMN` — existing `spin.db` data preserved.
+  3. **BigQuery Coordinate Fix (A3)**: Rewrote [`bigquery.py`](file:///c:/Users/Skmaa/SPIN-citizen-integration/backend/spin_agents/tools/bigquery.py) with `_extract_coordinates()` supporting flat, nested `lat_long`, and nested `location` dict formats. Preserves `(0.0, 0.0)`, represents missing as `None`, enforces coordinate pairing. Added `InsertResult` dict subclass with boolean evaluation for `simulate_pipeline.py` compatibility.
+  4. **Auth Security Baseline (A4)**: In [`auth.py`](file:///c:/Users/Skmaa/SPIN-citizen-integration/backend/spin_agents/auth.py): removed duplicate `/citizen-login` auto-create route (B-06); disabled unauthenticated password reset at `/citizen/reset-password` (returns 501); added production `JWT_SECRET` guard (RuntimeError if default secret in production, UserWarning in development); added signup validators (non-empty name, 8+ char password).
+  5. **Test Suite (A6)**: Created [`test_stage_a.py`](file:///c:/Users/Skmaa/SPIN-citizen-integration/backend/test_stage_a.py) with 14 targeted tests. Combined suite: **44/44 passed** (30 canonical + 14 Stage A).
+- **What's in progress**: Stage A complete. Stage B is next.
+- **What's left**:
+  1. **Stage B**: Backend AI Analysis & Confirmation Endpoints — `POST /api/requests/analyze`, `POST /api/requests/confirm`, `GET /api/requests/citizen/{user_id}`, `GET /api/requests/{request_id}`.
+  2. **Stage C**: Frontend dual request types + voice/text intake at Step 1.
+  3. **Stage D**: Nationwide location selection (all 36 States/UTs).
+  4. **Stage E**: Final registration connected to real backend.
+  5. **Stage F**: Request tracking + end-to-end verification.
+  6. Password reset: SMS OTP gateway integration required before re-enabling self-service reset.
+- **Watch out for**: `init_db` uses `text()` for SQLite PRAGMA — must import from `sqlalchemy`. `spin.db` currently has only `users` table; `grievances` will be created on first `init_db()` call.
+
+## Previous Session — Day 1 M1 Final Closure & Verified Handover (22 Sep 2026)
 - **What was done**:
   1. **Canonical Schema Corrections**: Corrected all six canonical Pydantic V2 schemas in [`schemas.py`](file:///c:/Users/Skmaa/Google-Code-For-Communities-/backend/spin_agents/schemas.py):
      - `Location`: Enforced coordinate pairing (both lat/lng or neither), rejected non-finite values (NaN/Inf), preserved legitimate `(0.0, 0.0)` coordinates, zero coordinate invention.

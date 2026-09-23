@@ -42,20 +42,17 @@ export type ViewState =
 
 function AppInner() {
   const [view, setView] = useState<ViewState>("landing");
-  const [targetViewAfterLogin, setTargetViewAfterLogin] = useState<string>("citizen-raise");
+  const [targetViewAfterLogin, setTargetViewAfterLogin] = useState<string>("citizen");
   const [selectedGrievanceId, setSelectedGrievanceId] = useState<string>("");
 
   // For Reset Password flow
   const [resetPhone, setResetPhone] = useState<string>("");
 
   const [citizenUser, setCitizenUser] = useState<CitizenUser>(
-    (getStoredCitizenUser() as CitizenUser) || { id: "cit-001", name: "", phone: "", isLoggedIn: false }
+    (getStoredCitizenUser() as CitizenUser) || { id: "", name: "", phone: "", isLoggedIn: false }
   );
   const [staffUser, setStaffUser] = useState<StaffUser>(
     (getStoredStaffUser() as StaffUser) || { id: "", name: "", employeeId: "", email: "", department: "", role: "Department Officer", isLoggedIn: false }
-  );
-  const [ministryUser, setMinistryUser] = useState<StaffUser>(
-    (getStoredStaffUser() as StaffUser) || { id: "", name: "", employeeId: "", email: "", department: "", role: "Policymaker", isLoggedIn: false }
   );
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
 
@@ -67,13 +64,13 @@ function AppInner() {
 
     if (newView === "citizen-logout") {
       clearStoredCitizenUser();
-      setCitizenUser({ id: "cit-001", name: "", phone: "", isLoggedIn: false });
+      setCitizenUser({ id: "", name: "", phone: "", isLoggedIn: false });
       setView("citizen-login");
       return;
     }
 
     // Require Citizen Login BEFORE "Raise Grievance" or "Track Grievances"
-    if ((newView === "citizen-raise" || newView === "citizen-track") && !citizenUser.isLoggedIn) {
+    if ((newView === "citizen-raise" || newView === "citizen-track" || newView === "citizen") && !citizenUser.isLoggedIn) {
       setTargetViewAfterLogin(newView);
       setView("citizen-login");
       return;
@@ -92,7 +89,9 @@ function AppInner() {
   /* Citizen Login Success Callback */
   const handleCitizenLoginSuccess = (user: CitizenUser) => {
     setCitizenUser(user);
-    handleNavigate(targetViewAfterLogin);
+    const destination = targetViewAfterLogin || "citizen";
+    setTargetViewAfterLogin("citizen");
+    handleNavigate(destination);
   };
 
   /* Staff Login Success Callback */

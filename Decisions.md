@@ -44,3 +44,33 @@ This file logs every meaningful architectural decision made while building SPIN.
   - *Frontend PolicyAction Migration*: Mapping legacy frontend payload (`grievance_id`, `user_id`, `action`, `budget_cr`) to canonical `PolicyAction` (`decision`, `allocated_budget_cr`, `reviewer_id`, `reviewer_role`) via JWT-authenticated middleware adapter is scheduled for **Day 2**.
   - *Route Protection Cutover*: Requiring `Authorization: Bearer <token>` on `/api/dashboard/policy-action` is coordinated for **Day 2** once frontend attaches auth headers.
 
+
+## D10: Stage A — Dual Request Types, Coordinate Fix, Auth Baseline (23 Sep 2026)
+- **Why**: Support both Type A (Existing Infrastructure Problem) and Type B (New Infrastructure Development Request) throughout the backend canonical pipeline, fix coordinate zeroing bug, and establish auth security baseline before Citizen Portal frontend work.
+- **Implementation**:
+  1. **RequestType alias**: `RequestType = Literal["existing_problem", "new_development"]` added to `schemas.py`. Synonym normalizer accepts "problem", "issue", "grievance" → `existing_problem`; "new_need", "development", "proposal" → `new_development`.
+  2. **CitizenRequest fields**: `request_type`, `category`, `specific_issue`, `start_date`, `frequency` (Type A), `reason`, `intended_beneficiaries` (Type B).
+  3. **ParsedRequest fields**: Same set above plus `normalize_request_type` validator. All existing 28 canonical tests unaffected.
+  4. **Grievance model**: 12 new columns added with same dual-type fields, `bigquery_synced`, `address`, `pincode`, `source_language`, `confidence`. Silent `"Pune"` / `"Maharashtra"` defaults removed.
+  5. **db.py `init_db()`**: Idempotent `ALTER TABLE` migration using `sqlalchemy.text()` — runs at application startup, safe on existing SQLite `spin.db`.
+  6. **BigQuery `_extract_coordinates()`**: Supports flat top-level keys (`latitude`/`longitude`, `lat`/`lng`) and nested (`lat_long`, `location`). Coordinate pairing enforced. `(0.0, 0.0)` preserved. Missing → `None` (never `0.0`).
+  7. **`InsertResult`**: Dict subclass supporting both key access (`grievance_id`, `status`) and boolean evaluation — ensures backward compatibility with `simulate_pipeline.py` and `runner.py`.
+  8. **Auth**: Duplicate `/citizen-login` removed (was auto-creating accounts). `/citizen/reset-password` returns 501 to prevent unauthenticated account takeover (CWE-640). JWT production guard added.
+- **Decision**: Password reset remains disabled until SMS OTP provider (Twilio / MSG91 / Bhashini) is configured. This is a deliberate security posture, not a blocker for Stage B-F.
+
+## D11: Complete Citizen Portal — Backend Submission, Auth Hardening, Tracking (23 Sep 2026)
+- **Why**: Deliver an end-to-end working Citizen Portal with real backend persistence, proper authentication, authorization enforcement, and genuine AI analysis.
+- **Implementation**:
+  1. **Auth dependencies**: Added `get_current_user` and `get_current_citizen` FastAPI dependencies using `HTTPBearer`. `get_current_citizen` restricts to `role == "citizen"`.
+  2. **Request submission**: `POST /api/requests/submit` validates dual types (only Type A gets `start_date`/`frequency`; only Type B gets `reason`/`intended_beneficiaries`), generates unique `SPIN-2026-XXXXXX` ID using `secrets.token_hex(3).upper()`, persists to SQLite, syncs to BigQuery in a background thread (non-blocking, safe no-op on auth failure).
+  3. **Authorization**: `GET /api/requests/{id}` and `GET /api/requests/citizen/{uid}` enforce ownership — any attempt by a different citizen returns `403 Forbidden`. Staff users can view all.
+  4. **File uploads**: `POST /api/requests/upload` validates content-type (JPG/PNG/WEBP/PDF) and size (max 5 MB). Saves to `backend/uploads/{token}_{filename}`. Static server at `/uploads`.
+  5. **AI analysis**: `POST /api/requests/analyze` calls Gemini 1.5 Flash with a structured extraction prompt. Falls back gracefully to `{"status": "unavailable"}` if GEMINI_API_KEY is not set or the call fails — never fabricates data.
+  6. **Frontend localStorage replaced**: `grievanceService.ts` now talks exclusively to the backend for submissions, listing, and detail. No request data is authoritative in localStorage.
+  7. **Double-click protection**: Submit button disabled after first click; re-enabled only on error response.
+  8. **CATEGORY_ISSUE_MAP**: Must remain non-exported from `RaiseGrievanceForm.tsx` (Vite Fast Refresh constraint — module can only default-export the component).
+- **Tradeoffs**:
+  - SQLite is the authoritative store (not BigQuery). BigQuery is best-effort sync for analytics.
+  - Voice input uses browser Web Speech API; falls back to text if not supported or if user dismisses.
+  - Password reset remains disabled (501) until an SMS OTP provider is wired in.
+

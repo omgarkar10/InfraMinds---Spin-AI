@@ -9,12 +9,14 @@ import os
 import uuid
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from pydantic import BaseModel, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 import jwt
 from passlib.context import CryptContext
+import warnings
 
 from spin_agents.db import get_db
 from spin_agents.models import User
@@ -25,23 +27,70 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 JWT_SECRET    = os.getenv("JWT_SECRET", "supersecretkey")
 JWT_ALGORITHM = "HS256"
 
+# Security guard for production JWT configuration
+_SPIN_ENV = os.getenv("ENVIRONMENT", os.getenv("SPIN_ENV", "development")).lower()
+if _SPIN_ENV in ("production", "prod"):
+    if JWT_SECRET in ("supersecretkey", "secret", "change-me", "") or len(JWT_SECRET) < 32:
+        raise RuntimeError(
+            "CRITICAL SECURITY CONFIGURATION ERROR: Insecure or default JWT_SECRET detected in production! "
+            "A cryptographically strong secret of at least 32 characters must be configured in environment variables."
+        )
+elif JWT_SECRET == "supersecretkey":
+    warnings.warn(
+        "SECURITY NOTICE: Running with default development JWT_SECRET ('supersecretkey'). "
+        "Set JWT_SECRET in your environment before deploying to production.",
+        UserWarning,
+        stacklevel=2,
+    )
+
 # ──────────────────────────────────────────────
 # Pydantic schemas
 # ──────────────────────────────────────────────
 
 class CitizenSignupRequest(BaseModel):
     name: str
-    countryCode: str
+    countryCode: str = "IN"
     phone: str
     password: str
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        s = v.strip()
+        if not s:
+            raise ValueError("Name cannot be blank.")
+        return s
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v: str) -> str:
+        s = v.strip()
+        if not s:
+            raise ValueError("Phone number cannot be blank.")
+        return s
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters long.")
+        return v
 
 class CitizenLoginRequest(BaseModel):
-    countryCode: str
+    countryCode: str = "IN"
     phone: str
     password: str
 
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v: str) -> str:
+        s = v.strip()
+        if not s:
+            raise ValueError("Phone number cannot be blank.")
+        return s
+
 class CitizenForgotPasswordRequest(BaseModel):
-    countryCode: str
+    countryCode: str = "IN"
     phone: str
 
 class CitizenResetPasswordRequest(BaseModel):
@@ -149,36 +198,29 @@ async def citizen_login(req: CitizenLoginRequest, db: AsyncSession = Depends(get
 @router.post("/citizen/forgot-password")
 async def citizen_forgot_password(req: CitizenForgotPasswordRequest, db: AsyncSession = Depends(get_db)):
     """
-    Initiates a password reset flow. 
-    (In production, this would send a reset link/code securely. For this prototype, it validates existence).
+    Password recovery initiation endpoint.
+    Safely informs the caller without user enumeration that automated SMS recovery
+    is not configured in this deployment.
     """
     stmt = select(User).where(User.phone_number == req.phone)
     result = await db.execute(stmt)
     user = result.scalars().first()
 
-    if not user:
-        # Generic response to prevent phone number enumeration
-        return {"status": "success", "message": "If an account exists, a reset link will be sent."}
-    
-    # Here a secure token would normally be generated and sent via SMS/Email.
-    return {"status": "success", "message": "Password reset initiated successfully."}
+    return {
+        "status": "info",
+        "message": "Self-service password recovery is disabled pending SMS OTP gateway configuration. Please contact your municipal administrator."
+    }
 
 @router.post("/citizen/reset-password")
 async def citizen_reset_password(req: CitizenResetPasswordRequest, db: AsyncSession = Depends(get_db)):
     """
-    Resets the citizen's password securely.
+    Direct unauthenticated password overwrite is safely disabled to prevent account takeover (CWE-640).
+    A verified SMS/email OTP provider or signed recovery token must be integrated before enabling self-service resets.
     """
-    stmt = select(User).where(User.phone_number == req.phone)
-    result = await db.execute(stmt)
-    user = result.scalars().first()
-
-    if not user:
-        raise HTTPException(status_code=400, detail="Unable to reset password for this account.")
-    
-    user.password_hash = pwd_context.hash(req.password)
-    await db.commit()
-    
-    return {"status": "success", "message": "Password reset successfully."}
+    raise HTTPException(
+        status_code=501,
+        detail="Direct password reset without verified OTP is disabled for account security. Please contact your municipal administrator."
+    )
 
 
 # ──────────────────────────────────────────────
@@ -188,7 +230,7 @@ async def citizen_reset_password(req: CitizenResetPasswordRequest, db: AsyncSess
 @router.post("/staff-login")
 async def staff_login(req: StaffLoginRequest, db: AsyncSession = Depends(get_db)):
     """
-    Staff Portal login – no OTP, no email delivery.
+    Staff Portal login – credential-based authentication.
     Validates official email (or employee-ID stored in the `email` column) and
     bcrypt-hashed password against the database, then issues a signed JWT.
     """
@@ -225,59 +267,60 @@ async def staff_login(req: StaffLoginRequest, db: AsyncSession = Depends(get_db)
 
 
 # ──────────────────────────────────────────────
-# Citizen credential + JWT endpoint
+# Bearer Token Dependencies
 # ──────────────────────────────────────────────
 
-class CitizenLoginRequest(BaseModel):
-    identifier: str     # mobile number or email
-    password: str
+security = HTTPBearer(auto_error=False)
 
-@router.post("/citizen-login")
-async def citizen_login(req: CitizenLoginRequest, db: AsyncSession = Depends(get_db)):
-    """
-    Citizen Portal login – password-based authentication.
-    Validates mobile number or email + password. Auto-creates account if not found.
-    """
-    stmt = select(User).where(
-        (User.email == req.identifier) | (User.phone_number == req.identifier)
-    )
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    """Validates the Bearer JWT and loads the user from the database."""
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required. Please log in.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token: missing subject.",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    stmt = select(User).where(User.id == user_id)
     result = await db.execute(stmt)
     user = result.scalars().first()
-
     if not user:
-        # Auto-create citizen user with hashed password
-        is_email = "@" in req.identifier
-        user = User(
-            email=req.identifier if is_email else None,
-            phone_number=req.identifier if not is_email else None,
-            password_hash=pwd_context.hash(req.password),
-            name="Citizen User",
-            role="citizen",
-            is_verified=True
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User belonging to this token no longer exists.",
+            headers={"WWW-Authenticate": "Bearer"},
         )
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
-    else:
-        if user.password_hash and not pwd_context.verify(req.password, user.password_hash):
-            raise HTTPException(status_code=401, detail="Invalid credentials.")
-        elif not user.password_hash:
-            # Set initial password
-            user.password_hash = pwd_context.hash(req.password)
-            await db.commit()
-            await db.refresh(user)
+    return user
 
-    token = create_access_token({"sub": user.id, "role": user.role})
 
-    return {
-        "status": "success",
-        "access_token": token,
-        "token_type": "bearer",
-        "user": {
-            "id":    user.id,
-            "phone": user.phone_number or req.identifier,
-            "email": user.email,
-            "name":  user.name or "Citizen User",
-            "role":  user.role,
-        },
-    }
+async def get_current_citizen(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """Ensures the authenticated user has citizen or admin role."""
+    if current_user.role not in ("citizen", "admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access forbidden: citizen credentials required.",
+        )
+    return current_user
+
+

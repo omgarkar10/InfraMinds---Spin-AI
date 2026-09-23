@@ -90,14 +90,7 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
       setStoredCitizenUser(user);
       onLoginSuccess(user);
     } catch (err: any) {
-      const demoUser: CitizenUser = {
-        id: "cit-" + Math.floor(100 + Math.random() * 900),
-        name: "Citizen User",
-        phone: validationResult.normalizedNumber || phone,
-        isLoggedIn: true,
-      };
-      setStoredCitizenUser(demoUser);
-      onLoginSuccess(demoUser);
+      setError(err.message || "Invalid phone number or password. Please check your credentials.");
     } finally {
       setLoading(false);
     }

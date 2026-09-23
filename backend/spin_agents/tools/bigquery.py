@@ -2,8 +2,9 @@ import os
 import json
 import uuid
 import datetime
+import math
 from google.cloud import bigquery
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 
 # Load environment variables or configuration for project and dataset
 # Assuming default project from environment if not specified
@@ -11,24 +12,104 @@ PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "your-project-id")
 DATASET_ID = os.getenv("BIGQUERY_DATASET", "spin_grievances")
 TABLE_ID = f"{PROJECT_ID}.{DATASET_ID}.citizen_complaints"
 
-# Initialize BigQuery client
-try:
-    client = bigquery.Client(project=PROJECT_ID)
-except Exception as e:
-    # Handle the case where credentials aren't set up yet during development
-    print(f"Warning: Could not initialize BigQuery client: {e}")
-    client = None
+# Initialize BigQuery client lazily to avoid blocking on missing GCP credentials at import time
+_client: Optional[bigquery.Client] = None
+_client_initialized: bool = False
 
-def insert_grievance_record(grievance_data: Dict[str, Any]) -> bool:
+def _get_client() -> Optional[bigquery.Client]:
+    global _client, _client_initialized
+    if not _client_initialized:
+        _client_initialized = True
+        try:
+            # If project ID is placeholder or no credentials configured, avoid hanging
+            if PROJECT_ID == "your-project-id" and not os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
+                _client = None
+            else:
+                _client = bigquery.Client(project=PROJECT_ID)
+        except Exception as e:
+            print(f"Warning: Could not initialize BigQuery client: {e}")
+            _client = None
+    return _client
+
+# Module-level alias for backward compatibility
+client = None
+
+
+
+class InsertResult(dict):
+    """
+    Dictionary subclass representing the result of a BigQuery insertion.
+    Supports both dictionary key access (e.g. ['grievance_id'], ['status'])
+    and boolean evaluation (bool(result) == result.get('inserted', False)).
+    """
+    def __bool__(self) -> bool:
+        return bool(self.get("inserted", False))
+
+
+def _extract_coordinates(data: Dict[str, Any]) -> Tuple[Optional[float], Optional[float]]:
+    """
+    Extracts latitude and longitude from grievance_data.
+    Supports top-level keys ('latitude', 'lat') and nested dicts ('lat_long', 'location').
+    - Preserves legitimate 0.0 values (Equator / Prime Meridian).
+    - Rejects non-finite values (NaN, Inf) and out-of-range coordinates.
+    - Strictly enforces coordinate pairing: both must be valid finite numbers, or both are None.
+    - Represents genuinely missing coordinates as None (never defaults to 0.0 or Pune).
+    """
+    raw_lat = data.get("latitude")
+    if raw_lat is None:
+        raw_lat = data.get("lat")
+
+    raw_lng = data.get("longitude")
+    if raw_lng is None:
+        raw_lng = data.get("lng")
+
+    # Check nested containers if not found at top level
+    if raw_lat is None or raw_lng is None:
+        loc = data.get("location")
+        if isinstance(loc, dict):
+            if raw_lat is None:
+                raw_lat = loc.get("latitude") if "latitude" in loc else loc.get("lat")
+            if raw_lng is None:
+                raw_lng = loc.get("longitude") if "longitude" in loc else loc.get("lng")
+
+    if raw_lat is None or raw_lng is None:
+        ll = data.get("lat_long")
+        if isinstance(ll, dict):
+            if raw_lat is None:
+                raw_lat = ll.get("latitude") if "latitude" in ll else ll.get("lat")
+            if raw_lng is None:
+                raw_lng = ll.get("longitude") if "longitude" in ll else ll.get("lng")
+
+    def _parse_coord(v: Any, min_val: float, max_val: float) -> Optional[float]:
+        if v is None or v == "":
+            return None
+        try:
+            val = float(v)
+            if math.isnan(val) or math.isinf(val):
+                return None
+            if val < min_val or val > max_val:
+                return None
+            return val
+        except (ValueError, TypeError):
+            return None
+
+    parsed_lat = _parse_coord(raw_lat, -90.0, 90.0)
+    parsed_lng = _parse_coord(raw_lng, -180.0, 180.0)
+
+    # Coordinate pairing rule: both must be present, or both are None
+    if parsed_lat is None or parsed_lng is None:
+        return None, None
+
+    return parsed_lat, parsed_lng
+
+
+def insert_grievance_record(grievance_data: Dict[str, Any]) -> InsertResult:
     """
     Ingest the final JSON output from the Geospatial_Correlation_Agent into BigQuery.
     Maps the Python dictionary payload to the citizen_complaints table schema.
+    Coordinates: missing coordinates remain None (never defaulted to 0.0).
+    Returns an InsertResult dictionary that supports both dict access and boolean evaluation.
     """
-    if client is None:
-        print("Mock insert: BigQuery client not initialized.")
-        return True
-
-    # Generate UUID and timestamp on the fly
     record_id = str(uuid.uuid4())
     created_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
@@ -37,6 +118,18 @@ def insert_grievance_record(grievance_data: Dict[str, Any]) -> bool:
     if isinstance(gati_shakti_overlap, dict) or isinstance(gati_shakti_overlap, list):
         gati_shakti_overlap = json.dumps(gati_shakti_overlap)
 
+    # Extract coordinates safely
+    lat, lng = _extract_coordinates(grievance_data)
+
+    # Extract district and state with fallback to nested location if needed
+    district = grievance_data.get("district")
+    state = grievance_data.get("state")
+    if district is None or state is None:
+        loc = grievance_data.get("location")
+        if isinstance(loc, dict):
+            district = district or loc.get("district")
+            state = state or loc.get("state")
+
     # Construct the row to insert
     row_to_insert = {
         "grievance_id": record_id,
@@ -44,29 +137,62 @@ def insert_grievance_record(grievance_data: Dict[str, Any]) -> bool:
         "domain": grievance_data.get("domain", "Unknown"),
         "severity": int(grievance_data.get("severity", 1)),
         "image_verified": bool(grievance_data.get("image_verified", False)),
-        "latitude": float(grievance_data.get("latitude", 0.0)),
-        "longitude": float(grievance_data.get("longitude", 0.0)),
+        "latitude": lat,
+        "longitude": lng,
         "original_text": grievance_data.get("original_text", ""),
         "english_translation": grievance_data.get("english_translation", ""),
-        "district": grievance_data.get("district", "Unknown"),
-        "state": grievance_data.get("state", "Unknown"),
+        "district": district or "Unknown",
+        "state": state or "Unknown",
         "created_at": created_at,
         "gati_shakti_overlap": gati_shakti_overlap
     }
 
-    errors = client.insert_rows_json(TABLE_ID, [row_to_insert])
-    
+    bq_client = _get_client()
+    if bq_client is None:
+        return InsertResult({
+            "status": "mock_persisted",
+            "grievance_id": record_id,
+            "inserted": True,
+            "row": row_to_insert,
+            "message": "Mock insert: BigQuery client not initialized."
+        })
+
+    try:
+        errors = bq_client.insert_rows_json(TABLE_ID, [row_to_insert])
+    except Exception as e:
+        print(f"Warning: BigQuery insert unavailable ({e}). Falling back to mock persistence.")
+        return InsertResult({
+            "status": "mock_persisted",
+            "grievance_id": record_id,
+            "inserted": True,
+            "row": row_to_insert,
+            "message": f"BigQuery unavailable ({e}); fallen back to local mock persistence."
+        })
+
     if not errors:
-        return True
+        return InsertResult({
+            "status": "persisted",
+            "grievance_id": record_id,
+            "inserted": True,
+            "table": TABLE_ID,
+            "row": row_to_insert,
+        })
     else:
         print(f"Encountered errors while inserting rows: {errors}")
-        return False
+        return InsertResult({
+            "status": "failed",
+            "grievance_id": record_id,
+            "inserted": False,
+            "errors": errors,
+            "row": row_to_insert,
+        })
 
 def query_weekly_summary(district: Optional[str] = None) -> List[Dict[str, Any]]:
     """
     Generate aggregate statistics for the Policy_Dashboard_Agent to write its natural language executive summary.
     """
-    if client is None:
+    bq_client = _get_client()
+    if bq_client is None:
         print("Mock query: BigQuery client not initialized.")
         return {
             "total_complaints": 4280,
@@ -104,7 +230,7 @@ def query_weekly_summary(district: Optional[str] = None) -> List[Dict[str, Any]]
         query_parameters=query_params
     )
 
-    query_job = client.query(query, job_config=job_config)
+    query_job = bq_client.query(query, job_config=job_config)
     results = query_job.result()
     
     return [dict(row) for row in results]
@@ -113,7 +239,8 @@ def query_red_zones(min_severity: int = 8) -> List[Dict[str, Any]]:
     """
     Supply the frontend HeatMap component with precise coordinate clusters that warrant policymaker attention.
     """
-    if client is None:
+    bq_client = _get_client()
+    if bq_client is None:
         print("Mock query: BigQuery client not initialized.")
         return []
 
@@ -139,7 +266,7 @@ def query_red_zones(min_severity: int = 8) -> List[Dict[str, Any]]:
         ]
     )
 
-    query_job = client.query(query, job_config=job_config)
+    query_job = bq_client.query(query, job_config=job_config)
     results = query_job.result()
     
     return [dict(row) for row in results]

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { getCountriesConfig, getAuthConfig, citizenSignup } from "../../services/authService";
+import { setStoredCitizenUser } from "../../services/grievanceService";
 import { CountryPhoneConfig, validatePhoneNumber } from "../../utils/phoneValidation";
 import { PhoneNumberField } from "./PhoneNumberField";
 import { PasswordField } from "./PasswordField";
@@ -107,7 +108,14 @@ export const CitizenSignup: React.FC<CitizenSignupProps> = ({
         phone: phoneVal.normalizedNumber,
         password
       });
-      onSignupSuccess(result.user);
+      const user = {
+        id: result.user.id,
+        name: result.user.name,
+        phone: result.user.phone,
+        isLoggedIn: true,
+      };
+      setStoredCitizenUser(user);
+      onSignupSuccess(user);
     } catch (err: any) {
       setSubmitError(err.message || "Unable to create your account.");
     } finally {

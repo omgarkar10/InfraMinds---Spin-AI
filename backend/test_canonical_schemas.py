@@ -533,3 +533,90 @@ def test_existing_import_compatibility():
     assert hasattr(runner, "run_pipeline")
     assert hasattr(models, "Grievance")
     assert hasattr(models, "User")
+
+
+# ============================================================================
+# Test 16: Dual Request Types (Existing Problem & New Development)
+# ============================================================================
+
+def test_citizen_request_dual_types():
+    """Verify that CitizenRequest supports Type A (Problem) and Type B (New Development)."""
+    # Type A: Existing Infrastructure Problem
+    req_a = CitizenRequest(
+        citizen_id="cit-101",
+        description="Potholes on MG Road causing daily traffic accidents.",
+        request_type="existing_problem",
+        category="Roads & Potholes",
+        specific_issue="Potholes / Damaged Road Surface",
+        start_date="2026-08-15",
+        frequency="Continuous",
+        location=Location(latitude=18.5204, longitude=73.8567, district="Pune", state="Maharashtra"),
+    )
+    assert req_a.request_type == "existing_problem"
+    assert req_a.start_date == "2026-08-15"
+    assert req_a.frequency == "Continuous"
+    assert req_a.category == "Roads & Potholes"
+
+    # Type B: New Infrastructure Development Request
+    req_b = CitizenRequest(
+        citizen_id="cit-102",
+        description="Need a primary healthcare center in village Khadakwasla.",
+        request_type="new_development",
+        category="Healthcare",
+        specific_issue="Primary Health Center",
+        reason="Nearest hospital is 25 km away, causing delays in emergency childbirth.",
+        intended_beneficiaries="5,000 rural residents across 3 adjoining gram panchayats",
+        location=Location(latitude=18.4320, longitude=73.7650, district="Pune", state="Maharashtra"),
+    )
+    assert req_b.request_type == "new_development"
+    assert req_b.reason.startswith("Nearest hospital")
+    assert "5,000 rural residents" in req_b.intended_beneficiaries
+    # Irrelevant Type A fields remain None
+    assert req_b.start_date is None
+    assert req_b.frequency is None
+
+    # Normalization of synonyms
+    req_synonym_a = CitizenRequest(
+        citizen_id="cit-103",
+        description="Broken streetlight near bus stop.",
+        request_type="problem",
+    )
+    assert req_synonym_a.request_type == "existing_problem"
+
+    req_synonym_b = CitizenRequest(
+        citizen_id="cit-104",
+        description="Request for new bridge over river.",
+        request_type="new_need",
+    )
+    assert req_synonym_b.request_type == "new_development"
+
+    # Rejection of invalid request types
+    with pytest.raises(ValidationError):
+        CitizenRequest(
+            citizen_id="cit-105",
+            description="General inquiry about municipal election dates.",
+            request_type="inquiry_or_general",
+        )
+
+
+def test_parsed_request_dual_types():
+    """Verify ParsedRequest supports both problem and new development classifications."""
+    parsed_dev = ParsedRequest(
+        request_id="REQ-TESTDEV01",
+        request_type="new_development",
+        original_text="Need a community drinking water filtration plant in Ward 7.",
+        normalized_description="Proposal for public community water purification plant in Ward 7.",
+        detected_language="en",
+        category="Water Supply",
+        department="Public Works / Water Supply Department",
+        issue_type="Drinking Water Treatment Plant",
+        reason="Groundwater has high fluoride contamination causing dental issues in children.",
+        intended_beneficiaries="Ward 7 community (approx 1,200 households)",
+        severity=7,
+        confidence=0.91,
+        location=Location(latitude=18.5204, longitude=73.8567, district="Pune", state="Maharashtra"),
+        processing_status="completed",
+    )
+    assert parsed_dev.request_type == "new_development"
+    assert parsed_dev.reason.startswith("Groundwater has high")
+    assert parsed_dev.start_date is None
