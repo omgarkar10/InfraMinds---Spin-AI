@@ -253,6 +253,9 @@ async def list_grievances(limit: int = 50):
 # Citizen Portal Authoritative Request Endpoints
 # ============================================================================
 
+from datetime import datetime, date
+from pydantic import BaseModel, Field, field_validator, model_validator
+
 class SubmitRequestPayload(BaseModel):
     request_type: str = "existing_problem"  # "existing_problem" | "new_development"
     category: str
@@ -289,6 +292,29 @@ class SubmitRequestPayload(BaseModel):
         if clean in ("new_need", "new_development", "development", "proposal"):
             return "new_development"
         return clean
+
+    @model_validator(mode="after")
+    def validate_start_date_and_request_type(self) -> "SubmitRequestPayload":
+        # For New Development Requests, clear start_date and frequency
+        if self.request_type == "new_development":
+            self.start_date = None
+            self.frequency = None
+
+        # For Existing Infrastructure Problem, reject future start_date
+        if self.request_type == "existing_problem" and self.start_date:
+            try:
+                # Accept YYYY-MM-DD or standard ISO date format
+                clean_date = self.start_date.split("T")[0]
+                parsed_dt = datetime.strptime(clean_date, "%Y-%m-%d").date()
+                today_dt = date.today()
+                if parsed_dt > today_dt:
+                    raise ValueError(f"start_date cannot be in the future (got {clean_date}, today is {today_dt}).")
+            except ValueError as ve:
+                if "future" in str(ve):
+                    raise ve
+                # Ignore non-parseable freeform date strings if any legacy strings exist
+                pass
+        return self
 
 
 def format_grievance_response(g: Grievance) -> dict:
@@ -621,11 +647,11 @@ Analyze the following citizen infrastructure request and extract structured info
 Input Request:
 "{text}"
 
-Request Type: {payload.request_type}
-
 Return a valid JSON object strictly with these fields:
 {{
-  "category": "Water Supply | Roads & Potholes | Drainage & Flooding | Electricity | Waste Management | Street Lighting | Public Transport | Healthcare & Hospitals | Education | Public Infrastructure | Other",
+  "request_type": "existing_problem" (if reporting a breakdown, pothole, burst, failure, waste, waterlogging, or existing problem) OR "new_development" (if proposing/asking for a new facility, road, school room, clinic, Anganwadi, bus stop, or building),
+  "detected_language": "Detected primary language name (e.g. Hindi, English, Marathi, Tamil, Telugu, Bengali, Gujarati, Kannada, Malayalam, Punjabi)",
+  "category": "Water Supply | Roads & Potholes | Drainage / Flooding | Electricity | Waste Management | Street Lighting | Public Transport | Healthcare & Hospitals | Education | Public Infrastructure | Other",
   "specific_issue": "Specific problem or proposed facility",
   "description": "Clean summary of the core issue",
   "district": null or detected Indian district,

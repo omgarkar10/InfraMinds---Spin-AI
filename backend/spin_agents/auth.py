@@ -7,6 +7,11 @@ Authentication module for SPIN Portal.
 
 import os
 import uuid
+import random
+import hmac
+import hashlib
+import json
+import urllib.request
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -60,6 +65,8 @@ class CitizenSignupRequest(BaseModel):
     countryCode: str = "IN"
     phone: str
     password: str
+    captcha_token: str | None = None
+    captcha_answer: str | None = None
 
     @field_validator("name")
     @classmethod
@@ -83,6 +90,9 @@ class CitizenSignupRequest(BaseModel):
         if len(v) < 8:
             raise ValueError("Password must be at least 8 characters long.")
         return v
+
+class GoogleAuthRequest(BaseModel):
+    id_token: str
 
 class CitizenLoginRequest(BaseModel):
     countryCode: str = "IN"
@@ -114,6 +124,48 @@ class StaffLoginRequest(BaseModel):
 # Helpers
 # ──────────────────────────────────────────────
 
+def verify_captcha_challenge(token: str | None, answer: str | None) -> bool:
+    """
+    Verifies human CAPTCHA challenge.
+    Supports:
+    1. External Google reCAPTCHA / Cloudflare Turnstile if secret key configured in environment.
+    2. Signed local mathematical challenge in local/demo environment.
+    """
+    recaptcha_secret = os.getenv("RECAPTCHA_SECRET_KEY") or os.getenv("TURNSTILE_SECRET_KEY")
+    if recaptcha_secret and token:
+        try:
+            url = "https://www.google.com/recaptcha/api/siteverify"
+            data = f"secret={recaptcha_secret}&response={token}".encode("utf-8")
+            req = urllib.request.Request(url, data=data, method="POST")
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                res_data = json.loads(resp.read().decode("utf-8"))
+                return bool(res_data.get("success", False))
+        except Exception as e:
+            print(f"[CAPTCHA Verification Warning]: {e}")
+
+    # Fallback / Local math CAPTCHA verification
+    if not token or not answer:
+        return False
+
+    try:
+        # Token format: "num1:num2:signature"
+        parts = token.split(":")
+        if len(parts) != 3:
+            return False
+        num1, num2, expected_sig = int(parts[0]), int(parts[1]), parts[2]
+        expected_ans = str(num1 + num2)
+        
+        # Verify signature to prevent forgery
+        msg = f"{num1}:{num2}".encode("utf-8")
+        computed_sig = hmac.new(JWT_SECRET.encode("utf-8"), msg, hashlib.sha256).hexdigest()[:16]
+        if not hmac.compare_digest(computed_sig, expected_sig):
+            return False
+        
+        return answer.strip() == expected_ans
+    except Exception:
+        return False
+
+
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     to_encode = data.copy()
     expire = datetime.utcnow() + (expires_delta or timedelta(hours=24))
@@ -122,16 +174,59 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
 
 
 # ──────────────────────────────────────────────
-# Citizen Password-based endpoints
+# CAPTCHA Challenge Endpoint
+# ──────────────────────────────────────────────
+
+@router.get("/captcha")
+async def get_captcha_challenge():
+    """
+    Generates a human verification challenge.
+    Returns site key metadata if reCAPTCHA/Turnstile configured, or a signed math puzzle for local dev.
+    """
+    recaptcha_site = os.getenv("RECAPTCHA_SITE_KEY") or os.getenv("VITE_RECAPTCHA_SITE_KEY")
+    turnstile_site = os.getenv("TURNSTILE_SITE_KEY") or os.getenv("VITE_TURNSTILE_SITE_KEY")
+    if recaptcha_site:
+        return {"provider": "recaptcha", "site_key": recaptcha_site}
+    if turnstile_site:
+        return {"provider": "turnstile", "site_key": turnstile_site}
+
+    # Standard signed local math puzzle
+    n1 = random.randint(1, 15)
+    n2 = random.randint(1, 15)
+    msg = f"{n1}:{n2}".encode("utf-8")
+    sig = hmac.new(JWT_SECRET.encode("utf-8"), msg, hashlib.sha256).hexdigest()[:16]
+    token = f"{n1}:{n2}:{sig}"
+    return {
+        "provider": "math",
+        "question": f"What is {n1} + {n2}?",
+        "captcha_token": token,
+    }
+
+
+# ──────────────────────────────────────────────
+# Citizen Password & OAuth endpoints
 # ──────────────────────────────────────────────
 
 @router.post("/citizen/signup")
 async def citizen_signup(req: CitizenSignupRequest, db: AsyncSession = Depends(get_db)):
     """
-    Creates a new citizen account with a hashed password.
+    Creates a new citizen account with a hashed password after CAPTCHA verification.
     Returns a JWT upon successful creation.
     """
-    # 1. Normalize phone if needed (frontend typically sends normalized format, but backend can enforce E.164 if configured)
+    # 0. Validate Human CAPTCHA
+    if not verify_captcha_challenge(req.captcha_token, req.captcha_answer):
+        recaptcha_secret = os.getenv("RECAPTCHA_SECRET_KEY") or os.getenv("TURNSTILE_SECRET_KEY")
+        if _SPIN_ENV in ("production", "prod") and not recaptcha_secret:
+            raise HTTPException(
+                status_code=400,
+                detail="CAPTCHA verification required: Please configure RECAPTCHA_SECRET_KEY or TURNSTILE_SECRET_KEY in production."
+            )
+        raise HTTPException(
+            status_code=400,
+            detail="Human verification (CAPTCHA) failed. Please solve the challenge correctly."
+        )
+
+    # 1. Normalize phone if needed
     normalized_phone = req.phone
     
     # 2. Check if user exists
@@ -167,6 +262,71 @@ async def citizen_signup(req: CitizenSignupRequest, db: AsyncSession = Depends(g
             "phone": new_user.phone_number,
             "name":  new_user.name,
             "role":  new_user.role,
+        },
+    }
+
+@router.post("/citizen/google")
+async def citizen_google_login(req: GoogleAuthRequest, db: AsyncSession = Depends(get_db)):
+    """
+    Verifies Google ID token, finds or creates corresponding SPIN citizen account, and returns JWT access token.
+    """
+    if not req.id_token:
+        raise HTTPException(status_code=400, detail="Missing Google ID token.")
+
+    token_data = None
+    try:
+        url = f"https://oauth2.googleapis.com/tokeninfo?id_token={req.id_token}"
+        req_obj = urllib.request.Request(url, method="GET")
+        with urllib.request.urlopen(req_obj, timeout=6) as resp:
+            token_data = json.loads(resp.read().decode("utf-8"))
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Google authentication token verification failed: {str(e)}")
+
+    if not token_data or "sub" not in token_data:
+        raise HTTPException(status_code=401, detail="Invalid Google ID token.")
+
+    google_sub = token_data.get("sub")
+    email = token_data.get("email")
+    name = token_data.get("name", "Google Citizen")
+
+    # Find existing user by email or google phone identifier
+    user = None
+    if email:
+        stmt = select(User).where(User.email == email)
+        res = await db.execute(stmt)
+        user = res.scalars().first()
+
+    if not user:
+        google_phone_id = f"g_{google_sub[:14]}"
+        stmt = select(User).where(User.phone_number == google_phone_id)
+        res = await db.execute(stmt)
+        user = res.scalars().first()
+
+    if not user:
+        google_phone_id = f"g_{google_sub[:14]}"
+        user = User(
+            name=name,
+            email=email,
+            phone_number=google_phone_id,
+            is_verified=True,
+            role="citizen"
+        )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+
+    token = create_access_token({"sub": user.id, "role": user.role})
+
+    return {
+        "status": "success",
+        "access_token": token,
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "phone": user.phone_number or email,
+            "email": user.email,
+            "name": user.name,
+            "role": user.role,
         },
     }
 

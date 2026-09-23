@@ -171,13 +171,38 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
           </div>
 
           {/* Right Action CTAs */}
-          <div className="navbar-actions">
-            <button
-              className={`navbar-cta ${isCitizenView ? "active" : ""}`}
-              onClick={() => onViewChange("citizen-login")}
-            >
-              Sign In
-            </button>
+          <div className="navbar-actions" style={{ display: "flex", gap: "8px" }}>
+            {(() => {
+              const storedCitizen = typeof window !== "undefined" ? localStorage.getItem("spin_citizen_user") : null;
+              let isLogged = false;
+              if (storedCitizen) {
+                try { isLogged = !!JSON.parse(storedCitizen).isLoggedIn; } catch {}
+              }
+              return isLogged ? (
+                <>
+                  <button
+                    className={`navbar-cta ${isCitizenView ? "active" : ""}`}
+                    onClick={() => onViewChange("citizen")}
+                  >
+                    Citizen Portal
+                  </button>
+                  <button
+                    className="btn-outline"
+                    style={{ fontSize: "12px", padding: "6px 12px" }}
+                    onClick={() => onViewChange("citizen-logout")}
+                  >
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <button
+                  className={`navbar-cta ${isCitizenView ? "active" : ""}`}
+                  onClick={() => onViewChange("citizen-login")}
+                >
+                  Sign In
+                </button>
+              );
+            })()}
           </div>
 
           {/* Mobile Hamburger */}
@@ -196,9 +221,22 @@ export function Navbar({ view, onViewChange }: NavbarProps) {
               </button>
             ))}
 
-            <button className="navbar-mobile-link" onClick={() => { onViewChange("citizen-login"); setMenuOpen(false); }}>
-              Sign In
-            </button>
+            {(() => {
+              const storedCitizen = typeof window !== "undefined" ? localStorage.getItem("spin_citizen_user") : null;
+              let isLogged = false;
+              if (storedCitizen) {
+                try { isLogged = !!JSON.parse(storedCitizen).isLoggedIn; } catch {}
+              }
+              return isLogged ? (
+                <button className="navbar-mobile-link" onClick={() => { onViewChange("citizen-logout"); setMenuOpen(false); }}>
+                  Sign Out
+                </button>
+              ) : (
+                <button className="navbar-mobile-link" onClick={() => { onViewChange("citizen-login"); setMenuOpen(false); }}>
+                  Sign In
+                </button>
+              );
+            })()}
           </div>
         )}
       </nav>
