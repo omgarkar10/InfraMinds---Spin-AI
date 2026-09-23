@@ -15,14 +15,22 @@ from pydantic import BaseModel, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 import jwt
-from passlib.context import CryptContext
+import bcrypt
 import warnings
 
 from spin_agents.db import get_db
 from spin_agents.models import User
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    try:
+        return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
+    except ValueError:
+        return False
 
 JWT_SECRET    = os.getenv("JWT_SECRET", "supersecretkey")
 JWT_ALGORITHM = "HS256"
@@ -134,7 +142,7 @@ async def citizen_signup(req: CitizenSignupRequest, db: AsyncSession = Depends(g
         raise HTTPException(status_code=400, detail="This phone number is already associated with an account.")
     
     # 3. Hash password
-    hashed_password = pwd_context.hash(req.password)
+    hashed_password = hash_password(req.password)
     
     # 4. Create user
     new_user = User(
@@ -175,7 +183,7 @@ async def citizen_login(req: CitizenLoginRequest, db: AsyncSession = Depends(get
     if not user or not user.password_hash:
         raise HTTPException(status_code=401, detail="Invalid phone number or password.")
 
-    if not pwd_context.verify(req.password, user.password_hash):
+    if not verify_password(req.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid phone number or password.")
 
     if user.role != "citizen":
@@ -243,7 +251,7 @@ async def staff_login(req: StaffLoginRequest, db: AsyncSession = Depends(get_db)
     if not user or not user.password_hash:
         raise HTTPException(status_code=401, detail="Invalid credentials.")
 
-    if not pwd_context.verify(req.password, user.password_hash):
+    if not verify_password(req.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials.")
 
     STAFF_ROLES = {"staff", "admin", "department officer", "policymaker"}

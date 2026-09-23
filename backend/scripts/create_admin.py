@@ -6,9 +6,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from spin_agents.db import AsyncSessionLocal, engine, Base
 from spin_agents.models import User
-from passlib.context import CryptContext
+import bcrypt
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 async def create_admin():
     # Ensure tables exist
@@ -28,7 +29,7 @@ async def create_admin():
 
         user = User(
             email="admin@government.gov.in",
-            password_hash=pwd_context.hash("SecureSPIN2026!"),
+            password_hash=hash_password("SecureSPIN2026!"),
             name="System Administrator",
             department="Municipal Infrastructure & Public works",
             role="admin",
