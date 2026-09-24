@@ -63,3 +63,5 @@ Thumbs.db
 **/*.lognode_modules/
 
 node_modules/
+secret.json
+global-bundle.pem

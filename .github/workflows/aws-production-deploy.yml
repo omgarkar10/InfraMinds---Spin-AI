@@ -1,0 +1,39 @@
+name: Production Deploy to AWS
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: ap-south-1
+  ECR_REGISTRY: 541259832110.dkr.ecr.ap-south-1.amazonaws.com
+
+jobs:
+  deploy-backend:
+    name: Build & Deploy Backend Microservices
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and Push Agent Image
+        run: |
+          docker build -t $ECR_REGISTRY/spin-agent:latest -f deploy/Dockerfile.agent .
+          docker push $ECR_REGISTRY/spin-agent:latest
+
+      - name: Build and Push API Image
+        run: |
+          docker build -t $ECR_REGISTRY/spin-api:latest -f deploy/Dockerfile.api .
+          docker push $ECR_REGISTRY/spin-api:latest
