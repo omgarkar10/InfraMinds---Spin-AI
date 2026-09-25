@@ -22,3 +22,6 @@ testpaths = [
     "tests",
     "."
 ]
+
+[tool.pyright]
+extraPaths = [".."]
