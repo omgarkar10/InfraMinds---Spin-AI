@@ -120,6 +120,25 @@ jobs:
               --health-check-configuration "Protocol=HTTP,Path=/,Interval=10,Timeout=5,HealthyThreshold=2,UnhealthyThreshold=3" \
               --region ${{ env.AWS_REGION }}
           else
+            echo "Checking status of existing service: $SERVICE_ARN"
+            for i in $(seq 1 30); do
+              STATUS=$(aws apprunner describe-service \
+                --service-arn "$SERVICE_ARN" \
+                --query "Service.Status" \
+                --output text --region ${{ env.AWS_REGION }})
+              echo "Current status: $STATUS"
+              if [ "$STATUS" = "RUNNING" ]; then
+                echo "Service is ready for update."
+                break
+              elif [ "$STATUS" = "OPERATION_IN_PROGRESS" ]; then
+                echo "Operation in progress, waiting 15s..."
+                sleep 15
+              else
+                echo "Warning: Service status is $STATUS"
+                break
+              fi
+            done
+
             echo "Updating existing App Runner service: $SERVICE_ARN"
             aws apprunner update-service \
               --service-arn "$SERVICE_ARN" \
