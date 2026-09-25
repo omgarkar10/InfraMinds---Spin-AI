@@ -56,7 +56,7 @@ const SUB_DEPT_MAP: Record<string, string[]> = {
 };
 
 const DEFAULT_SUB_DEPTS = [
-  "General Complaint",
+  "General Community Demand",
   "Maintenance Request",
   "Urgent Safety Hazard",
   "Other Issue",
@@ -86,7 +86,7 @@ const FEEDBACK_OPTIONS = [
 export function CitizenChat({ apiUrl = "" }: CitizenChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     { role: "bot", text: "Hello! Welcome to SPIN civic portal." },
-    { role: "bot", text: "Would you like to register a grievance?" },
+    { role: "bot", text: "Would you like to register a proposal?" },
   ]);
   const [input, setInput] = useState("");
   const [step, setStep] = useState<ChatStep>("ask_register");
@@ -142,7 +142,7 @@ export function CitizenChat({ apiUrl = "" }: CitizenChatProps) {
         setGrievanceData((prev) => ({ ...prev, loc }));
         setMessages((m) => [
           ...m,
-          { role: "bot", text: `📍 GPS Coordinates captured (${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}). Submitting your grievance…` },
+          { role: "bot", text: `📍 GPS Coordinates captured (${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}). Submitting your proposal…` },
         ]);
         submit(desc, loc, currentDept, currentSubDept);
       },
@@ -178,7 +178,7 @@ export function CitizenChat({ apiUrl = "" }: CitizenChatProps) {
       const data = await res.json();
       
       const summary = data.policy_output?.executive_summary;
-      let confirmationText = `✅ Grievance recorded successfully with ID: ${generatedId}.`;
+      let confirmationText = `✅ Proposal recorded successfully with ID: ${generatedId}.`;
       if (summary) {
         confirmationText += `\nSummary: ${summary}`;
       }
@@ -201,7 +201,7 @@ export function CitizenChat({ apiUrl = "" }: CitizenChatProps) {
         ...m,
         {
           role: "bot",
-          text: `✅ Grievance recorded locally with ID: ${generatedId} (Demo Mode).`,
+          text: `✅ Proposal recorded locally with ID: ${generatedId} (Demo Mode).`,
         },
         {
           role: "bot",
@@ -244,7 +244,7 @@ export function CitizenChat({ apiUrl = "" }: CitizenChatProps) {
         requestLocation(grievanceData.desc);
       } else {
         setGrievanceData((prev) => ({ ...prev, loc: text }));
-        setMessages((m) => [...m, { role: "bot", text: `Location recorded: "${text}". Submitting your grievance…` }]);
+        setMessages((m) => [...m, { role: "bot", text: `Location recorded: "${text}". Submitting your proposal…` }]);
         submit(grievanceData.desc, text);
       }
     } else if (step === "feedback") {
@@ -259,10 +259,10 @@ export function CitizenChat({ apiUrl = "" }: CitizenChatProps) {
   };
 
   const handleOptionClick = (option: string) => {
-    if (option === "🔄 Register Another Grievance") {
+    if (option === "🔄 Register Another Proposal") {
       setMessages([
         { role: "bot", text: "Hello! Welcome to SPIN civic portal." },
-        { role: "bot", text: "Would you like to register a grievance?" },
+        { role: "bot", text: "Would you like to register a proposal?" },
       ]);
       setStep("ask_register");
       setGrievanceData({
@@ -280,7 +280,7 @@ export function CitizenChat({ apiUrl = "" }: CitizenChatProps) {
     if (loading) return [];
     switch (step) {
       case "ask_register":
-        return ["Yes, Register Grievance", "No, Just Browsing"];
+        return ["Yes, Register Proposal", "No, Just Browsing"];
       case "dept":
         return DEPARTMENT_OPTIONS;
       case "sub_dept":
@@ -292,7 +292,7 @@ export function CitizenChat({ apiUrl = "" }: CitizenChatProps) {
       case "feedback":
         return FEEDBACK_OPTIONS;
       case "done":
-        return ["🔄 Register Another Grievance"];
+        return ["🔄 Register Another Proposal"];
       default:
         return [];
     }

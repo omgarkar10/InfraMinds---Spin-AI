@@ -96,7 +96,7 @@ export const TermsModal: React.FC<TermsModalProps> = ({ isOpen, onClose, onAccep
               <strong>Accuracy of Submissions:</strong> Citizens agree to submit information that is accurate, truthful, and genuine to the best of their knowledge.
             </li>
             <li style={{ marginBottom: "12px" }}>
-              <strong>No Guarantee of Government Funding:</strong> Submitting a request or grievance through SPIN does not constitute automatic approval, guarantee of municipal funding, or binding project execution by public authorities.
+              <strong>No Guarantee of Government Funding:</strong> Submitting a request or proposal through SPIN does not constitute automatic approval, guarantee of municipal funding, or binding project execution by public authorities.
             </li>
             <li style={{ marginBottom: "12px" }}>
               <strong>Privacy &amp; Data Security:</strong> Personal contact information is stored securely and handled according to platform privacy practices. Analytical views strip personally identifiable information.

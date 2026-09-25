@@ -42,7 +42,7 @@ export function ExecutiveSummaryPanel({ summary, loading }: ExecutiveSummaryPane
           <span className="empty-icon">📡</span>
           <div className="empty-title">NO LIVE INTELLIGENCE</div>
           <div className="empty-desc">
-            No citizen grievances recorded yet. Submit a report through the Citizen Portal to populate live intelligence.
+            No citizen proposals recorded yet. Submit a report through the Citizen Portal to populate live intelligence.
           </div>
         </div>
       </aside>
@@ -64,7 +64,7 @@ export function ExecutiveSummaryPanel({ summary, loading }: ExecutiveSummaryPane
         <StatCard
           label="TOTAL SIGNALS"
           value={stats.total_complaints.toLocaleString()}
-          subtext="Logged complaints"
+          subtext="Logged community demands"
         />
         <StatCard
           label="TOP DOMAIN"
@@ -92,7 +92,7 @@ export function ExecutiveSummaryPanel({ summary, loading }: ExecutiveSummaryPane
         </div>
         {hasNoComplaints ? (
           <p className="summary-text empty">
-            No citizen grievances recorded yet. Submit a report through the Citizen Portal to trigger automated spatial correlation and AI situation briefings.
+            No citizen proposals recorded yet. Submit a report through the Citizen Portal to trigger automated spatial correlation and AI situation briefings.
           </p>
         ) : (
           <p className="summary-text">{summary.executive_summary}</p>

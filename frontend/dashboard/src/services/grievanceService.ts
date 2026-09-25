@@ -1,5 +1,5 @@
 import type {
-  Grievance,
+  Proposal,
   CitizenUser,
   StaffUser,
   GrievanceStatus,
@@ -10,7 +10,7 @@ const STORAGE_GRIEVANCES_KEY = "spin_grievances_v1";
 const STORAGE_CITIZEN_KEY = "spin_citizen_user_v1";
 const STORAGE_STAFF_KEY = "spin_staff_user_v1";
 
-const INITIAL_SEED_GRIEVANCES: Grievance[] = [
+const INITIAL_SEED_GRIEVANCES: Proposal[] = [
   // WATER SUPPLY DEPARTMENT
   {
     id: "SPIN-2026-WTR001",
@@ -19,7 +19,7 @@ const INITIAL_SEED_GRIEVANCES: Grievance[] = [
     citizenPhone: "+91 98765 43210",
     category: "Water Supply",
     issueType: "Pipeline leakage / burst",
-    severity: "High",
+    priority: "High",
     startDate: "2026-08-20",
     frequency: "Continuous",
     description: "Main feeder water pipe burst causing heavy leakage near Sector 4 underground reservoir.",
@@ -41,7 +41,7 @@ const INITIAL_SEED_GRIEVANCES: Grievance[] = [
     aiAnalysis: {
       category: "Water Supply",
       issue: "Pipeline leakage / burst",
-      severity: "High",
+      priority: "High",
       location: "Pune / Ward 14",
       confidence: 96,
       nearbyGrievances: 42,
@@ -56,8 +56,8 @@ const INITIAL_SEED_GRIEVANCES: Grievance[] = [
     timeline: [
       {
         date: "20 AUG",
-        title: "Grievance Submitted",
-        description: "Grievance recorded on SPIN Citizen Portal.",
+        title: "Proposal Submitted",
+        description: "Proposal recorded on SPIN Citizen Portal.",
         completed: true,
       },
     ],
@@ -70,7 +70,7 @@ const INITIAL_SEED_GRIEVANCES: Grievance[] = [
     citizenPhone: "+91 98123 45678",
     category: "Water Supply",
     issueType: "Contaminated water",
-    severity: "Critical",
+    priority: "Critical",
     startDate: "2026-08-18",
     frequency: "Daily",
     description: "Muddy and foul smelling tap water supplied during morning supply hours in Block B.",
@@ -90,7 +90,7 @@ const INITIAL_SEED_GRIEVANCES: Grievance[] = [
     aiAnalysis: {
       category: "Water Supply",
       issue: "Contaminated water",
-      severity: "Critical",
+      priority: "Critical",
       location: "Pune / Ward 8",
       confidence: 94,
       nearbyGrievances: 19,
@@ -105,8 +105,8 @@ const INITIAL_SEED_GRIEVANCES: Grievance[] = [
     timeline: [
       {
         date: "18 AUG",
-        title: "Grievance Submitted",
-        description: "Grievance recorded on SPIN Citizen Portal.",
+        title: "Proposal Submitted",
+        description: "Proposal recorded on SPIN Citizen Portal.",
         completed: true,
       },
       {
@@ -127,7 +127,7 @@ const INITIAL_SEED_GRIEVANCES: Grievance[] = [
     citizenPhone: "+91 97654 32109",
     category: "Electricity",
     issueType: "Transformer failure / sparks",
-    severity: "Critical",
+    priority: "Critical",
     startDate: "2026-08-22",
     frequency: "Continuous",
     description: "Local distribution transformer sparking violently with frequent tripping in industrial pocket.",
@@ -146,7 +146,7 @@ const INITIAL_SEED_GRIEVANCES: Grievance[] = [
     aiAnalysis: {
       category: "Electricity",
       issue: "Transformer failure / sparks",
-      severity: "Critical",
+      priority: "Critical",
       location: "Mumbai / Kurla Zone",
       confidence: 98,
       nearbyGrievances: 28,
@@ -161,8 +161,8 @@ const INITIAL_SEED_GRIEVANCES: Grievance[] = [
     timeline: [
       {
         date: "22 AUG",
-        title: "Grievance Submitted",
-        description: "Grievance recorded on SPIN Citizen Portal.",
+        title: "Proposal Submitted",
+        description: "Proposal recorded on SPIN Citizen Portal.",
         completed: true,
       },
       {
@@ -181,7 +181,7 @@ const INITIAL_SEED_GRIEVANCES: Grievance[] = [
     citizenPhone: "+91 99887 76655",
     category: "Street Lighting",
     issueType: "Dark stretch / No lights installed",
-    severity: "Medium",
+    priority: "Medium",
     startDate: "2026-08-15",
     frequency: "Daily",
     description: "Entire 800-meter bypass stretch has non-functional streetlights creating pedestrian safety concern.",
@@ -200,7 +200,7 @@ const INITIAL_SEED_GRIEVANCES: Grievance[] = [
     aiAnalysis: {
       category: "Street Lighting",
       issue: "Dark stretch / No lights installed",
-      severity: "Medium",
+      priority: "Medium",
       location: "Bengaluru / Ward 112",
       confidence: 91,
       nearbyGrievances: 15,
@@ -215,8 +215,8 @@ const INITIAL_SEED_GRIEVANCES: Grievance[] = [
     timeline: [
       {
         date: "15 AUG",
-        title: "Grievance Submitted",
-        description: "Grievance recorded on SPIN Citizen Portal.",
+        title: "Proposal Submitted",
+        description: "Proposal recorded on SPIN Citizen Portal.",
         completed: true,
       },
     ],
@@ -231,7 +231,7 @@ const INITIAL_SEED_GRIEVANCES: Grievance[] = [
     citizenPhone: "+91 98220 11223",
     category: "Roads & Potholes",
     issueType: "Pothole",
-    severity: "High",
+    priority: "High",
     startDate: "2026-08-10",
     frequency: "Continuous",
     description: "Deep 3-foot pothole on main arterial road causing vehicle damage and traffic bottlenecks.",
@@ -250,7 +250,7 @@ const INITIAL_SEED_GRIEVANCES: Grievance[] = [
     aiAnalysis: {
       category: "Roads & Potholes",
       issue: "Pothole",
-      severity: "High",
+      priority: "High",
       location: "New Delhi / South Zone",
       confidence: 95,
       nearbyGrievances: 53,
@@ -265,8 +265,8 @@ const INITIAL_SEED_GRIEVANCES: Grievance[] = [
     timeline: [
       {
         date: "10 AUG",
-        title: "Grievance Submitted",
-        description: "Grievance recorded on SPIN Citizen Portal.",
+        title: "Proposal Submitted",
+        description: "Proposal recorded on SPIN Citizen Portal.",
         completed: true,
       },
       {
@@ -287,7 +287,7 @@ const INITIAL_SEED_GRIEVANCES: Grievance[] = [
     citizenPhone: "+91 94230 99887",
     category: "Waste Management",
     issueType: "Garbage dump not cleared",
-    severity: "High",
+    priority: "High",
     startDate: "2026-08-17",
     frequency: "Daily",
     description: "Community waste bin uncleared for 5 consecutive days, overflowing onto public sidewalk.",
@@ -306,7 +306,7 @@ const INITIAL_SEED_GRIEVANCES: Grievance[] = [
     aiAnalysis: {
       category: "Waste Management",
       issue: "Garbage dump not cleared",
-      severity: "High",
+      priority: "High",
       location: "Pune / Ward 21",
       confidence: 97,
       nearbyGrievances: 31,
@@ -321,8 +321,8 @@ const INITIAL_SEED_GRIEVANCES: Grievance[] = [
     timeline: [
       {
         date: "17 AUG",
-        title: "Grievance Submitted",
-        description: "Grievance recorded on SPIN Citizen Portal.",
+        title: "Proposal Submitted",
+        description: "Proposal recorded on SPIN Citizen Portal.",
         completed: true,
       },
     ],
@@ -337,7 +337,7 @@ const INITIAL_SEED_GRIEVANCES: Grievance[] = [
     citizenPhone: "+91 98450 12345",
     category: "Healthcare & Hospitals",
     issueType: "Medicine/service unavailability",
-    severity: "High",
+    priority: "High",
     startDate: "2026-08-19",
     frequency: "Occasional",
     description: "Shortage of essential anti-venom and emergency medicines at Primary Health Center.",
@@ -356,7 +356,7 @@ const INITIAL_SEED_GRIEVANCES: Grievance[] = [
     aiAnalysis: {
       category: "Healthcare & Hospitals",
       issue: "Medicine/service unavailability",
-      severity: "High",
+      priority: "High",
       location: "Hyderabad / South District",
       confidence: 93,
       nearbyGrievances: 12,
@@ -371,8 +371,8 @@ const INITIAL_SEED_GRIEVANCES: Grievance[] = [
     timeline: [
       {
         date: "19 AUG",
-        title: "Grievance Submitted",
-        description: "Grievance recorded on SPIN Citizen Portal.",
+        title: "Proposal Submitted",
+        description: "Proposal recorded on SPIN Citizen Portal.",
         completed: true,
       },
     ],
@@ -387,7 +387,7 @@ const INITIAL_SEED_GRIEVANCES: Grievance[] = [
     citizenPhone: "+91 99100 88776",
     category: "Public Safety & Law Enforcement",
     issueType: "Traffic signal not working",
-    severity: "High",
+    priority: "High",
     startDate: "2026-08-21",
     frequency: "Continuous",
     description: "Major 4-way intersection traffic light failure leading to chaotic near-miss accidents.",
@@ -406,7 +406,7 @@ const INITIAL_SEED_GRIEVANCES: Grievance[] = [
     aiAnalysis: {
       category: "Public Safety & Law Enforcement",
       issue: "Traffic signal not working",
-      severity: "High",
+      priority: "High",
       location: "Ahmedabad / West Zone",
       confidence: 96,
       nearbyGrievances: 24,
@@ -421,8 +421,8 @@ const INITIAL_SEED_GRIEVANCES: Grievance[] = [
     timeline: [
       {
         date: "21 AUG",
-        title: "Grievance Submitted",
-        description: "Grievance recorded on SPIN Citizen Portal.",
+        title: "Proposal Submitted",
+        description: "Proposal recorded on SPIN Citizen Portal.",
         completed: true,
       },
       {
@@ -437,14 +437,14 @@ const INITIAL_SEED_GRIEVANCES: Grievance[] = [
 ];
 
 /* Helper functions for LocalStorage management */
-export function getStoredGrievances(): Grievance[] {
+export function getStoredGrievances(): Proposal[] {
   const data = localStorage.getItem(STORAGE_GRIEVANCES_KEY);
   if (!data) {
     localStorage.setItem(STORAGE_GRIEVANCES_KEY, JSON.stringify(INITIAL_SEED_GRIEVANCES));
     return INITIAL_SEED_GRIEVANCES;
   }
   try {
-    const list: Grievance[] = JSON.parse(data);
+    const list: Proposal[] = JSON.parse(data);
     if (!Array.isArray(list) || list.length === 0) {
       localStorage.setItem(STORAGE_GRIEVANCES_KEY, JSON.stringify(INITIAL_SEED_GRIEVANCES));
       return INITIAL_SEED_GRIEVANCES;
@@ -459,18 +459,18 @@ export function clearStoredGrievances(): void {
   localStorage.removeItem(STORAGE_GRIEVANCES_KEY);
 }
 
-export function saveGrievance(grievance: Grievance): void {
+export function saveGrievance(proposal: Proposal): void {
   const list = getStoredGrievances();
-  const index = list.findIndex((g) => g.id === grievance.id);
+  const index = list.findIndex((g) => g.id === proposal.id);
   if (index >= 0) {
-    list[index] = grievance;
+    list[index] = proposal;
   } else {
-    list.unshift(grievance);
+    list.unshift(proposal);
   }
   localStorage.setItem(STORAGE_GRIEVANCES_KEY, JSON.stringify(list));
 }
 
-export function getGrievanceById(id: string): Grievance | undefined {
+export function getGrievanceById(id: string): Proposal | undefined {
   const list = getStoredGrievances();
   return list.find((g) => g.id.toLowerCase() === id.toLowerCase());
 }
@@ -490,10 +490,10 @@ export function isSuperAdmin(user: StaffUser): boolean {
 }
 
 /**
- * Authorization & Filtering: Retrieve only grievances matching the staff member's department.
- * Admins/Policymakers receive all grievances system-wide.
+ * Authorization & Filtering: Retrieve only proposals matching the staff member's department.
+ * Admins/Policymakers receive all proposals system-wide.
  */
-export function getStaffGrievances(staffUser: StaffUser): Grievance[] {
+export function getStaffGrievances(staffUser: StaffUser): Proposal[] {
   const allGrievances = getStoredGrievances();
   if (isSuperAdmin(staffUser)) {
     return allGrievances;
@@ -505,24 +505,24 @@ export function getStaffGrievances(staffUser: StaffUser): Grievance[] {
 }
 
 /**
- * Authorized single grievance lookup for staff.
- * Rejects access if grievance belongs to another department and user is not admin.
+ * Authorized single proposal lookup for staff.
+ * Rejects access if proposal belongs to another department and user is not admin.
  */
-export function getStaffGrievanceById(id: string, staffUser: StaffUser): Grievance | undefined {
-  const grievance = getGrievanceById(id);
-  if (!grievance) return undefined;
-  if (isSuperAdmin(staffUser)) return grievance;
+export function getStaffGrievanceById(id: string, staffUser: StaffUser): Proposal | undefined {
+  const proposal = getGrievanceById(id);
+  if (!proposal) return undefined;
+  if (isSuperAdmin(staffUser)) return proposal;
 
   const userDept = getNormalizedDepartment(staffUser.department);
-  const grievanceDept = getNormalizedDepartment(grievance.department);
+  const grievanceDept = getNormalizedDepartment(proposal.department);
 
   if (userDept !== grievanceDept) {
     return undefined; // Blocked: belong to another department
   }
-  return grievance;
+  return proposal;
 }
 
-export function updateGrievanceStatus(id: string, status: GrievanceStatus, note?: string): Grievance | undefined {
+export function updateGrievanceStatus(id: string, status: GrievanceStatus, note?: string): Proposal | undefined {
   const list = getStoredGrievances();
   const g = list.find((item) => item.id.toLowerCase() === id.toLowerCase());
   if (g) {
@@ -545,7 +545,7 @@ export function updateGrievanceStatus(id: string, status: GrievanceStatus, note?
   return undefined;
 }
 
-export function updateStaffDecision(id: string, decision: "ACCEPTED" | "MODIFIED" | "REJECTED", note?: string): Grievance | undefined {
+export function updateStaffDecision(id: string, decision: "ACCEPTED" | "MODIFIED" | "REJECTED", note?: string): Proposal | undefined {
   const list = getStoredGrievances();
   const g = list.find((item) => item.id.toLowerCase() === id.toLowerCase());
   if (g) {
@@ -566,7 +566,7 @@ export function updateStaffDecision(id: string, decision: "ACCEPTED" | "MODIFIED
   return undefined;
 }
 
-export function addCitizenFeedback(id: string, resolved: boolean, rating?: number, comment?: string, reopenReason?: string): Grievance | undefined {
+export function addCitizenFeedback(id: string, resolved: boolean, rating?: number, comment?: string, reopenReason?: string): Proposal | undefined {
   const list = getStoredGrievances();
   const g = list.find((item) => item.id.toLowerCase() === id.toLowerCase());
   if (g) {
@@ -581,7 +581,7 @@ export function addCitizenFeedback(id: string, resolved: boolean, rating?: numbe
       g.status = "REOPENED";
       g.timeline.push({
         date: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short" }).toUpperCase(),
-        title: "Grievance Reopened by Citizen",
+        title: "Proposal Reopened by Citizen",
         description: reopenReason || "Citizen flagged that the issue persists.",
         completed: true,
       });

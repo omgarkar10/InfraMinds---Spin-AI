@@ -123,7 +123,7 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
           <div>
             <h2 className="portal-heading" style={{ fontSize: "22px" }}>Citizen Login</h2>
             <p className="portal-subtext" style={{ fontSize: "13px" }}>
-              Sign in to access SPIN citizen services, submit complaints, and track resolutions.
+              Sign in to access SPIN citizen services, submit community demands, and track resolutions.
             </p>
           </div>
 

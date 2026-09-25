@@ -1,24 +1,24 @@
 import React from "react";
-import type { Grievance } from "../../types";
+import type { Proposal } from "../../types";
 import "./GrievanceKPIBar.css";
 
 interface GrievanceKPIBarProps {
-  grievances?: Grievance[];
+  proposals?: Proposal[];
   isLiveApi?: boolean;
 }
 
 export const GrievanceKPIBar: React.FC<GrievanceKPIBarProps> = ({
-  grievances = [],
+  proposals = [],
   isLiveApi = false,
 }) => {
-  // Calculate statistics strictly from the department grievances provided
-  const totalGrievances = grievances.length;
-  const pendingGrievances = grievances.filter((g) => g.status !== "RESOLVED").length;
-  const avgResolutionDays = grievances.length > 0 ? "2.4 days" : "0 days";
-  const highPriorityCount = grievances.filter((g) => g.severity === "High" || g.severity === "Critical").length;
+  // Calculate statistics strictly from the department proposals provided
+  const totalGrievances = proposals.length;
+  const pendingGrievances = proposals.filter((g) => g.status !== "RESOLVED").length;
+  const avgResolutionDays = proposals.length > 0 ? "2.4 days" : "0 days";
+  const highPriorityCount = proposals.filter((g) => g.priority === "High" || g.priority === "Critical").length;
 
   return (
-    <section className="grievance-kpi-bar-wrapper" aria-label="Grievance Statistics Overview">
+    <section className="proposal-kpi-bar-wrapper" aria-label="Proposal Statistics Overview">
       <div className="kpi-header-strip">
         <span className="label-eyebrow">MUNICIPAL INFRASTRUCTURE INTELLIGENCE · GRIEVANCE STATISTICS</span>
         <span className={`kpi-provenance-tag ${isLiveApi ? "live" : "demo"}`}>
@@ -26,7 +26,7 @@ export const GrievanceKPIBar: React.FC<GrievanceKPIBarProps> = ({
         </span>
       </div>
 
-      <div className="grievance-kpi-grid">
+      <div className="proposal-kpi-grid">
         {/* METRIC 01: TOTAL GRIEVANCES */}
         <div className="kpi-metric-card">
           <div className="kpi-card-top">
@@ -56,7 +56,7 @@ export const GrievanceKPIBar: React.FC<GrievanceKPIBarProps> = ({
             </span>
           </div>
 
-          <span className="kpi-caption" aria-label="Grievances increased 12% compared to the previous 7 days">
+          <span className="kpi-caption" aria-label="Proposals increased 12% compared to the previous 7 days">
             vs previous 7 days
           </span>
         </div>
@@ -90,7 +90,7 @@ export const GrievanceKPIBar: React.FC<GrievanceKPIBarProps> = ({
             </span>
           </div>
 
-          <span className="kpi-caption" aria-label="Pending grievances decreased 8% compared to the previous 7 days">
+          <span className="kpi-caption" aria-label="Pending proposals decreased 8% compared to the previous 7 days">
             vs previous 7 days
           </span>
         </div>
@@ -124,7 +124,7 @@ export const GrievanceKPIBar: React.FC<GrievanceKPIBarProps> = ({
             </span>
           </div>
 
-          <span className="kpi-caption" aria-label="Resolution time decreased 15% faster compared to previous period">
+          <span className="kpi-caption" aria-label="Adoption Stage time decreased 15% faster compared to previous period">
             vs previous period
           </span>
         </div>
@@ -158,7 +158,7 @@ export const GrievanceKPIBar: React.FC<GrievanceKPIBarProps> = ({
             </span>
           </div>
 
-          <span className="kpi-caption" aria-label="High priority grievances increased 6% requiring immediate attention">
+          <span className="kpi-caption" aria-label="High priority proposals increased 6% requiring immediate attention">
             requiring attention
           </span>
         </div>

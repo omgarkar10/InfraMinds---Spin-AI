@@ -63,7 +63,7 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
                 Citizen Dashboard
               </h1>
               <p className="portal-subtext" style={{ fontSize: "13px" }}>
-                {user.isLoggedIn && user.name ? `Welcome, ${user.name}` : "Infrastructure Demand & Resolution Services"}
+                {user.isLoggedIn && user.name ? `Welcome, ${user.name}` : "Infrastructure Demand & Adoption Stage Services"}
               </p>
             </div>
           </div>
@@ -115,14 +115,14 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
               className="service-card-btn service-card-btn-orange"
               onClick={() => onNavigate("citizen-raise")}
             >
-              + Submit Request →
+              + Submit Proposal →
             </button>
           </div>
 
           {/* CARD 2: MY REQUESTS & TRACKING */}
           <div className="service-card">
             <span className="service-card-tag">SERVICE 02 · TRACKING</span>
-            <h2 className="service-card-title">MY SUBMITTED REQUESTS</h2>
+            <h2 className="service-card-title">MY SUBMITTED PROPOSALS</h2>
             <p className="service-card-desc">
               Check the official government review status, department routing, and resolution timeline.
             </p>
@@ -184,7 +184,7 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
                   style={{ display: "inline-block" }}
                   onClick={() => onNavigate("citizen-raise")}
                 >
-                  + Submit Your First Request
+                  + Submit Your First Proposal
                 </button>
               </div>
             ) : (

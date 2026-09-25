@@ -22,8 +22,8 @@ function calculateLiveSummary(districtFilter?: string): { summary: DashboardSumm
     return {
       summary: {
         executive_summary: districtFilter
-          ? `No complaints filed for ${districtFilter} yet.`
-          : "No citizen grievances recorded yet. Submit a report via the Citizen Portal to view real-time intelligence summaries.",
+          ? `No community demands filed for ${districtFilter} yet.`
+          : "No citizen proposals recorded yet. Submit a report via the Citizen Portal to view real-time intelligence summaries.",
         weekly_stats: {
           district: districtFilter || "All Districts",
           total_complaints: 0,
@@ -53,7 +53,7 @@ function calculateLiveSummary(districtFilter?: string): { summary: DashboardSumm
 
   const topDomain = mapCategoryToDomain(topCategory);
   const redZoneCount = filtered.filter(
-    (g) => g.aiAnalysis?.redZone || g.severity === "High" || g.severity === "Critical"
+    (g) => g.aiAnalysis?.redZone || g.priority === "High" || g.priority === "Critical"
   ).length;
 
   const severityScores: Record<string, number> = {
@@ -62,7 +62,7 @@ function calculateLiveSummary(districtFilter?: string): { summary: DashboardSumm
     High: 8.0,
     Critical: 10.0,
   };
-  const totalSeverity = filtered.reduce((acc, g) => acc + (severityScores[g.severity] || 5.0), 0);
+  const totalSeverity = filtered.reduce((acc, g) => acc + (severityScores[g.priority] || 5.0), 0);
   const avgSeverity = filtered.length > 0 ? Number((totalSeverity / filtered.length).toFixed(1)) : 0;
 
   const redZones: RedZone[] = filtered.map((g) => ({
@@ -75,7 +75,7 @@ function calculateLiveSummary(districtFilter?: string): { summary: DashboardSumm
 
   return {
     summary: {
-      executive_summary: `${filtered.length} verified complaint(s) recorded in ${districtFilter || "all districts"}. ${topCategory} infrastructure dominates grievance volume. ${redZoneCount} Red Zone cluster(s) logged.`,
+      executive_summary: `${filtered.length} verified community demand(s) recorded in ${districtFilter || "all districts"}. ${topCategory} infrastructure dominates proposal volume. ${redZoneCount} Red Zone cluster(s) logged.`,
       weekly_stats: {
         district: districtFilter || "All Districts",
         total_complaints: filtered.length,

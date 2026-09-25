@@ -26,7 +26,7 @@ export function PolicyDashboard() {
       target_language: "hi",
       action: "reallocated",
       budget_cr: topAllocation.proposed_cr,
-      message_en: `Budget reallocation approved for ${topAllocation.domain} infrastructure. Your grievance is being addressed.`,
+      message_en: `Budget reallocation approved for ${topAllocation.domain} infrastructure. Your proposal is being addressed.`,
     });
     await refresh(districtFilter || undefined);
   };
@@ -118,11 +118,11 @@ export function PolicyDashboard() {
               <div className="legend-title">GIS LAYER LEGEND</div>
               <div className="legend-item">
                 <span className="legend-dot red" />
-                <span>Red Zone Cluster — High Severity</span>
+                <span>Red Zone Cluster — High Priority</span>
               </div>
               <div className="legend-item">
                 <span className="legend-dot blue" />
-                <span>Verified Civic Grievance Location</span>
+                <span>Verified Civic Proposal Location</span>
               </div>
             </div>
           </div>

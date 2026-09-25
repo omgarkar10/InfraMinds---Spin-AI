@@ -56,7 +56,7 @@ export function AgentsSection() {
           <span className="label-eyebrow tag-orange">RESPONSIBLE AI GOVERNANCE</span>
           <h3 className="editorial-h3">AI DOES NOT MAKE EVERY DECISION.</h3>
           <p className="body-md">
-            If location, severity or evidence is insufficient, SPIN pauses automated processing and requests human/citizen confirmation.
+            If location, priority or evidence is insufficient, SPIN pauses automated processing and requests human/citizen confirmation.
           </p>
         </div>
 

@@ -80,7 +80,7 @@ export function TransformationSection() {
               </div>
               <div className="tech-explanation-box">
                 <span className="label-eyebrow">TECHNICAL TERM: Bhashini Speech-to-Text & Translation</span>
-                <p>Translates 22+ official Indian languages into standardized text so downstream AI models can accurately assess intent and severity regardless of language barriers.</p>
+                <p>Translates 22+ official Indian languages into standardized text so downstream AI models can accurately assess intent and priority regardless of language barriers.</p>
               </div>
             </div>
           )}
@@ -102,7 +102,7 @@ export function TransformationSection() {
               </div>
               <div className="tech-explanation-box">
                 <span className="label-eyebrow">TECHNICAL TERM: Semantic Parsing</span>
-                <p>SPIN converts unstructured complaints into structured information such as infrastructure domain, issue severity, duration, and required department.</p>
+                <p>SPIN converts unstructured community demands into structured information such as infrastructure domain, issue priority, duration, and required department.</p>
               </div>
             </div>
           )}
@@ -128,7 +128,7 @@ export function TransformationSection() {
               </div>
               <div className="tech-explanation-box">
                 <span className="label-eyebrow">TECHNICAL TERM: Geospatial Correlation</span>
-                <p>SPIN checks whether multiple complaints are concentrated in the same geographic area to verify systemic infrastructure failure rather than isolated domestic issues.</p>
+                <p>SPIN checks whether multiple community demands are concentrated in the same geographic area to verify systemic infrastructure failure rather than isolated domestic issues.</p>
               </div>
             </div>
           )}
@@ -175,11 +175,11 @@ export function TransformationSection() {
                 </div>
                 <div className="spec-section">
                   <strong>2. Gemini Semantic Agent:</strong>
-                  <p>Prompt instructions enforce zero hallucination rules. Grievances are categorized strictly under Water, Road, Power, Rail, or Telecom with normalized severity floating values between 0.0 and 10.0.</p>
+                  <p>Prompt instructions enforce zero hallucination rules. Proposals are categorized strictly under Water, Road, Power, Rail, or Telecom with normalized priority floating values between 0.0 and 10.0.</p>
                 </div>
                 <div className="spec-section">
                   <strong>3. Spatial Join Algorithm:</strong>
-                  <p>Density thresholds trigger a Red Zone when grievance density exceeds 3.0 grievances per km² over a 7-day rolling window.</p>
+                  <p>Density thresholds trigger a Red Zone when proposal density exceeds 3.0 proposals per km² over a 7-day rolling window.</p>
                 </div>
               </div>
               <div className="modal-footer">

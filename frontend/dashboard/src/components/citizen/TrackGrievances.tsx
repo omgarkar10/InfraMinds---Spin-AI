@@ -9,7 +9,7 @@ interface TrackGrievancesProps {
 }
 
 export const TrackGrievances: React.FC<TrackGrievancesProps> = ({ user, onNavigate }) => {
-  const [grievances, setGrievances] = useState<any[]>([]);
+  const [proposals, setGrievances] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,7 +38,7 @@ export const TrackGrievances: React.FC<TrackGrievancesProps> = ({ user, onNaviga
   }, [user.isLoggedIn]);
 
   /* Filter Logic */
-  const filtered = grievances.filter((g) => {
+  const filtered = proposals.filter((g) => {
     const id = g.grievance_id || g.id || "";
     if (searchId && !id.toLowerCase().includes(searchId.toLowerCase())) return false;
     if (selectedCategory && g.category !== selectedCategory) return false;
@@ -47,9 +47,9 @@ export const TrackGrievances: React.FC<TrackGrievancesProps> = ({ user, onNaviga
     return true;
   });
 
-  const totalCount = grievances.length;
-  const activeCount = grievances.filter((g) => g.status !== "RESOLVED").length;
-  const resolvedCount = grievances.filter((g) => g.status === "RESOLVED").length;
+  const totalCount = proposals.length;
+  const activeCount = proposals.filter((g) => g.status !== "RESOLVED").length;
+  const resolvedCount = proposals.filter((g) => g.status === "RESOLVED").length;
 
   return (
     <div className="citizen-portal-container">
@@ -79,7 +79,7 @@ export const TrackGrievances: React.FC<TrackGrievancesProps> = ({ user, onNaviga
               <span className="portal-org">SPIN · CITIZEN SERVICES</span>
               <h1 className="portal-heading" style={{ fontSize: "24px" }}>My Submitted Requests</h1>
               <p className="portal-subtext" style={{ fontSize: "13px" }}>
-                Official tracking registry for your public infrastructure demands and grievances.
+                Official tracking registry for your public infrastructure demands and proposals.
               </p>
             </div>
           </div>
@@ -189,21 +189,21 @@ export const TrackGrievances: React.FC<TrackGrievancesProps> = ({ user, onNaviga
             <div className="form-card" style={{ textAlign: "center", padding: "48px 16px" }}>
               <div style={{ fontSize: "36px", marginBottom: "8px" }}>📋</div>
               <h3 style={{ color: "var(--col-navy)", fontSize: "18px", margin: "0 0 8px 0" }}>
-                {grievances.length === 0 ? "No Requests Submitted Yet" : "No Matching Requests Found"}
+                {proposals.length === 0 ? "No Requests Submitted Yet" : "No Matching Requests Found"}
               </h3>
               <p className="portal-subtext" style={{ maxWidth: "460px", margin: "0 auto 16px auto" }}>
-                {grievances.length === 0
+                {proposals.length === 0
                   ? "You have not submitted any infrastructure demands yet. Once registered, your official tracking status will appear here."
                   : "Try clearing your search query or filter selection to see all requests."}
               </p>
-              {grievances.length === 0 && (
+              {proposals.length === 0 && (
                 <button
                   type="button"
                   className="service-card-btn service-card-btn-orange"
                   style={{ display: "inline-block" }}
                   onClick={() => onNavigate("citizen-raise")}
                 >
-                  + Submit Your First Request
+                  + Submit Your First Proposal
                 </button>
               )}
             </div>

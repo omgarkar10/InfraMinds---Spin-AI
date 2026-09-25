@@ -87,7 +87,7 @@ export interface EvidenceData {
 export interface AIAnalysisData {
   category: GrievanceCategory;
   issue: string;
-  severity: GrievanceSeverity;
+  priority: GrievanceSeverity;
   location: string;
   confidence: number; // e.g. 94
   nearbyGrievances: number; // e.g. 37
@@ -110,14 +110,14 @@ export interface GrievanceFeedback {
   submittedAt: string;
 }
 
-export interface Grievance {
+export interface Proposal {
   id: string;
   citizenId: string;
   citizenName: string;
   citizenPhone: string;
   category: GrievanceCategory;
   issueType: string;
-  severity: GrievanceSeverity;
+  priority: GrievanceSeverity;
   startDate: string;
   frequency: "One time" | "Occasional" | "Daily" | "Continuous";
   description: string;

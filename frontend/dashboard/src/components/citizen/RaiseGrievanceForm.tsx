@@ -550,7 +550,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
               Request Registered Successfully
             </h2>
             <p className="portal-subtext" style={{ fontSize: "14px", maxWidth: "580px", margin: "0 auto 20px auto" }}>
-              Your {requestType === "existing_problem" ? "infrastructure grievance" : "new infrastructure development request"} has been officially recorded in the authoritative SPIN registry.
+              Your {requestType === "existing_problem" ? "infrastructure proposal" : "new infrastructure development request"} has been officially recorded in the authoritative SPIN registry.
             </p>
 
             <div style={{ background: "var(--col-panel)", padding: "20px", borderRadius: "8px", margin: "16px 0", border: "1px solid var(--col-border)" }}>
@@ -578,7 +578,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
                 <span className="process-arrow">→</span>
                 <span className="status-pill UNDER_REVIEW">3. Department Review</span>
                 <span className="process-arrow">→</span>
-                <span className="status-pill RESOLVED">4. Resolution &amp; Works</span>
+                <span className="status-pill RESOLVED">4. Adoption Stage &amp; Works</span>
               </div>
             </div>
 
@@ -953,7 +953,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
 
                     <div style={{ marginBottom: "16px" }}>
                       <label className="form-label" style={{ fontSize: "12px" }}>
-                        {requestType === "existing_problem" ? "Specific Issue:" : "Proposed Facility / Development:"}
+                        {requestType === "existing_problem" ? "Proposed Improvement:" : "Proposed Facility / Development:"}
                       </label>
                       <input
                         type="text"
@@ -1167,7 +1167,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
                   </div>
                 )}
 
-                {/* Category and Specific Issue / Proposed Facility Selection */}
+                {/* Category and Proposed Improvement / Proposed Facility Selection */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
                   <div className="form-group">
                     <label className="form-label" htmlFor="category">
@@ -1189,7 +1189,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
 
                   <div className="form-group">
                     <label className="form-label" htmlFor="specificIssue">
-                      {requestType === "existing_problem" ? "Specific Issue" : "Proposed Facility"}{" "}
+                      {requestType === "existing_problem" ? "Proposed Improvement" : "Proposed Facility"}{" "}
                       <span style={{ color: "#e53e3e" }}>*</span>
                     </label>
                     {requestType === "existing_problem" ? (
@@ -1455,7 +1455,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
                 onClick={handleNext}
                 disabled={!validateStep(2)}
               >
-                Next: Supporting Evidence →
+                Next: Supporting Photos / Context →
               </button>
             </div>
           </div>
@@ -1465,7 +1465,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
         {step === 3 && (
           <div className="form-card">
             <h2 className="editorial-h3" style={{ fontSize: "18px", marginBottom: "8px" }}>
-              Step 3 — Supporting Evidence (Optional)
+              Step 3 — Supporting Photos / Context (Optional)
             </h2>
             <p className="portal-subtext" style={{ fontSize: "13px", marginBottom: "16px" }}>
               Upload photographic proof or relevant documentation to substantiate your request.
@@ -1587,7 +1587,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
                 <div><strong>Submitting Citizen:</strong> {user.name || "Authenticated Citizen"} {user.phone ? `(${user.phone})` : ""}</div>
                 <div><strong>Submission Type:</strong> {requestType === "existing_problem" ? "Existing Infrastructure Problem" : "New Infrastructure Development"}</div>
                 <div><strong>Category:</strong> {category}</div>
-                <div><strong>{requestType === "existing_problem" ? "Specific Issue" : "Proposed Facility"}:</strong> {requestType === "existing_problem" ? specificIssue : proposedFacility || specificIssue}</div>
+                <div><strong>{requestType === "existing_problem" ? "Proposed Improvement" : "Proposed Facility"}:</strong> {requestType === "existing_problem" ? specificIssue : proposedFacility || specificIssue}</div>
                 {requestType === "existing_problem" && (
                   <>
                     <div><strong>Start Date:</strong> {startDate || "Not specified"}</div>
@@ -1686,7 +1686,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
                 disabled={isSubmitting || !declaration}
                 style={{ opacity: isSubmitting || !declaration ? 0.6 : 1 }}
               >
-                {isSubmitting ? "Submitting to Official Registry..." : "Confirm & Submit Request →"}
+                {isSubmitting ? "Submitting to Official Registry..." : "Confirm & Submit Proposal →"}
               </button>
             </div>
           </div>

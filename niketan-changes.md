@@ -38,3 +38,11 @@ Removed several unused directories, tests, and redundant package configuration f
 - **Launch Script**: Created `backend/start_server.bat` to automatically activate the virtual environment and boot up the FastAPI server via Uvicorn.
 - **Reports Generated**: Analyzed the source code to document the backend's core execution flow and database schema into `backend_workflow_report.md` and `database_workflow_report.md` artifacts.
 - **Dashboard API Auth Fix**: Restored the exact `require_staff` implementation (and `STAFF_ROLES` mapping) from the `main` branch into `backend/spin_agents/auth.py` so the `dashboard_router.py` can correctly restrict staff endpoints.
+
+## 8. Frontend UX Refactoring
+- **Paradigm Shift Copy Updates**: Refactored frontend UI copy across the dashboard to align with the new proactive "Public Demand & Community Needs" paradigm.
+  - Replaced "Grievance" / "Complaint" / "Issue" with "Proposal" / "Community Demand" / "Improvement".
+  - Replaced action phrases like "File a Complaint" and "Report an Issue" with "Voice a Need" and "Propose an Improvement".
+  - Replaced "Ticket Status", "Resolution", "Escalate", and "Severity" with "Demand Status", "Adoption Stage", "Community Support", and "Priority".
+  - Updated form labels and placeholders (e.g., "Describe your issue/incident" ➔ "What improvement does your community need?").
+  - Executed these changes programmatically across all citizen and staff dashboard React components (`.tsx` files), preserving TypeScript interfaces and API payload keys (`grievance_id`, `specific_issue`) to ensure backend compatibility.

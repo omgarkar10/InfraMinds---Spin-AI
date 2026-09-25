@@ -178,7 +178,7 @@ export const CitizenSignup: React.FC<CitizenSignupProps> = ({
           </div>
           <h2 className="portal-heading" style={{ fontSize: "22px" }}>Create Citizen Account</h2>
           <p className="portal-subtext" style={{ fontSize: "13px" }}>
-            Register to raise grievances and track infrastructure issues.
+            Register to raise proposals and track infrastructure issues.
           </p>
         </div>
 

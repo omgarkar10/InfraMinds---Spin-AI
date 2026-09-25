@@ -6,7 +6,7 @@ import {
   updateStaffDecision,
   updateGrievanceStatus,
 } from "../../services/grievanceService";
-import type { StaffUser, Grievance, GrievanceStatus } from "../../types";
+import type { StaffUser, Proposal, GrievanceStatus } from "../../types";
 
 import { GrievanceKPIBar } from "./GrievanceKPIBar";
 
@@ -16,8 +16,8 @@ interface StaffDashboardProps {
 }
 
 export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate }) => {
-  const [grievances, setGrievances] = useState<Grievance[]>(getStaffGrievances(user));
-  const [selectedGrievance, setSelectedGrievance] = useState<Grievance | null>(null);
+  const [proposals, setGrievances] = useState<Proposal[]>(getStaffGrievances(user));
+  const [selectedGrievance, setSelectedGrievance] = useState<Proposal | null>(null);
   const [staffNote, setStaffNote] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
@@ -25,7 +25,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
   const [authError, setAuthError] = useState<string>("");
 
   useEffect(() => {
-    // Whenever logged in user changes, reload department-scoped grievances
+    // Whenever logged in user changes, reload department-scoped proposals
     refreshData();
   }, [user.id, user.department, user.role]);
 
@@ -42,13 +42,13 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
     }
   };
 
-  const handleOpenDossier = (g: Grievance) => {
+  const handleOpenDossier = (g: Proposal) => {
     const authorized = getStaffGrievanceById(g.id, user);
     if (authorized) {
       setSelectedGrievance(authorized);
       setAuthError("");
     } else {
-      setAuthError(`Access Denied: Grievance ${g.id} belongs to a different department.`);
+      setAuthError(`Access Denied: Proposal ${g.id} belongs to a different department.`);
     }
   };
 
@@ -78,7 +78,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
     refreshData();
   };
 
-  const filteredGrievances = grievances.filter((g) => {
+  const filteredGrievances = proposals.filter((g) => {
     if (statusFilter && g.status !== statusFilter) return false;
     if (categoryFilter && g.category !== categoryFilter) return false;
     if (searchQuery) {
@@ -91,15 +91,15 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
     return true;
   });
 
-  // Calculate statistics STRICTLY from department-scoped grievances
-  const activeCount = grievances.filter((g) => g.status !== "RESOLVED").length;
-  const criticalCount = grievances.filter((g) => g.severity === "Critical" || g.severity === "High").length;
-  const pendingCount = grievances.filter((g) => g.decisionStatus === "PENDING" || !g.decisionStatus).length;
-  const resolvedCount = grievances.filter((g) => g.status === "RESOLVED").length;
-  const escalatedCount = grievances.filter((g) => g.status === "REOPENED").length;
+  // Calculate statistics STRICTLY from department-scoped proposals
+  const activeCount = proposals.filter((g) => g.status !== "RESOLVED").length;
+  const criticalCount = proposals.filter((g) => g.priority === "Critical" || g.priority === "High").length;
+  const pendingCount = proposals.filter((g) => g.decisionStatus === "PENDING" || !g.decisionStatus).length;
+  const resolvedCount = proposals.filter((g) => g.status === "RESOLVED").length;
+  const escalatedCount = proposals.filter((g) => g.status === "REOPENED").length;
 
   // Extract unique categories present in department queue for filter
-  const uniqueCategories = Array.from(new Set(grievances.map((g) => g.category)));
+  const uniqueCategories = Array.from(new Set(proposals.map((g) => g.category)));
 
   return (
     <div className="citizen-portal-container">
@@ -113,7 +113,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
               <span style={{ fontSize: "11px", color: "#4ADE80", letterSpacing: "0.1em" }}>SYSTEM OPERATIONAL</span>
             </div>
             <h1 className="portal-heading" style={{ color: "#fff", fontSize: "22px" }}>
-              Department Operations & Grievance Queue
+              Department Operations & Proposal Queue
             </h1>
             <p className="portal-subtext" style={{ color: "rgba(255,255,255,0.7)", fontSize: "13px" }}>
               Officer: <strong>{user.name}</strong> ({user.employeeId}) · Dept: <strong>{user.department}</strong>
@@ -137,7 +137,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
         )}
 
         {/* DEPARTMENT-SCOPED KPI BAR */}
-        <GrievanceKPIBar grievances={grievances} />
+        <GrievanceKPIBar proposals={proposals} />
 
         {/* KPI Overview Cards (Strictly Department Scoped) */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "12px", marginBottom: "24px" }}>
@@ -163,7 +163,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
           </div>
         </div>
 
-        {/* Filter Controls & Grievance Queue Table */}
+        {/* Filter Controls & Proposal Queue Table */}
         <div className="form-card" style={{ padding: "20px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "12px" }}>
             <div>
@@ -225,8 +225,8 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
                     <td>{g.category}</td>
                     <td>{g.location.district} ({g.location.address})</td>
                     <td>
-                      <span style={{ color: g.severity === "Critical" || g.severity === "High" ? "var(--col-red)" : "var(--col-navy)", fontWeight: "700" }}>
-                        {g.severity}
+                      <span style={{ color: g.priority === "Critical" || g.priority === "High" ? "var(--col-red)" : "var(--col-navy)", fontWeight: "700" }}>
+                        {g.priority}
                       </span>
                     </td>
                     <td>{g.createdAt}</td>
@@ -247,10 +247,10 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
                 <tr>
                   <td colSpan={8} style={{ textAlign: "center", padding: "40px 20px", color: "var(--col-text-muted)" }}>
                     <div style={{ fontSize: "15px", fontWeight: "600", color: "var(--col-navy)" }}>
-                      No grievances assigned to your department.
+                      No proposals assigned to your department.
                     </div>
                     <div style={{ fontSize: "12px", marginTop: "4px", color: "var(--col-text-mid)" }}>
-                      Grievances submitted for <strong>{user.department}</strong> will automatically populate in this queue.
+                      Proposals submitted for <strong>{user.department}</strong> will automatically populate in this queue.
                     </div>
                   </td>
                 </tr>
@@ -278,12 +278,12 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
               </button>
             </div>
 
-            {/* Citizen Complaint & Evidence Breakdown */}
+            {/* Citizen Community Demand & Evidence Breakdown */}
             <div className="ai-review-card">
               <span className="label-eyebrow">CITIZEN COMPLAINT & EVIDENCE</span>
               <p className="body-md" style={{ color: "var(--col-navy)" }}>"{selectedGrievance.description}"</p>
               <div style={{ fontSize: "12px", color: "var(--col-text-mid)" }}>
-                <strong>Complainant:</strong> {selectedGrievance.citizenName || "Citizen"} ({selectedGrievance.citizenPhone || "Identity Protected"})
+                <strong>Citizen Contributor:</strong> {selectedGrievance.citizenName || "Citizen"} ({selectedGrievance.citizenPhone || "Identity Protected"})
                 <br />
                 <strong>Address:</strong> {selectedGrievance.location.address || selectedGrievance.location.district}
               </div>
@@ -303,9 +303,9 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
               <div style={{ background: "var(--col-surface)", padding: "12px", borderRadius: "6px", fontSize: "12px", margin: "8px 0" }}>
                 <strong>EMPIRICAL EVIDENCE BACKBONE (WHY?):</strong>
                 <ul style={{ listStyle: "none", paddingLeft: "4px", marginTop: "4px", display: "flex", flexDirection: "column", gap: "2px" }}>
-                  <li>• {selectedGrievance.aiAnalysis?.nearbyGrievances || 24} related grievances in cluster</li>
+                  <li>• {selectedGrievance.aiAnalysis?.nearbyGrievances || 24} related proposals in cluster</li>
                   <li>• Department: {selectedGrievance.department}</li>
-                  <li>• Severity Level: {selectedGrievance.severity}</li>
+                  <li>• Priority Level: {selectedGrievance.priority}</li>
                   <li>• Location: {selectedGrievance.location.address || selectedGrievance.location.district}</li>
                 </ul>
               </div>

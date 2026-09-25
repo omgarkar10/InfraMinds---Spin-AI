@@ -69,7 +69,7 @@ function AppInner() {
       return;
     }
 
-    // Require Citizen Login BEFORE "Raise Grievance" or "Track Grievances"
+    // Require Citizen Login BEFORE "Propose Initiative" or "Track Proposals"
     if ((newView === "citizen-raise" || newView === "citizen-track" || newView === "citizen") && !citizenUser.isLoggedIn) {
       setTargetViewAfterLogin(newView);
       setView("citizen-login");

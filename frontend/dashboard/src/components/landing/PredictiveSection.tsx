@@ -2,16 +2,16 @@ import { SectionBase } from "./SectionBase";
 import "./PredictiveSection.css";
 
 const TRADITIONAL_PARADIGM = [
-  "01. Isolated Complaint Intake",
+  "01. Isolated Community Demand Intake",
   "02. Manual Ticket Assignment",
-  "03. Individual Issue Resolution",
+  "03. Individual Issue Adoption Stage",
   "04. Ticket Closure (Root Cause Unknown)",
-  "05. Repeat Complaints & Recurring Failures",
+  "05. Repeat Community Demands & Recurring Failures",
 ];
 
 const SPIN_PREDICTIVE_PARADIGM = [
   "01. Multilingual Signal Intake & GIS Mapping",
-  "02. Gemini Semantic Parsing & Severity Scoring",
+  "02. Gemini Semantic Parsing & Priority Scoring",
   "03. Spatial Density Clustering & Asset Correlation",
   "04. Red Zone Identification & Demand Prediction",
   "05. Evidence-Backed Policy & Budget Reallocation",
@@ -23,11 +23,11 @@ export function PredictiveSection() {
     <SectionBase id="predictive" number="08" label="FROM REACTIVE TO PREDICTIVE">
       <div className="predictive-heading">
         <h2 className="editorial-h2">
-          From reactive grievance ticketing<br />
+          From reactive proposal ticketing<br />
           <span className="problem-h2-highlight">to predictive infrastructure governance.</span>
         </h2>
         <p className="body-lg predictive-subtitle">
-          Traditional government portals close tickets individually. SPIN transforms isolated complaint data into anticipatory public investment.
+          Traditional government portals close tickets individually. SPIN transforms isolated community demand data into anticipatory public investment.
         </p>
       </div>
 

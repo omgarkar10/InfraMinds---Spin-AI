@@ -13,7 +13,7 @@ export const GrievanceDetail: React.FC<GrievanceDetailProps> = ({
   grievanceId,
   onNavigate,
 }) => {
-  const [grievance, setGrievance] = useState<any | null>(null);
+  const [proposal, setGrievance] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,7 +55,7 @@ export const GrievanceDetail: React.FC<GrievanceDetailProps> = ({
     );
   }
 
-  if (!grievance) {
+  if (!proposal) {
     return (
       <div className="citizen-portal-container">
         <div className="container" style={{ maxWidth: "600px", textAlign: "center", padding: "60px 0" }}>
@@ -73,9 +73,9 @@ export const GrievanceDetail: React.FC<GrievanceDetailProps> = ({
     );
   }
 
-  const reqId = grievance.grievance_id || grievance.id;
-  const isNewDev = grievance.request_type === "new_development";
-  const evidenceList = grievance.evidence_urls || (grievance.evidence?.photos || []);
+  const reqId = proposal.grievance_id || proposal.id;
+  const isNewDev = proposal.request_type === "new_development";
+  const evidenceList = proposal.evidence_urls || (proposal.evidence?.photos || []);
 
   return (
     <div className="citizen-portal-container">
@@ -96,8 +96,8 @@ export const GrievanceDetail: React.FC<GrievanceDetailProps> = ({
                 <span className="mono" style={{ fontSize: "22px", fontWeight: "800", color: "var(--col-navy)" }}>
                   {reqId}
                 </span>
-                <span className={`status-pill ${grievance.status || "SUBMITTED"}`}>
-                  {(grievance.status || "SUBMITTED").replace(/_/g, " ")}
+                <span className={`status-pill ${proposal.status || "SUBMITTED"}`}>
+                  {(proposal.status || "SUBMITTED").replace(/_/g, " ")}
                 </span>
                 <span
                   style={{
@@ -113,10 +113,10 @@ export const GrievanceDetail: React.FC<GrievanceDetailProps> = ({
                 </span>
               </div>
               <h2 className="portal-heading" style={{ fontSize: "20px", marginTop: "6px" }}>
-                {grievance.category} — {grievance.specific_issue || grievance.issueType || "General Civic Need"}
+                {proposal.category} — {proposal.specific_issue || proposal.issueType || "General Civic Need"}
               </h2>
               <p className="portal-subtext" style={{ fontSize: "13px" }}>
-                Recorded on {grievance.created_at ? new Date(grievance.created_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "Today"}
+                Recorded on {proposal.created_at ? new Date(proposal.created_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "Today"}
               </p>
             </div>
 
@@ -126,10 +126,10 @@ export const GrievanceDetail: React.FC<GrievanceDetailProps> = ({
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "12px", background: "var(--col-panel)", padding: "14px", borderRadius: "6px", marginTop: "16px", fontSize: "13px" }}>
-            <div><strong>Routing Authority:</strong> {grievance.domain || grievance.category || "Municipal Administration"}</div>
-            <div><strong>Location:</strong> {grievance.district || (grievance.location?.district)}, {grievance.state || (grievance.location?.state)}</div>
+            <div><strong>Routing Authority:</strong> {proposal.domain || proposal.category || "Municipal Administration"}</div>
+            <div><strong>Location:</strong> {proposal.district || (proposal.location?.district)}, {proposal.state || (proposal.location?.state)}</div>
             <div><strong>Persistence:</strong> Authoritative SQLite</div>
-            <div><strong>Warehouse Sync:</strong> {grievance.bigquery_synced ? "✓ Synchronized" : "Pending Scheduled Batch"}</div>
+            <div><strong>Warehouse Sync:</strong> {proposal.bigquery_synced ? "✓ Synchronized" : "Pending Scheduled Batch"}</div>
           </div>
         </div>
 
@@ -140,20 +140,20 @@ export const GrievanceDetail: React.FC<GrievanceDetailProps> = ({
             <div className="form-card">
               <span className="label-eyebrow">CITIZEN DESCRIPTION</span>
               <p style={{ marginTop: "8px", fontSize: "14px", lineHeight: "1.6", color: "var(--col-navy)", whiteSpace: "pre-wrap" }}>
-                {grievance.original_text || grievance.description}
+                {proposal.original_text || proposal.description}
               </p>
 
               {/* Conditional Type B Details */}
               {isNewDev && (
                 <div style={{ borderTop: "1px solid var(--col-border)", paddingTop: "12px", marginTop: "16px", fontSize: "13px" }}>
-                  {grievance.reason && (
+                  {proposal.reason && (
                     <div style={{ marginBottom: "8px" }}>
-                      <strong>Civic Justification:</strong> {grievance.reason}
+                      <strong>Civic Justification:</strong> {proposal.reason}
                     </div>
                   )}
-                  {grievance.intended_beneficiaries && (
+                  {proposal.intended_beneficiaries && (
                     <div>
-                      <strong>Intended Beneficiaries:</strong> {grievance.intended_beneficiaries}
+                      <strong>Intended Beneficiaries:</strong> {proposal.intended_beneficiaries}
                     </div>
                   )}
                 </div>
@@ -162,14 +162,14 @@ export const GrievanceDetail: React.FC<GrievanceDetailProps> = ({
               {/* Conditional Type A Details */}
               {!isNewDev && (
                 <div style={{ borderTop: "1px solid var(--col-border)", paddingTop: "12px", marginTop: "16px", fontSize: "13px" }}>
-                  {grievance.start_date && (
+                  {proposal.start_date && (
                     <div style={{ marginBottom: "6px" }}>
-                      <strong>Started:</strong> {grievance.start_date}
+                      <strong>Started:</strong> {proposal.start_date}
                     </div>
                   )}
-                  {grievance.frequency && (
+                  {proposal.frequency && (
                     <div>
-                      <strong>Frequency:</strong> {grievance.frequency}
+                      <strong>Frequency:</strong> {proposal.frequency}
                     </div>
                   )}
                 </div>
@@ -180,17 +180,17 @@ export const GrievanceDetail: React.FC<GrievanceDetailProps> = ({
             <div className="form-card">
               <span className="label-eyebrow">VERIFIED LOCATION</span>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", fontSize: "13px", marginTop: "8px" }}>
-                <div><strong>State:</strong> {grievance.state || (grievance.location?.state) || "Not specified"}</div>
-                <div><strong>District:</strong> {grievance.district || (grievance.location?.district) || "Not specified"}</div>
-                <div><strong>Address:</strong> {grievance.address || (grievance.location?.address) || "Locality registered"}</div>
-                <div><strong>Landmark:</strong> {grievance.landmark || (grievance.location?.landmark) || "None"}</div>
-                <div><strong>PIN Code:</strong> {grievance.pincode || (grievance.location?.pinCode) || "None"}</div>
+                <div><strong>State:</strong> {proposal.state || (proposal.location?.state) || "Not specified"}</div>
+                <div><strong>District:</strong> {proposal.district || (proposal.location?.district) || "Not specified"}</div>
+                <div><strong>Address:</strong> {proposal.address || (proposal.location?.address) || "Locality registered"}</div>
+                <div><strong>Landmark:</strong> {proposal.landmark || (proposal.location?.landmark) || "None"}</div>
+                <div><strong>PIN Code:</strong> {proposal.pincode || (proposal.location?.pinCode) || "None"}</div>
                 <div>
                   <strong>Coordinates:</strong>{" "}
-                  {grievance.latitude && grievance.longitude
-                    ? `${grievance.latitude}, ${grievance.longitude}`
-                    : grievance.location?.lat
-                    ? `${grievance.location.lat}, ${grievance.location.lng}`
+                  {proposal.latitude && proposal.longitude
+                    ? `${proposal.latitude}, ${proposal.longitude}`
+                    : proposal.location?.lat
+                    ? `${proposal.location.lat}, ${proposal.location.lng}`
                     : "Manual District Registration"}
                 </div>
               </div>
@@ -228,7 +228,7 @@ export const GrievanceDetail: React.FC<GrievanceDetailProps> = ({
             <div className="form-card">
               <span className="label-eyebrow">RESOLUTION TIMELINE</span>
               <div style={{ marginTop: "12px", display: "flex", flexDirection: "column", gap: "14px" }}>
-                {(grievance.timeline || []).map((t: any, idx: number) => (
+                {(proposal.timeline || []).map((t: any, idx: number) => (
                   <div key={idx} style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
                     <div
                       style={{
