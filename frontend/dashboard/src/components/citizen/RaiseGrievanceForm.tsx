@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useMapsLibrary } from "@vis.gl/react-google-maps";
 import "../../styles/citizen.css";
 import {
   submitRequestToBackend,
@@ -159,6 +160,54 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
   const [intakeMode, setIntakeMode] = useState<"choose" | "voice" | "manual">("choose");
   const [detectedLanguage, setDetectedLanguage] = useState<string>("");
   const [isVoiceConfirmCardVisible, setIsVoiceConfirmCardVisible] = useState<boolean>(false);
+
+  const placesLibrary = useMapsLibrary("places");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!placesLibrary || !containerRef.current) return;
+    
+    // Clear container to prevent duplicate elements in React StrictMode
+    containerRef.current.innerHTML = '';
+    
+    // Programmatically instantiate the custom web component
+    const autocompleteEl = new placesLibrary.PlaceAutocompleteElement();
+    autocompleteEl.id = "address";
+    autocompleteEl.setAttribute("style", "width: 100%; padding: 12px; border: 1px solid var(--col-border); border-radius: 6px; box-sizing: border-box; display: block;");
+    
+    const handlePlaceSelect = (e: any) => {
+      const place = e.place; // or autocompleteEl.place
+      if (place) {
+        place.fetchFields({ fields: ['formattedAddress', 'location'] }).then(() => {
+          const addr = place.formattedAddress || "";
+          setAddress(addr);
+          if (place.location) {
+            setLatitude(place.location.lat());
+            setLongitude(place.location.lng());
+            setGpsConfirmed(true);
+            setGpsMessage(`Location set to ${addr}.`);
+          }
+        });
+      }
+    };
+
+    const handleInput = () => {
+      // @ts-ignore
+      setAddress(autocompleteEl.inputValue || "");
+    };
+
+    autocompleteEl.addEventListener('gmp-placeselect', handlePlaceSelect);
+    autocompleteEl.addEventListener('input', handleInput);
+    
+    containerRef.current.appendChild(autocompleteEl);
+    
+    return () => {
+      autocompleteEl.removeEventListener('gmp-placeselect', handlePlaceSelect);
+      autocompleteEl.removeEventListener('input', handleInput);
+      autocompleteEl.remove();
+    };
+  }, [placesLibrary, step]);
+
 
   // Calculate today's LOCAL date in YYYY-MM-DD format (avoids UTC offset shift)
   const getTodayLocalDateStr = () => {
@@ -1288,7 +1337,14 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
                   </div>
                 )}
 
-                <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "20px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: "20px" }}>
+                  <button
+                    type="button"
+                    className="btn-outline"
+                    onClick={() => onNavigate("citizen")}
+                  >
+                    ← Go Back to Dashboard
+                  </button>
                   <button
                     type="button"
                     className="service-card-btn service-card-btn-orange"
@@ -1403,15 +1459,20 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
               <label className="form-label" htmlFor="address">
                 Street Address / Locality / Village <span style={{ color: "#e53e3e" }}>*</span>
               </label>
-              <input
-                id="address"
-                type="text"
-                className="form-input"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="e.g., Near Primary School, Rampur Village, Ward 4"
-                required
-              />
+              <div ref={containerRef} style={{ width: "100%" }}>
+                {!placesLibrary && (
+                  <input
+                    id="address"
+                    type="text"
+                    className="form-input"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Loading Google Maps Autocomplete..."
+                    required
+                  />
+                )}
+              </div>
+
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "20px" }}>

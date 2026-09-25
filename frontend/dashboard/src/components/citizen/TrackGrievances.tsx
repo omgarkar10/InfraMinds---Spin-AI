@@ -267,6 +267,15 @@ export const TrackGrievances: React.FC<TrackGrievancesProps> = ({ user, onNaviga
             })
           )}
         </div>
+        <div style={{ marginTop: "32px", textAlign: "center" }}>
+          <button
+            type="button"
+            className="btn-outline"
+            onClick={() => onNavigate("citizen")}
+          >
+            ← Go Back to Dashboard
+          </button>
+        </div>
       </div>
     </div>
   );

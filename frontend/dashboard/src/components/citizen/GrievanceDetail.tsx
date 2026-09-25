@@ -256,6 +256,16 @@ export const GrievanceDetail: React.FC<GrievanceDetailProps> = ({
                 <strong>SPIN POLICY ASSURANCE:</strong> Your submission has been securely ingested into the authoritative municipal database. All decisions and resolution timelines remain under the audit of authorized civic officers.
               </div>
             </div>
+
+            <div style={{ marginTop: "32px", textAlign: "center" }}>
+              <button
+                type="button"
+                className="btn-outline"
+                onClick={() => onNavigate("citizen-track")}
+              >
+                ← Go Back to My Requests
+              </button>
+            </div>
           </div>
         </div>
       </div>
