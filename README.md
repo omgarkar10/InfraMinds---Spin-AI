@@ -23,7 +23,11 @@ Policymaker Dashboard (React + Google Maps heat layer)
 ## Quick Start
 
 ```bash
-# Backend
+# Backend Virtual Environment Setup
+python -m venv venv
+venv\Scripts\activate  # Windows (use `source venv/bin/activate` for macOS/Linux)
+
+# Backend Dependencies & Run
 cp .env.example .env   # fill in GCP + Bhashini keys
 cd backend && pip install -r requirements.txt
 adk web spin_agents     # ADK dev UI on :8000

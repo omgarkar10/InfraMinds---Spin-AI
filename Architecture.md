@@ -13,11 +13,9 @@ SPIN operates as an Agent-to-Agent (A2A) decoupled microservice architecture, al
 
 ### 2. Agent Orchestration (ADK)
 The system uses a `SequentialAgent` structure managed by a Root Agent to strictly enforce the single-parent rule.
-- **Chatbot_Intake_Agent**: Collects initial multimodal telemetry.
-- **HitlLocationGate**: Evaluates if the grievance has valid spatial tracking; enforces Human-in-the-Loop if missing.
-- **Semantic_Parsing_Agent**: Performs deep Entity Extraction using Vertex AI Vision models and Gemini for classification.
-- **Geospatial_Correlation_Agent**: Connects directly to Google BigQuery and PM Gati Shakti APIs for GIS overlapping.
-- **Policy_Dashboard_Agent**: Distills data into natural language summaries and reverse-notifies the citizen.
+- **Semantic_Parsing_Agent**: Handles semantic parsing and multimodal ingestion, combining intake and translation.
+- **Dynamic_Verification_Agent**: Handles dynamic verification and read-back, acting as the Human-in-the-Loop (HITL) gate.
+- **Policy_Routing_Agent**: Handles deterministic routing, geospatial correlation, policy formulation, and citizen reverse notification.
 
 ### 3. Policymaker Dashboard (Frontend)
 - **Tech Stack**: React + TypeScript.
