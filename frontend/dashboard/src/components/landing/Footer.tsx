@@ -15,28 +15,17 @@ export function Footer({ onViewChange }: FooterProps) {
             <span className="footer-wordmark">SPIN</span>
             <span className="footer-descriptor">SYMBIOTIC PUBLIC INFRASTRUCTURE NETWORK</span>
             <p className="footer-tagline">
-              Connecting citizen grievance reporting with municipal infrastructure decision-makers.
+              Connecting community demand signals with municipal infrastructure decision-makers.
             </p>
           </div>
 
           <div className="footer-links-col">
             <span className="label-eyebrow">CITIZEN SERVICES</span>
             <button className="footer-link" onClick={() => onViewChange("citizen-raise")}>Report a Problem</button>
-            <button className="footer-link" onClick={() => onViewChange("citizen-track")}>Track My Grievance</button>
+            <button className="footer-link" onClick={() => onViewChange("citizen-track")}>Track My Request</button>
             <button className="footer-link" onClick={() => onViewChange("citizen")}>Citizen Portal Home</button>
           </div>
 
-          <div className="footer-links-col">
-            <span className="label-eyebrow">OFFICIAL ACCESS</span>
-            <button className="footer-link" onClick={() => onViewChange("dashboard")}>Policymaker Dashboard</button>
-            <button className="footer-link" onClick={() => onViewChange("approval-portal")}>Budget Approval Status</button>
-            <button className="footer-link" style={{ marginTop: "4px", color: "var(--col-orange)", fontSize: "12px", fontWeight: "600" }} onClick={() => onViewChange("ministry-login")}>
-              🏛️ Ministry Review Portal
-            </button>
-            <button className="footer-link" style={{ marginTop: "4px", color: "var(--col-navy)", fontSize: "12px", fontWeight: "600" }} onClick={() => onViewChange("staff-login")}>
-              🔒 Staff / Field Ops Login
-            </button>
-          </div>
         </div>
 
         <div className="footer-bottom">

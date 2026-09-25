@@ -149,7 +149,7 @@ export function HeroSection({ onViewChange }: HeroSectionProps) {
               Report a Problem →
             </button>
             <button className="hero-btn-secondary" onClick={() => onViewChange?.("citizen-track")}>
-              Track My Grievance
+              Track My Request
             </button>
 
           </div>

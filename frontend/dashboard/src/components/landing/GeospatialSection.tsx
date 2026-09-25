@@ -20,7 +20,7 @@ export function GeospatialSection() {
           {/* Left Column: Red Zone Breakdown Card */}
           <div className="redzone-spec-card">
             <div className="redzone-card-header">
-              <span className="tag-red-badge">🔴 {t.geo_redzone}</span>
+              <span className="tag-red-badge"><span className="red-circle-dot" style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#ef4444', marginRight: '6px' }}></span>{t.geo_redzone}</span>
               <span className="provenance-tag">PUNE EAST / WARD 14</span>
             </div>
 

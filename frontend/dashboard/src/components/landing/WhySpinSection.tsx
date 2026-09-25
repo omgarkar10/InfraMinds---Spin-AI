@@ -1,59 +1,102 @@
+import { useEffect, useRef } from "react";
 import "./WhySpinSection.css";
 
 export function WhySpinSection() {
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('active');
+          } else {
+            entry.target.classList.remove('active');
+          }
+        });
+      },
+      { 
+        rootMargin: "-20% 0px -20% 0px",
+        threshold: 0 
+      }
+    );
+
+    const steps = document.querySelectorAll('.timeline-step');
+    steps.forEach(step => observer.observe(step));
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <section className="why-spin-section" id="why-spin">
+    <section className="workflow-section" id="workflow" ref={sectionRef}>
       <div className="container">
-        <div className="why-spin-header">
-          <span className="label-eyebrow tag-navy">WHY SPIN</span>
-          <h2 className="editorial-h2">
-            Every citizen deserves <br />
-            <span className="text-highlight">responsive public infrastructure.</span>
-          </h2>
-          <p className="body-lg why-spin-lead">
-            Roads, water, electricity and other public services affect everyday life. SPIN gives citizens a simple way to report these problems and helps authorities see where communities need attention.
-          </p>
-        </div>
+        <div className="workflow-grid">
+          
+          {/* LEFT COLUMN - NARRATIVE */}
+          <div className="workflow-left">
+            <div className="workflow-sticky">
+              <span className="label-eyebrow tag-navy">HOW YOUR REQUEST IS HANDLED</span>
+              <h2 className="editorial-h2 workflow-h2">
+                From submission<br />to government action.
+              </h2>
+              <p className="body-lg workflow-lead">
+                Once a request is submitted, SPIN organizes the information, identifies the relevant authority and keeps the citizen informed as the request moves through review and action.
+              </p>
+              
 
-        <div className="why-spin-benefits-grid">
-          <div className="benefit-card">
-            <div className="benefit-icon">📱</div>
-            <h3 className="benefit-title">Report problems easily</h3>
-            <p className="benefit-desc">
-              Submit issues quickly from your mobile phone or computer without complicated administrative forms.
-            </p>
+            </div>
           </div>
 
-          <div className="benefit-card">
-            <div className="benefit-icon">🗣️</div>
-            <h3 className="benefit-title">Submit in your language</h3>
-            <p className="benefit-desc">
-              Speak or write in the language you are most comfortable using. SPIN breaks down language barriers.
-            </p>
-          </div>
+          {/* RIGHT COLUMN - TIMELINE & CASE */}
+          <div className="workflow-right">
+            
+            {/* Vertical Timeline */}
+            <div className="workflow-timeline">
+              <div className="timeline-line"></div>
+              
+              <div className="timeline-step">
+                <div className="timeline-marker">01</div>
+                <div className="timeline-content">
+                  <h3 className="timeline-title">REQUEST RECEIVED</h3>
+                  <p className="timeline-desc">Your request is recorded with the information you provide.</p>
+                </div>
+              </div>
+              
+              <div className="timeline-step">
+                <div className="timeline-marker">02</div>
+                <div className="timeline-content">
+                  <h3 className="timeline-title">REQUEST CLASSIFIED</h3>
+                  <p className="timeline-desc">SPIN classifies the request and identifies the appropriate department.</p>
+                  <span className="ai-assisted-tag">AI-assisted processing</span>
+                </div>
+              </div>
+              
+              <div className="timeline-step">
+                <div className="timeline-marker">03</div>
+                <div className="timeline-content">
+                  <h3 className="timeline-title">ROUTED FOR REVIEW</h3>
+                  <p className="timeline-desc">The request is matched to the appropriate department and geographic jurisdiction.</p>
+                </div>
+              </div>
+              
+              <div className="timeline-step">
+                <div className="timeline-marker">04</div>
+                <div className="timeline-content">
+                  <h3 className="timeline-title">ACTION / REVIEW</h3>
+                  <p className="timeline-desc">The concerned authority reviews the request and records the appropriate action.</p>
+                </div>
+              </div>
+              
+              <div className="timeline-step">
+                <div className="timeline-marker">05</div>
+                <div className="timeline-content">
+                  <h3 className="timeline-title">STATUS UPDATED</h3>
+                  <p className="timeline-desc">The citizen can follow the latest status and receive updates.</p>
+                </div>
+              </div>
+            </div>
 
-          <div className="benefit-card">
-            <div className="benefit-icon">📍</div>
-            <h3 className="benefit-title">Add location & photos</h3>
-            <p className="benefit-desc">
-              Attach precise GPS locations and photos so maintenance teams know exactly where to take action.
-            </p>
-          </div>
 
-          <div className="benefit-card">
-            <div className="benefit-icon">📋</div>
-            <h3 className="benefit-title">Track your complaint</h3>
-            <p className="benefit-desc">
-              Get a unique Grievance ID to monitor real-time department routing and resolution progress.
-            </p>
-          </div>
-
-          <div className="benefit-card">
-            <div className="benefit-icon">🔔</div>
-            <h3 className="benefit-title">Receive live updates</h3>
-            <p className="benefit-desc">
-              Stay informed as your grievance moves from initial review to on-ground repair completion.
-            </p>
           </div>
         </div>
       </div>

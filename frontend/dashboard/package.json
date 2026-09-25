@@ -10,19 +10,17 @@
   },
   "dependencies": {
     "@vis.gl/react-google-maps": "^1.9.0",
+    "leaflet": "^1.9.4",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-leaflet": "^5.0.0"
   },
   "devDependencies": {
     "@types/google.maps": "^3.58.1",
+    "@types/leaflet": "^1.9.22",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.70.0",
-    "@typescript-eslint/parser": "^8.70.0",
     "@vitejs/plugin-react": "^4.3.4",
-    "eslint": "^9.39.5",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.1.1",
     "typescript": "~5.7.2",
     "vite": "^6.0.0"
   }

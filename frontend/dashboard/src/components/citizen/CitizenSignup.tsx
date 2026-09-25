@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { getCountriesConfig, getAuthConfig, citizenSignup } from "../../services/authService";
+import { getCountriesConfig, getAuthConfig, getCaptchaChallenge, citizenSignup } from "../../services/authService";
+import { setStoredCitizenUser } from "../../services/grievanceService";
 import { CountryPhoneConfig, validatePhoneNumber } from "../../utils/phoneValidation";
 import { PhoneNumberField } from "./PhoneNumberField";
 import { PasswordField } from "./PasswordField";
+import { TermsModal } from "./TermsModal";
 
 interface CitizenSignupProps {
   onLoginClick: () => void;
@@ -22,6 +24,16 @@ export const CitizenSignup: React.FC<CitizenSignupProps> = ({
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
+
+  // CAPTCHA State
+  const [captchaChallenge, setCaptchaChallenge] = useState<{
+    provider: string;
+    question?: string;
+    captcha_token?: string;
+    site_key?: string;
+  } | null>(null);
+  const [captchaAnswer, setCaptchaAnswer] = useState("");
   
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -31,18 +43,29 @@ export const CitizenSignup: React.FC<CitizenSignupProps> = ({
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const fetchCaptcha = async () => {
+    try {
+      const chal = await getCaptchaChallenge();
+      setCaptchaChallenge(chal);
+      setCaptchaAnswer("");
+    } catch {
+      // Non-blocking fallback
+    }
+  };
+
   useEffect(() => {
     async function loadConfigs() {
       try {
         const [countriesRes, authRes] = await Promise.all([
           getCountriesConfig(),
-          getAuthConfig()
+          getAuthConfig(),
         ]);
         setCountries(countriesRes.countries);
         setAuthConfig(authRes.passwordPolicy);
         if (countriesRes.countries.length > 0) {
           setCountryCode(countriesRes.countries[0].code);
         }
+        await fetchCaptcha();
       } catch (err) {
         setSubmitError("Failed to load authentication configuration.");
       } finally {
@@ -57,6 +80,11 @@ export const CitizenSignup: React.FC<CitizenSignupProps> = ({
     
     if (!name.trim()) isValid = false;
     if (!termsAccepted) isValid = false;
+
+    // Validate CAPTCHA
+    if (captchaChallenge?.provider === "math" && !captchaAnswer.trim()) {
+      isValid = false;
+    }
 
     // Validate Phone
     const phoneVal = validatePhoneNumber(countryCode, phone, countries);
@@ -88,7 +116,7 @@ export const CitizenSignup: React.FC<CitizenSignupProps> = ({
     if (!loading) {
       validateAll();
     }
-  }, [name, countryCode, phone, password, confirmPassword, termsAccepted]);
+  }, [name, countryCode, phone, password, confirmPassword, termsAccepted, captchaAnswer]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,11 +133,21 @@ export const CitizenSignup: React.FC<CitizenSignupProps> = ({
         name: name.trim(),
         countryCode,
         phone: phoneVal.normalizedNumber,
-        password
+        password,
+        captcha_token: captchaChallenge?.captcha_token,
+        captcha_answer: captchaAnswer.trim(),
       });
-      onSignupSuccess(result.user);
+      const user = {
+        id: result.user.id,
+        name: result.user.name,
+        phone: result.user.phone,
+        isLoggedIn: true,
+      };
+      setStoredCitizenUser(user);
+      onSignupSuccess(user);
     } catch (err: any) {
       setSubmitError(err.message || "Unable to create your account.");
+      await fetchCaptcha();
     } finally {
       setSubmitting(false);
     }
@@ -127,6 +165,12 @@ export const CitizenSignup: React.FC<CitizenSignupProps> = ({
 
   return (
     <div className="login-container">
+      <TermsModal
+        isOpen={isTermsModalOpen}
+        onClose={() => setIsTermsModalOpen(false)}
+        onAccept={() => setTermsAccepted(true)}
+      />
+
       <div className="login-card">
         <div className="login-header">
           <div style={{ marginBottom: "1rem", display: "flex", justifyContent: "center" }}>
@@ -186,23 +230,76 @@ export const CitizenSignup: React.FC<CitizenSignupProps> = ({
             errorText={confirmPassword.length > 0 ? confirmError : null}
           />
 
+          {/* CAPTCHA / Human Verification Widget */}
+          {captchaChallenge?.provider === "math" && (
+            <div className="form-group" style={{ marginBottom: "1.5rem", background: "#f8fafc", padding: "12px 14px", borderRadius: "8px", border: "1px solid var(--col-border)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                <label className="form-label" style={{ fontSize: "12px", margin: 0 }}>
+                  Human Verification (CAPTCHA) <span style={{ color: "#e53e3e" }}>*</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={fetchCaptcha}
+                  style={{ background: "none", border: "none", color: "var(--col-orange)", fontSize: "11px", cursor: "pointer", textDecoration: "underline" }}
+                >
+                  🔄 Refresh Challenge
+                </button>
+              </div>
+              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                <div style={{ background: "#e2e8f0", padding: "8px 14px", borderRadius: "6px", fontWeight: 700, fontSize: "14px", color: "var(--col-navy)", letterSpacing: "1px" }}>
+                  {captchaChallenge.question}
+                </div>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={captchaAnswer}
+                  onChange={(e) => setCaptchaAnswer(e.target.value)}
+                  placeholder="Answer"
+                  required
+                  style={{ width: "100px", textAlign: "center", fontSize: "14px", fontWeight: 600 }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Terms & Conditions Checkbox + Clickable Modal Trigger */}
           <div className="form-group" style={{ marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "10px" }}>
             <input
               type="checkbox"
               id="terms"
               checked={termsAccepted}
               onChange={(e) => setTermsAccepted(e.target.checked)}
-              style={{ width: "16px", height: "16px", accentColor: "var(--col-orange)" }}
+              style={{ width: "16px", height: "16px", accentColor: "var(--col-orange)", cursor: "pointer" }}
             />
             <label htmlFor="terms" style={{ fontSize: "13px", color: "var(--col-navy)", cursor: "pointer" }}>
-              I agree to the Terms & Conditions <span style={{ color: "#e53e3e" }}>*</span>
+              I agree to the{" "}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setIsTermsModalOpen(true);
+                }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--col-orange)",
+                  fontWeight: 600,
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                  padding: 0,
+                  fontSize: "13px",
+                }}
+              >
+                Terms &amp; Conditions
+              </button>{" "}
+              <span style={{ color: "#e53e3e" }}>*</span>
             </label>
           </div>
 
           <button
             type="submit"
             className="btn-primary"
-            disabled={submitting || !termsAccepted || !!phoneError || !!passwordError || !!confirmError || !name.trim()}
+            disabled={submitting || !termsAccepted || !!phoneError || !!passwordError || !!confirmError || !name.trim() || (captchaChallenge?.provider === "math" && !captchaAnswer.trim())}
             style={{ width: "100%", marginBottom: "20px" }}
           >
             {submitting ? "Creating Account..." : "Create Account"}
