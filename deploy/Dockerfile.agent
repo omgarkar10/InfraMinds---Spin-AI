@@ -2,14 +2,18 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY backend/requirements.txt .
+COPY backend/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy application code
 COPY backend/ ./backend/
-ENV PYTHONPATH=/app/backend
+# Copy root-level schemas package (required by spin_agents imports)
+COPY schemas/ ./schemas/
+
+ENV PYTHONPATH=/app
 
 # AGENT_SERVICE: intake | parsing | geospatial | policy | pipeline
 ENV AGENT_SERVICE=pipeline
 EXPOSE 8000
 
-CMD ["sh", "-c", "adk web backend/spin_agents --port 8000"]
+CMD ["uvicorn", "backend.spin_agents.api:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -17,9 +17,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-# Add paths
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from contextlib import asynccontextmanager
 
 from schemas.data_models import (
     ChannelType,
@@ -43,12 +41,22 @@ from spin_agents.tools.mcp_bindings import cloud_translate_text
 
 logger = logging.getLogger(__name__)
 
+# ── Lifespan (replaces deprecated on_event startup) ──────────────────────────
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Creates all SQLAlchemy tables on startup."""
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+
 # ── App ───────────────────────────────────────────────────────────────────────
 
 app = FastAPI(
     title="SPIN 3-Agent Decoupled Citizen Grievance Engine",
     description="ADK & A2A Microservice Architecture for Multilingual Civic Intelligence",
     version="2.0.0",
+    lifespan=lifespan,
 )
 
 # ── Global error handler ──────────────────────────────────────────────────────
@@ -67,12 +75,6 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
         content={"detail": "An internal error occurred. Please try again later."},
     )
 
-# ── Startup ───────────────────────────────────────────────────────────────────
-
-@app.on_event("startup")
-async def on_startup() -> None:
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
 
 # ── Middleware ────────────────────────────────────────────────────────────────
 

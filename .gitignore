@@ -60,8 +60,9 @@ Thumbs.db
 *.swp
 *.swo
 *.log
-**/*.lognode_modules/
+**/*.log
 
 node_modules/
 secret.json
 global-bundle.pem
+

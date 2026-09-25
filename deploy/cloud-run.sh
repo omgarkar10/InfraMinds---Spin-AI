@@ -13,10 +13,11 @@ for SERVICE in intake parsing geospatial policy; do
     --image "${IMAGE}" \
     --region "${REGION}" \
     --set-env-vars "AGENT_SERVICE=${SERVICE},GOOGLE_CLOUD_PROJECT=${PROJECT}" \
-    --allow-unauthenticated \
+    --no-allow-unauthenticated \
     --memory 1Gi \
     --cpu 1
 done
+
 
 gcloud run deploy spin-api \
   --source . \

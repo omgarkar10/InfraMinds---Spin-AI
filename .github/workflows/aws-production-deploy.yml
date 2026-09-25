@@ -7,17 +7,24 @@ on:
 
 env:
   AWS_REGION: ap-south-1
-  ECR_REGISTRY: 541259832110.dkr.ecr.ap-south-1.amazonaws.com
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com
+  API_SERVICE_NAME: spin-api
+  AGENT_SERVICE_NAME: spin-agent
 
 jobs:
   deploy-backend:
-    name: Build & Deploy Backend Microservices
+    name: Build, Push & Deploy Backend Microservices
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
+      # ── Docker Layer Cache ──────────────────────────────────────────────────
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ── AWS Auth ───────────────────────────────────────────────────────────
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -29,12 +36,138 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      # ── Build & Push Agent Image ───────────────────────────────────────────
       - name: Build and Push Agent Image
-        run: |
-          docker build -t $ECR_REGISTRY/spin-agent:latest -f deploy/Dockerfile.agent .
-          docker push $ECR_REGISTRY/spin-agent:latest
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: deploy/Dockerfile.agent
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/${{ env.AGENT_SERVICE_NAME }}:latest
+            ${{ env.ECR_REGISTRY }}/${{ env.AGENT_SERVICE_NAME }}:${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.ECR_REGISTRY }}/${{ env.AGENT_SERVICE_NAME }}:cache
+          cache-to: type=registry,ref=${{ env.ECR_REGISTRY }}/${{ env.AGENT_SERVICE_NAME }}:cache,mode=max
 
+      # ── Build & Push API Image ─────────────────────────────────────────────
       - name: Build and Push API Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: deploy/Dockerfile.api
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/${{ env.API_SERVICE_NAME }}:latest
+            ${{ env.ECR_REGISTRY }}/${{ env.API_SERVICE_NAME }}:${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.ECR_REGISTRY }}/${{ env.API_SERVICE_NAME }}:cache
+          cache-to: type=registry,ref=${{ env.ECR_REGISTRY }}/${{ env.API_SERVICE_NAME }}:cache,mode=max
+
+      # ── Deploy API to App Runner ───────────────────────────────────────────
+      - name: Deploy API to AWS App Runner
+        id: deploy
         run: |
-          docker build -t $ECR_REGISTRY/spin-api:latest -f deploy/Dockerfile.api .
-          docker push $ECR_REGISTRY/spin-api:latest
+          SERVICE_ARN=$(aws apprunner list-services \
+            --query "ServiceSummaryList[?ServiceName=='${{ env.API_SERVICE_NAME }}'].ServiceArn" \
+            --output text --region ${{ env.AWS_REGION }})
+
+          ENV_VARS=$(cat <<EOF
+          {
+            "DATABASE_URL": "${{ secrets.DATABASE_URL }}",
+            "JWT_SECRET": "${{ secrets.JWT_SECRET }}",
+            "GOOGLE_CLOUD_PROJECT": "${{ secrets.GOOGLE_CLOUD_PROJECT }}",
+            "GOOGLE_CLOUD_LOCATION": "${{ secrets.GOOGLE_CLOUD_LOCATION }}",
+            "GEMINI_MODEL": "gemini-2.5-flash",
+            "GEMINI_API_KEY": "${{ secrets.GEMINI_API_KEY }}",
+            "BHASHINI_API_KEY": "${{ secrets.BHASHINI_API_KEY }}",
+            "BHASHINI_USER_ID": "${{ secrets.BHASHINI_USER_ID }}",
+            "BHASHINI_ASR_SERVICE_ID": "${{ secrets.BHASHINI_ASR_SERVICE_ID }}",
+            "BHASHINI_TRANSLATION_SERVICE_ID": "${{ secrets.BHASHINI_TRANSLATION_SERVICE_ID }}",
+            "FIREBASE_PROJECT_ID": "${{ secrets.FIREBASE_PROJECT_ID }}",
+            "GATI_SHAKTI_API_KEY": "${{ secrets.GATI_SHAKTI_API_KEY }}",
+            "CORS_ORIGINS": "${{ secrets.CORS_ORIGINS }}",
+            "SPIN_BQ_DATASET": "spin_grievances",
+            "SPIN_BQ_TABLE": "citizen_complaints",
+            "SPIN_USE_REMOTE_AGENTS": "false"
+          }
+          EOF
+          )
+
+          IMAGE_ID="${{ env.ECR_REGISTRY }}/${{ env.API_SERVICE_NAME }}:${{ github.sha }}"
+
+          if [ -z "$SERVICE_ARN" ] || [ "$SERVICE_ARN" = "None" ]; then
+            echo "Creating new App Runner service..."
+            aws apprunner create-service \
+              --service-name ${{ env.API_SERVICE_NAME }} \
+              --source-configuration "{
+                \"ImageRepository\": {
+                  \"ImageIdentifier\": \"$IMAGE_ID\",
+                  \"ImageConfiguration\": {
+                    \"Port\": \"8080\",
+                    \"RuntimeEnvironmentVariables\": $ENV_VARS
+                  },
+                  \"ImageRepositoryType\": \"ECR\"
+                },
+                \"AuthenticationConfiguration\": {
+                  \"AccessRoleArn\": \"${{ secrets.APPRUNNER_ECR_ROLE_ARN }}\"
+                }
+              }" \
+              --instance-configuration "Cpu=1 vCPU,Memory=2 GB" \
+              --health-check-configuration "Protocol=HTTP,Path=/health,Interval=10,Timeout=5,HealthyThreshold=2,UnhealthyThreshold=3" \
+              --region ${{ env.AWS_REGION }}
+          else
+            echo "Updating existing App Runner service: $SERVICE_ARN"
+            aws apprunner update-service \
+              --service-arn "$SERVICE_ARN" \
+              --source-configuration "{
+                \"ImageRepository\": {
+                  \"ImageIdentifier\": \"$IMAGE_ID\",
+                  \"ImageConfiguration\": {
+                    \"Port\": \"8080\",
+                    \"RuntimeEnvironmentVariables\": $ENV_VARS
+                  },
+                  \"ImageRepositoryType\": \"ECR\"
+                }
+              }" \
+              --region ${{ env.AWS_REGION }}
+          fi
+
+      # ── Wait for Deployment to Stabilise ──────────────────────────────────
+      - name: Wait for App Runner Deployment
+        run: |
+          SERVICE_ARN=$(aws apprunner list-services \
+            --query "ServiceSummaryList[?ServiceName=='${{ env.API_SERVICE_NAME }}'].ServiceArn" \
+            --output text --region ${{ env.AWS_REGION }})
+          echo "Polling service status for: $SERVICE_ARN"
+          for i in $(seq 1 30); do
+            STATUS=$(aws apprunner describe-service \
+              --service-arn "$SERVICE_ARN" \
+              --query "Service.Status" \
+              --output text --region ${{ env.AWS_REGION }})
+            echo "Attempt $i/30 — Status: $STATUS"
+            if [ "$STATUS" = "RUNNING" ]; then
+              echo "✅ Deployment successful — service is RUNNING"
+              break
+            fi
+            if [ "$STATUS" = "CREATE_FAILED" ] || [ "$STATUS" = "UPDATE_FAILED" ]; then
+              echo "❌ Deployment FAILED with status: $STATUS"
+              exit 1
+            fi
+            sleep 15
+          done
+
+      # ── Smoke Test ─────────────────────────────────────────────────────────
+      - name: Smoke Test — Health Endpoint
+        run: |
+          SERVICE_ARN=$(aws apprunner list-services \
+            --query "ServiceSummaryList[?ServiceName=='${{ env.API_SERVICE_NAME }}'].ServiceArn" \
+            --output text --region ${{ env.AWS_REGION }})
+          SERVICE_URL=$(aws apprunner describe-service \
+            --service-arn "$SERVICE_ARN" \
+            --query "Service.ServiceUrl" \
+            --output text --region ${{ env.AWS_REGION }})
+          echo "Running health check against: https://$SERVICE_URL/health"
+          RESPONSE=$(curl -sf "https://$SERVICE_URL/health")
+          echo "Response: $RESPONSE"
+          echo "$RESPONSE" | grep -q '"status":"ok"' \
+            && echo "✅ Health check PASSED" \
+            || (echo "❌ Health check FAILED" && exit 1)
