@@ -7,7 +7,7 @@ on:
 
 env:
   AWS_REGION: ap-south-1
-  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-south-1.amazonaws.com
+  ECR_REGISTRY: 541259832110.dkr.ecr.ap-south-1.amazonaws.com
   API_SERVICE_NAME: spin-api
   AGENT_SERVICE_NAME: spin-agent
 
@@ -71,24 +71,24 @@ jobs:
             --output text --region ${{ env.AWS_REGION }})
 
           ENV_VARS=$(cat <<EOF
-          {
-            "DATABASE_URL": "${{ secrets.DATABASE_URL }}",
-            "JWT_SECRET": "${{ secrets.JWT_SECRET }}",
-            "GOOGLE_CLOUD_PROJECT": "${{ secrets.GOOGLE_CLOUD_PROJECT }}",
-            "GOOGLE_CLOUD_LOCATION": "${{ secrets.GOOGLE_CLOUD_LOCATION }}",
-            "GEMINI_MODEL": "gemini-2.5-flash",
-            "GEMINI_API_KEY": "${{ secrets.GEMINI_API_KEY }}",
-            "BHASHINI_API_KEY": "${{ secrets.BHASHINI_API_KEY }}",
-            "BHASHINI_USER_ID": "${{ secrets.BHASHINI_USER_ID }}",
-            "BHASHINI_ASR_SERVICE_ID": "${{ secrets.BHASHINI_ASR_SERVICE_ID }}",
-            "BHASHINI_TRANSLATION_SERVICE_ID": "${{ secrets.BHASHINI_TRANSLATION_SERVICE_ID }}",
-            "FIREBASE_PROJECT_ID": "${{ secrets.FIREBASE_PROJECT_ID }}",
-            "GATI_SHAKTI_API_KEY": "${{ secrets.GATI_SHAKTI_API_KEY }}",
-            "CORS_ORIGINS": "${{ secrets.CORS_ORIGINS }}",
-            "SPIN_BQ_DATASET": "spin_grievances",
-            "SPIN_BQ_TABLE": "citizen_complaints",
-            "SPIN_USE_REMOTE_AGENTS": "false"
-          }
+          [
+            {"Name": "DATABASE_URL", "Value": "${{ secrets.DATABASE_URL }}"},
+            {"Name": "JWT_SECRET", "Value": "${{ secrets.JWT_SECRET }}"},
+            {"Name": "GOOGLE_CLOUD_PROJECT", "Value": "${{ secrets.GOOGLE_CLOUD_PROJECT }}"},
+            {"Name": "GOOGLE_CLOUD_LOCATION", "Value": "${{ secrets.GOOGLE_CLOUD_LOCATION }}"},
+            {"Name": "GEMINI_MODEL", "Value": "gemini-2.5-flash"},
+            {"Name": "GEMINI_API_KEY", "Value": "${{ secrets.GEMINI_API_KEY }}"},
+            {"Name": "BHASHINI_API_KEY", "Value": "${{ secrets.BHASHINI_API_KEY }}"},
+            {"Name": "BHASHINI_USER_ID", "Value": "${{ secrets.BHASHINI_USER_ID }}"},
+            {"Name": "BHASHINI_ASR_SERVICE_ID", "Value": "${{ secrets.BHASHINI_ASR_SERVICE_ID }}"},
+            {"Name": "BHASHINI_TRANSLATION_SERVICE_ID", "Value": "${{ secrets.BHASHINI_TRANSLATION_SERVICE_ID }}"},
+            {"Name": "FIREBASE_PROJECT_ID", "Value": "${{ secrets.FIREBASE_PROJECT_ID }}"},
+            {"Name": "GATI_SHAKTI_API_KEY", "Value": "${{ secrets.GATI_SHAKTI_API_KEY }}"},
+            {"Name": "CORS_ORIGINS", "Value": "${{ secrets.CORS_ORIGINS }}"},
+            {"Name": "SPIN_BQ_DATASET", "Value": "spin_grievances"},
+            {"Name": "SPIN_BQ_TABLE", "Value": "citizen_complaints"},
+            {"Name": "SPIN_USE_REMOTE_AGENTS", "Value": "false"}
+          ]
           EOF
           )
 
