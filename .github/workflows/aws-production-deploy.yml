@@ -190,9 +190,9 @@ jobs:
             --query "Service.ServiceUrl" \
             --output text --region ${{ env.AWS_REGION }})
           
-          echo "Checking application health at https://$SERVICE_URL..."
+          echo "Checking application health at https://$SERVICE_URL/health..."
           
-          HTTP_STATUS=$(curl -s -o response.txt -w "%{http_code}" "https://$SERVICE_URL/" || true)
+          HTTP_STATUS=$(curl -s -o response.txt -w "%{http_code}" "https://$SERVICE_URL/health" || true)
           echo "HTTP Status Code: $HTTP_STATUS"
           echo "Response Body:"
           cat response.txt
