@@ -42,7 +42,7 @@ const LOOP_STEPS: LoopStep[] = [
     num: "05",
     actor: "PUBLIC WORKS",
     title: "Executes Infrastructure Project",
-    description: "Contractor assigned to repair main line and restore municipal water supply.",
+    description: "Contractor assigned to upgrade main line and restore municipal water supply.",
     badgeClass: "badge-amber",
   },
   {

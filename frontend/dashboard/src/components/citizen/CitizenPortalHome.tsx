@@ -102,7 +102,7 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
             <span className="service-card-tag">SERVICE 01 · CITIZEN INTAKE</span>
             <h2 className="service-card-title">SUBMIT DEVELOPMENT NEED</h2>
             <p className="service-card-desc">
-              Report an existing breakdown or propose a new infrastructure facility for your neighborhood.
+              Report an existing service gap or propose a new infrastructure facility for your neighborhood.
             </p>
             <ul className="service-card-examples">
               <li>• Existing problem (Potholes, pipeline burst, power cuts, flood drains)</li>
@@ -176,7 +176,7 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
                   No Infrastructure Demands Submitted Yet
                 </h4>
                 <p style={{ color: "var(--col-text-muted)", fontSize: "13px", maxWidth: "460px", margin: "0 auto 16px auto" }}>
-                  When you report an infrastructure problem or submit a new development proposal, its official status and department review timeline will be tracked here.
+                  When you report an infrastructure need or submit a new development proposal, its official status and department review timeline will be tracked here.
                 </p>
                 <button
                   type="button"
@@ -208,7 +208,7 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
                       <div style={{ fontWeight: 700, color: "var(--col-navy)", fontSize: "14px" }}>
                         {req.grievance_id}{" "}
                         <span style={{ fontSize: "11px", fontWeight: 400, color: "var(--col-text-muted)" }}>
-                          ({req.request_type === "new_development" ? "New Development" : "Existing Problem"})
+                          ({req.request_type === "new_development" ? "New Development" : "Current Need"})
                         </span>
                       </div>
                       <div style={{ fontSize: "12px", color: "var(--col-text-mid)", marginTop: "2px" }}>

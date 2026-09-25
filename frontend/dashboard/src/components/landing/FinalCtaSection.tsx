@@ -11,7 +11,7 @@ export function FinalCtaSection({ onViewChange }: FinalCtaSectionProps) {
         <div className="final-cta-card text-center">
           <span className="label-eyebrow tag-orange">TAKE ACTION TODAY</span>
           <h2 className="editorial-h2 final-cta-title">
-            Have a problem in your area?
+            Have an improvement idea for your area?
           </h2>
           <p className="body-lg final-cta-subtitle">
             Report it to your local administration.

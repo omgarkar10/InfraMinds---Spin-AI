@@ -131,7 +131,7 @@ export const TrackGrievances: React.FC<TrackGrievancesProps> = ({ user, onNaviga
                 style={{ fontSize: "13px" }}
               >
                 <option value="">All Types</option>
-                <option value="existing_problem">Existing Problem</option>
+                <option value="existing_problem">Current Need</option>
                 <option value="new_development">New Development</option>
               </select>
             </div>
@@ -232,7 +232,7 @@ export const TrackGrievances: React.FC<TrackGrievancesProps> = ({ user, onNaviga
                             fontWeight: 600,
                           }}
                         >
-                          {isNewDev ? "🏗️ New Development" : "⚠️ Existing Problem"}
+                          {isNewDev ? "🏗️ New Development" : "⚠️ Current Need"}
                         </span>
                       </div>
                       <strong style={{ fontSize: "16px", color: "var(--col-navy)" }}>

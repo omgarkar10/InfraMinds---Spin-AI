@@ -107,7 +107,7 @@ const CATEGORY_ISSUE_MAP: Record<string, string[]> = {
     "Public safety hazard",
   ],
   "Other": [
-    "Other civic infrastructure problem",
+    "Other civic infrastructure need",
     "Other community development proposal",
   ],
 };
@@ -176,7 +176,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
   const [specificIssue, setSpecificIssue] = useState<string>("Pipeline leakage / burst");
   const [description, setDescription] = useState<string>("");
 
-  // Type A specific (Existing Problem)
+  // Type A specific (Current Need)
   const [startDate, setStartDate] = useState<string>("");
   const [frequency, setFrequency] = useState<string>("Continuous");
 
@@ -560,7 +560,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "16px", textAlign: "left", fontSize: "13px" }}>
-                <div><strong>Request Type:</strong> {requestType === "existing_problem" ? "Existing Problem" : "New Development Request"}</div>
+                <div><strong>Request Type:</strong> {requestType === "existing_problem" ? "Current Need" : "New Development Request"}</div>
                 <div><strong>Category:</strong> {category}</div>
                 <div><strong>State &amp; District:</strong> {district}, {state}</div>
                 <div><strong>Status:</strong> <span className="status-pill SUBMITTED">SUBMITTED</span></div>
@@ -631,7 +631,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
               Submit Infrastructure Demand
             </h1>
             <p className="portal-subtext" style={{ fontSize: "13px" }}>
-              Report an existing breakdown or propose a new infrastructure development project.
+              Report an existing service gap or propose a new infrastructure development project.
             </p>
           </div>
           <button
@@ -913,7 +913,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
                               cursor: "pointer",
                             }}
                           >
-                            ⚠️ Existing Problem
+                            ⚠️ Current Need
                           </button>
                           <button
                             type="button"
@@ -1042,7 +1042,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
                       }}
                     >
                       <div style={{ fontWeight: 700, color: "var(--col-navy)", fontSize: "14px" }}>
-                        ⚠️ Existing Infrastructure Problem
+                        ⚠️ Current Infrastructure Need
                       </div>
                       <div style={{ fontSize: "12px", color: "var(--col-text-muted)", marginTop: "4px" }}>
                         Report broken pipes, potholes, power cuts, waterlogging, or damaged public assets.
@@ -1078,7 +1078,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
                 <div className="form-group" style={{ marginBottom: "16px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <label className="form-label" htmlFor="description">
-                      {requestType === "existing_problem" ? "Describe the Problem in Detail" : "Describe the Proposed Development Project"}{" "}
+                      {requestType === "existing_problem" ? "Describe the Need in Detail" : "Describe the Proposed Development Project"}{" "}
                       <span style={{ color: "#e53e3e" }}>*</span>
                     </label>
                     <div style={{ display: "flex", gap: "8px" }}>
@@ -1219,12 +1219,12 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
                   </div>
                 </div>
 
-                {/* Conditional Type A Fields (Existing Problem Only) */}
+                {/* Conditional Type A Fields (Current Need Only) */}
                 {requestType === "existing_problem" && (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
                     <div className="form-group">
                       <label className="form-label" htmlFor="startDate">
-                        When did this problem start? (Optional)
+                        When did this need arise? (Optional)
                       </label>
                       <input
                         id="startDate"
@@ -1585,7 +1585,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", fontSize: "13px", marginBottom: "12px" }}>
                 <div><strong>Submitting Citizen:</strong> {user.name || "Authenticated Citizen"} {user.phone ? `(${user.phone})` : ""}</div>
-                <div><strong>Submission Type:</strong> {requestType === "existing_problem" ? "Existing Infrastructure Problem" : "New Infrastructure Development"}</div>
+                <div><strong>Submission Type:</strong> {requestType === "existing_problem" ? "Current Infrastructure Need" : "New Infrastructure Development"}</div>
                 <div><strong>Category:</strong> {category}</div>
                 <div><strong>{requestType === "existing_problem" ? "Proposed Improvement" : "Proposed Facility"}:</strong> {requestType === "existing_problem" ? specificIssue : proposedFacility || specificIssue}</div>
                 {requestType === "existing_problem" && (

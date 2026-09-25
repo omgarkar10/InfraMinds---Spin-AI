@@ -109,7 +109,7 @@ export const GrievanceDetail: React.FC<GrievanceDetailProps> = ({
                     fontWeight: 700,
                   }}
                 >
-                  {isNewDev ? "🏗️ New Development Proposal" : "⚠️ Existing Infrastructure Problem"}
+                  {isNewDev ? "🏗️ New Development Proposal" : "⚠️ Current Infrastructure Need"}
                 </span>
               </div>
               <h2 className="portal-heading" style={{ fontSize: "20px", marginTop: "6px" }}>

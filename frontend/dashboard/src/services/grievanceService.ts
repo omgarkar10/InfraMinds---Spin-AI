@@ -411,7 +411,7 @@ const INITIAL_SEED_GRIEVANCES: Proposal[] = [
       confidence: 96,
       nearbyGrievances: 24,
       redZone: true,
-      reasoning: "High risk collision junction requires immediate traffic police deployment and signal repair.",
+      reasoning: "High risk collision junction requires immediate traffic police deployment and signal upgrade.",
     },
     status: "INSPECTION_SCHEDULED",
     department: "Police / Law & Order",

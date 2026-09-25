@@ -146,7 +146,7 @@ export function HeroSection({ onViewChange }: HeroSectionProps) {
           {/* Primary Action Buttons for Citizens */}
           <div className="hero-actions">
             <button className="hero-btn-primary" onClick={() => onViewChange?.("citizen-raise")}>
-              Report a Problem →
+              Propose an Improvement →
             </button>
             <button className="hero-btn-secondary" onClick={() => onViewChange?.("citizen-track")}>
               Track My Request

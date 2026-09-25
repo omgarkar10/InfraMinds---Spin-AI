@@ -65,7 +65,7 @@ const DEFAULT_SUB_DEPTS = [
 const DESC_TEMPLATES = [
   "⏭️ Skip Description (Optional)",
   "Severe issue causing inconvenience to residents",
-  "Recurring problem for over 3 days",
+  "Recurring need for over 3 days",
   "Immediate safety hazard to pedestrians / vehicles",
   "Requires urgent municipal inspection",
 ];

@@ -21,7 +21,7 @@ export function Footer({ onViewChange }: FooterProps) {
 
           <div className="footer-links-col">
             <span className="label-eyebrow">CITIZEN SERVICES</span>
-            <button className="footer-link" onClick={() => onViewChange("citizen-raise")}>Report a Problem</button>
+            <button className="footer-link" onClick={() => onViewChange("citizen-raise")}>Propose an Improvement</button>
             <button className="footer-link" onClick={() => onViewChange("citizen-track")}>Track My Request</button>
             <button className="footer-link" onClick={() => onViewChange("citizen")}>Citizen Portal Home</button>
           </div>

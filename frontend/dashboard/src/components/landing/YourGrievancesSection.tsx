@@ -38,7 +38,7 @@ export function YourGrievancesSection({ onViewChange }: YourGrievancesSectionPro
               className="card-action-btn btn-primary"
               onClick={() => onViewChange("citizen-raise")}
             >
-              Report a Problem →
+              Propose an Improvement →
             </button>
           </div>
 

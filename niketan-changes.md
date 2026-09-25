@@ -46,3 +46,5 @@ Removed several unused directories, tests, and redundant package configuration f
   - Replaced "Ticket Status", "Resolution", "Escalate", and "Severity" with "Demand Status", "Adoption Stage", "Community Support", and "Priority".
   - Updated form labels and placeholders (e.g., "Describe your issue/incident" ➔ "What improvement does your community need?").
   - Executed these changes programmatically across all citizen and staff dashboard React components (`.tsx` files), preserving TypeScript interfaces and API payload keys (`grievance_id`, `specific_issue`) to ensure backend compatibility.
+  - Re-wrote problem-centric sections on the landing page (`useLanguage.tsx`) into opportunity-centric wording (e.g., "The Problem" ➔ "The Opportunity", "Misaligned infrastructure investment" ➔ "Untapped community potential").
+  - Executed a second pass across all components (`CitizenPortalHome.tsx`, `RaiseGrievanceForm.tsx`, `HeroSection.tsx`, etc.) to eliminate residual negative phrasing: updated "Existing Problem" to "Current Need", "Report a Problem" to "Propose an Improvement", "breakdown" to "service gap", and "repair" to "upgrade".
