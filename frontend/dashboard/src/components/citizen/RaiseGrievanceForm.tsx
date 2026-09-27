@@ -188,7 +188,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
   // Speech Recognition & Voice Intake
   const [isListening, setIsListening] = useState<boolean>(false);
   const [speechTranscript, setSpeechTranscript] = useState<string>("");
-  const [speechLanguage, setSpeechLanguage] = useState<string>("hi-IN");
+  const [speechLanguage, _setSpeechLanguage] = useState<string>("hi-IN");
   const [speechSupported, setSpeechSupported] = useState<boolean>(true);
   const [recognitionInstance, setRecognitionInstance] = useState<any>(null);
 
@@ -264,14 +264,6 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
     }
   }, [speechLanguage, intakeMode]);
 
-  // Update speech recognition language when changed
-  const handleLanguageChange = (lang: string) => {
-    setSpeechLanguage(lang);
-    if (recognitionInstance) {
-      recognitionInstance.lang = lang;
-    }
-  };
-
   const toggleListening = () => {
     if (!recognitionInstance) {
       alert("Speech recognition is not supported in this browser. Please type your request.");
@@ -288,13 +280,6 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
       } catch (err) {
         setIsListening(false);
       }
-    }
-  };
-
-  const handleUseTranscriptAsDescription = () => {
-    if (speechTranscript.trim()) {
-      setDescription((prev) => (prev ? `${prev}\n${speechTranscript.trim()}` : speechTranscript.trim()));
-      setSpeechTranscript("");
     }
   };
 

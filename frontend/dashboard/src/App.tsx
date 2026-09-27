@@ -57,7 +57,7 @@ function AppInner() {
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
 
   /* Navigation handler with Citizen Auth Protection */
-  const handleNavigate = (newView: string, extraId?: string) => {
+  const handleNavigate = (newView: string, extraId?: string, activeCitizenUser?: CitizenUser) => {
     if (extraId) {
       setSelectedGrievanceId(extraId);
     }
@@ -69,8 +69,10 @@ function AppInner() {
       return;
     }
 
-    // Require Citizen Login BEFORE "Raise Grievance" or "Track Grievances"
-    if ((newView === "citizen-raise" || newView === "citizen-track" || newView === "citizen") && !citizenUser.isLoggedIn) {
+    const effectiveCitizenUser = activeCitizenUser || citizenUser;
+
+    // Require Citizen Login BEFORE "Raise Grievance" or "Track Grievances" or "Citizen Dashboard"
+    if ((newView === "citizen-raise" || newView === "citizen-track" || newView === "citizen") && !effectiveCitizenUser.isLoggedIn) {
       setTargetViewAfterLogin(newView);
       setView("citizen-login");
       return;
@@ -91,7 +93,7 @@ function AppInner() {
     setCitizenUser(user);
     const destination = targetViewAfterLogin || "citizen";
     setTargetViewAfterLogin("citizen");
-    handleNavigate(destination);
+    handleNavigate(destination, undefined, user);
   };
 
   /* Staff Login Success Callback */

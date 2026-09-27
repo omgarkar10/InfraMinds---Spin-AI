@@ -66,7 +66,7 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validationResult.isValid || !validationResult.normalizedNumber || !password) {
+    if (!validationResult.isValid || !validationResult.normalizedNumber || !password || loading) {
       return;
     }
 
@@ -91,7 +91,6 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
       onLoginSuccess(user);
     } catch (err: any) {
       setError(err.message || "Invalid phone number or password. Please check your credentials.");
-    } finally {
       setLoading(false);
     }
   };
@@ -192,7 +191,9 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
             {/* Google Sign-In Button */}
             <button
               type="button"
+              disabled={loading}
               onClick={async () => {
+                if (loading) return;
                 const googleClientId = (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID;
                 if (!googleClientId) {
                   setError("Google OAuth is not configured. Please set VITE_GOOGLE_CLIENT_ID in your environment.");
@@ -202,6 +203,7 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
                   (window as any).google.accounts.id.initialize({
                     client_id: googleClientId,
                     callback: async (response: any) => {
+                      if (loading) return;
                       try {
                         setLoading(true);
                         const res = await citizenGoogleLogin(response.credential);
@@ -215,7 +217,6 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
                         onLoginSuccess(user);
                       } catch (err: any) {
                         setError(err.message || "Google authentication failed.");
-                      } finally {
                         setLoading(false);
                       }
                     },
@@ -238,7 +239,8 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
                 alignItems: "center",
                 justifyContent: "center",
                 gap: "10px",
-                cursor: "pointer",
+                cursor: loading ? "not-allowed" : "pointer",
+                opacity: loading ? 0.6 : 1,
               }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24">
