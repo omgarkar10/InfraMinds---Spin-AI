@@ -11,7 +11,7 @@ from spin_agents.models import User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-SHARED_PASSWORD = "SecureSPIN2026!"
+SHARED_PASSWORD = "securespin26"
 
 STAFF_ACCOUNTS = [
     ("water.supply", "Water Supply"),
@@ -39,14 +39,14 @@ async def create_admin():
         # Hash once and reuse it for every seeded account.
         password_hash = pwd_context.hash(SHARED_PASSWORD)
         accounts = [
-            ("admin@government.gov.in", "General Administration", "System Administrator", "admin"),
+            ("admin@gov.in", "General Administration", "System Administrator", "admin"),
             ("ministry@nic.in", "Ministry of Housing & Urban Affairs (MoHUA)", "Dr. R. K. Sharma (Joint Secretary)", "policymaker"),
         ]
         for email_prefix, department in STAFF_ACCOUNTS:
             accounts.extend([
-                (f"{email_prefix}.officer@government.gov.in", department, f"{department} Officer", "department officer"),
-                (f"{email_prefix}.field@government.gov.in", department, f"{department} Field Inspector", "staff"),
-                (f"{email_prefix}.policy@government.gov.in", department, f"{department} Policymaker", "policymaker"),
+                (f"{email_prefix}.officer@gov.in", department, f"{department} Officer", "department officer"),
+                (f"{email_prefix}.field@gov.in", department, f"{department} Field Inspector", "staff"),
+                (f"{email_prefix}.policy@gov.in", department, f"{department} Policymaker", "policymaker"),
             ])
 
         for email, department, name, role in accounts:
