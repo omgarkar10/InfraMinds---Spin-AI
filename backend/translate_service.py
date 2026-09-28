@@ -135,26 +135,29 @@ def translate_to_english(text: str) -> dict[str, Any]:
 
     detected_lang = detect_language(text)
 
-    # 1. Try Google Cloud Translation Client
-    client = get_translation_client()
-    if client:
-        try:
-            result = client.translate(text, target_language="en")
-            return {
-                "original_text": text,
-                "translated_text": result.get("translatedText", text),
-                "source_language": result.get("detectedSourceLanguage", detected_lang),
-            }
-        except Exception:
-            pass
-
-    # 2. Intelligent NLP Fallback for Indian Languages
-    translated = _smart_translate_civic(text, detected_lang)
-    return {
-        "original_text": text,
-        "translated_text": translated,
-        "source_language": detected_lang,
-    }
+    # Use Bhashini API for all translations
+    try:
+        from spin_agents.tools.bhashini import bhashini_translate_sync
+        import json
+        
+        # We need to map the output format to match what's expected
+        bhashini_result_json = bhashini_translate_sync(text, detected_lang)
+        result = json.loads(bhashini_result_json)
+        
+        return {
+            "original_text": text,
+            "translated_text": result.get("english_translation", text),
+            "source_language": detected_lang,
+        }
+    except Exception as e:
+        print(f"Bhashini translation failed: {e}")
+        # Intelligent NLP Fallback for Indian Languages
+        translated = _smart_translate_civic(text, detected_lang)
+        return {
+            "original_text": text,
+            "translated_text": translated,
+            "source_language": detected_lang,
+        }
 
 
 if __name__ == "__main__":

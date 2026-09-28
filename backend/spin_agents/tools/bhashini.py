@@ -81,25 +81,12 @@ async def bhashini_translate(
     if cached and time.monotonic() - cached[0] < CONFIG.bhashini_cache_ttl_seconds:
         return {**cached[1], "cached": True}
     if not CONFIG.bhashini_configured:
-        try:
-            import os
-            import sys
-            sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-            from translate_service import translate_to_english
-            res = translate_to_english(text)
-            return {
-                "original_text": text,
-                "english_translation": res.get("translated_text", text),
-                "source_language": res.get("source_language", source_language),
-                "target_language": target_language,
-            }
-        except Exception:
-            return {
-                "original_text": text,
-                "english_translation": text,
-                "source_language": source_language,
-                "target_language": target_language,
-            }
+        return {
+            "original_text": text,
+            "english_translation": f"[Bhashini Mock] {text}",
+            "source_language": source_language,
+            "target_language": target_language,
+        }
 
     payload = {
         "pipelineTasks": [

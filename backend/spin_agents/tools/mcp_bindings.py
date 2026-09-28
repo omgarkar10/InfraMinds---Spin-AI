@@ -91,45 +91,31 @@ def deterministic_department_lookup(category: str, jurisdiction: Optional[str] =
 
 def cloud_speech_to_text(audio_url: str, hint_language: str = "hi") -> Dict[str, Any]:
     """Transcribes audio URL via Cloud Speech-to-Text with Language Identification."""
-    if not CONFIG.gcp_project or audio_url.startswith("mock://"):
-        return {
-            "transcript": "सड़क पर गहरा गड्ढा है और पानी भर गया है",
-            "detected_language": hint_language or "hi",
-            "confidence": 0.94,
-            "source": "mock_asr",
-        }
-
     try:
-        from google.cloud import speech_v1p1beta1 as speech
-
-        client = speech.SpeechClient()
-        audio = speech.RecognitionAudio(uri=audio_url)
-        config = speech.RecognitionConfig(
-            encoding=speech.RecognitionConfig.AudioEncoding.OGG_OPUS,
-            sample_rate_hertz=16000,
-            language_code=hint_language or "hi-IN",
-            alternative_language_codes=["en-IN", "mr-IN", "ta-IN", "te-IN"],
-            enable_automatic_punctuation=True,
-        )
-        response = client.recognize(config=config, audio=audio)
-        if response.results:
-            result = response.results[0]
-            alternative = result.alternatives[0]
-            return {
-                "transcript": alternative.transcript,
-                "detected_language": result.language_code[:2] if result.language_code else hint_language,
-                "confidence": float(alternative.confidence),
-                "source": "google_speech_to_text",
-            }
+        from spin_agents.tools.bhashini import bhashini_asr
+        import asyncio
+        
+        # Call the async Bhashini ASR
+        # We need a sync wrapper here since this function is synchronous
+        loop = asyncio.new_event_loop()
+        result = loop.run_until_complete(bhashini_asr(audio_url, hint_language))
+        loop.close()
+        
+        return {
+            "transcript": result.get("original_text", ""), # The transcribed regional text
+            "translated_text": result.get("english_translation", ""), # Translated to english
+            "detected_language": result.get("source_language", hint_language),
+            "confidence": 0.95,
+            "source": "bhashini_asr",
+        }
     except Exception as exc:
-        pass
-
-    return {
-        "transcript": "Audio received for grievance processing.",
-        "detected_language": hint_language,
-        "confidence": 0.85,
-        "source": "fallback_asr",
-    }
+        print(f"Bhashini ASR failed: {exc}")
+        return {
+            "transcript": "Audio received for grievance processing. (Bhashini fallback)",
+            "detected_language": hint_language,
+            "confidence": 0.85,
+            "source": "fallback_asr",
+        }
 
 
 # ---------------------------------------------------------------------------
@@ -144,35 +130,24 @@ def cloud_translate_text(text: str, target_language: str = "en", source_language
     if source_language == target_language:
         return {"original_text": text, "translated_text": text, "source_language": source_language}
 
-    # Development / Offline heuristic dictionary for high-fidelity offline tests
-    OFFLINE_TRANSLATIONS: Dict[str, str] = {
-        "सड़क पर गहरा गड्ढा है और पानी भर गया है": "There is a deep pothole on the road and water is overflowing.",
-        "पानी की पाइपलाइन टूट गई है और पीने का पानी नहीं आ रहा है": "The drinking water pipeline is broken and no water is coming.",
-        "कचरे का ढेर लगा है और बदबू आ रही है": "There is a pile of garbage accumulated and a foul smell is coming.",
-        "स्ट्रीट लाइट खराब है, रात में अंधेरा रहता है": "Street light is broken, it stays dark at night.",
-    }
-
-    if text in OFFLINE_TRANSLATIONS and target_language == "en":
-        return {
-            "original_text": text,
-            "translated_text": OFFLINE_TRANSLATIONS[text],
-            "source_language": source_language or "hi",
-        }
-
     try:
-        from google.cloud import translate_v2 as translate
-        client = translate.Client()
-        result = client.translate(
-            text,
-            target_language=target_language,
-            source_language=source_language,
-        )
+        from spin_agents.tools.bhashini import bhashini_translate_sync
+        import json
+        
+        # Bhashini translates to english. If target_language is not english, we may need two hops
+        # but bhashini_translate_sync defaults to english target.
+        bhashini_result_json = bhashini_translate_sync(text, source_language or "hi")
+        result = json.loads(bhashini_result_json)
+        
+        # This implementation mainly supports translating TO english. 
+        # If we want generic translation, we'd need to modify bhashini_translate_sync or use bhashini_translate async.
         return {
             "original_text": text,
-            "translated_text": result.get("translatedText", text),
-            "source_language": result.get("detectedSourceLanguage", source_language or "unknown"),
+            "translated_text": result.get("english_translation", text),
+            "source_language": result.get("source_language", source_language or "unknown"),
         }
-    except Exception:
+    except Exception as exc:
+        print(f"Bhashini MCP translation failed: {exc}")
         # Fallback heuristic
         return {
             "original_text": text,
