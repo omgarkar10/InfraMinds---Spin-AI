@@ -61,3 +61,11 @@ Removed several unused directories, tests, and redundant package configuration f
 - **Created `credentials.md`**: Generated a reference document detailing all 38 staff accounts across 12 departments along with shared default passwords and role assignments.
 - **Updated Email Domain to `@gov.in`**: Changed all staff email formats across `backend/scripts/create_admin.py`, `scripts/seed_staff_accounts.py`, `StaffLogin.tsx`, `authService.ts`, and `credentials.md` from `@government.gov.in` to `@gov.in`. Re-ran seeding script to provision all `@gov.in` users in Firebase Auth.
 - **Updated Shared Password to `securespin26`**: Updated `SHARED_PASSWORD` across `backend/scripts/create_admin.py`, `scripts/seed_staff_accounts.py`, `StaffLogin.tsx`, `authService.ts`, and `credentials.md` to `securespin26`. Re-executed seeding script to synchronize all 38 Firebase Auth staff user account passwords.
+
+## 9. Environment & Virtual Environment Standardization
+- **Removed Outdated `.env.example`**: Deleted `backend/.env.example` to remove duplicate and obsolete environment templates (e.g. legacy Twilio vars) that caused developer confusion.
+- **Updated `frontend/dashboard/.env.example`**: Synchronized frontend `.env.example` with all actual variables consumed by Vite, including complete Firebase Web SDK credential placeholders (`VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, etc.) and Google Maps JS API key placeholders.
+- **Automatic `.env` Resolution in Backend**: Updated `backend/spin_agents/config.py` to import `dotenv.load_dotenv` and automatically resolve `.env` files from `backend/.env` or the workspace root upon import.
+- **Standardized Developer Quick Start Guide**: Updated `README.md` with explicit, reproducible steps for setting up the Python virtual environment (`venv`), installing dependencies, copying environment templates, environment location mapping table, and running dev servers across both backend and frontend.
+
+

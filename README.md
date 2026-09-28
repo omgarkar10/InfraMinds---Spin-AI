@@ -20,22 +20,62 @@ Citizen Edge (WhatsApp/Telegram/Voice)
 Policymaker Dashboard (React + Google Maps heat layer)
 ```
 
-## Quick Start
+## Quick Start & Environment Setup
+
+### 1. Backend Setup (Python Virtual Environment)
+
+The backend uses a single Python virtual environment located at the root directory (`venv/`).
 
 ```bash
-# Backend Virtual Environment Setup
+# 1. Create & Activate Python Virtual Environment at workspace root
 python -m venv venv
-venv\Scripts\activate  # Windows (use `source venv/bin/activate` for macOS/Linux)
+venv\Scripts\activate      # Windows
+# source venv/bin/activate  # macOS / Linux
 
-# Backend Dependencies & Run
-cp .env.example .env   # fill in GCP + Bhashini keys
-cd backend && pip install -r requirements.txt
-adk web spin_agents     # ADK dev UI on :8000
-uvicorn spin_agents.api:app --port 8080  # REST API
+# 2. Install Backend Dependencies
+pip install -r backend/requirements.txt
 
-# Frontend
-cd frontend/dashboard && npm install && npm run dev
+# 3. Configure Backend Environment Variables
+# Copy `.env.example` to `backend/.env` and fill in necessary GCP/Bhashini keys
+cp .env.example backend/.env
+
+# 4. Run Backend FastAPI Server
+backend\start_server.bat
+# Or manually: python -m uvicorn spin_agents.api:app --host 0.0.0.0 --port 8080 --reload
 ```
+
+### 2. Frontend Setup (React / Vite)
+
+The frontend uses Node.js (`npm`) and manages its own package environment inside `frontend/dashboard/`.
+
+```bash
+# 1. Navigate to Frontend Directory
+cd frontend/dashboard
+
+# 2. Install Node Dependencies
+npm install
+
+# 3. Configure Frontend Environment Variables
+# Copy `.env.example` to `.env` inside `frontend/dashboard/`
+cp .env.example .env
+
+# 4. Start Development Server
+npm run dev
+```
+
+---
+
+## Environment & Configuration Architecture
+
+| Service | Runtime / Ecosystem | Environment Location | Config File |
+| :--- | :--- | :--- | :--- |
+| **Backend API** | Python 3.10+ | Root `venv/` | [`backend/.env`](file:///c:/Users/niket/Documents/Hackathon-106/Google-Code-For-Communities-/backend/.env) (Template: [`.env.example`](file:///c:/Users/niket/Documents/Hackathon-106/Google-Code-For-Communities-/.env.example)) |
+| **Frontend Dashboard** | Node.js / React / Vite | `frontend/dashboard/node_modules` | [`frontend/dashboard/.env`](file:///c:/Users/niket/Documents/Hackathon-106/Google-Code-For-Communities-/frontend/dashboard/.env) (Template: [`frontend/dashboard/.env.example`](file:///c:/Users/niket/Documents/Hackathon-106/Google-Code-For-Communities-/frontend/dashboard/.env.example)) |
+
+* **Firebase & Google Maps Web SDK Keys**: Configured in `frontend/dashboard/.env` (`VITE_FIREBASE_*`, `VITE_GOOGLE_MAPS_API_KEY`).
+* **Firebase Staff Credentials**: Pre-seeded staff demo accounts across 12 government departments are documented in [`credentials.md`](file:///c:/Users/niket/Documents/Hackathon-106/Google-Code-For-Communities-/credentials.md).
+
+---
 
 ## Hackathon Alignment
 
