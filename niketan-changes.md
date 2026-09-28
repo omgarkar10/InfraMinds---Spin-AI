@@ -218,3 +218,39 @@ otranslate class to the SPIN branding logo to prevent AI translation distortion.
 - Migrated manual React state navigation to Native URL Routing (window.history.pushState/popstate) to fully resolve browser back-button navigation issues across the entire application and provide clean URL paths like /citizen and /landing.
 
 - Added SPIN logo to Citizen Dashboard header.\n- Implemented Geolocation request on citizen feed load, zooming the map to user location and adding a blue You Are Here marker.\n
+## 2026-09-28: Fixed Login and Registration Workflow
+- **Description**: Replaced the synthetic email mapping with authentic email Firebase auth, implemented a multi-step registration workflow (Info, OTP, Password) for new users, and ensured Google Auth seamlessly pre-fills new user registration while auto-logging in existing users.
+- **Files Modified**: 
+  - frontend/dashboard/src/services/authService.ts
+  - frontend/dashboard/src/components/citizen/CitizenLogin.tsx
+  - frontend/dashboard/src/components/citizen/CitizenSignup.tsx
+  - frontend/dashboard/src/types/index.ts
+- **Rationale**: Removes phone-only dependency which corrupted user data with fake domains. Allows robust email usage, real OTP simulation, and smooth Google single-sign-on.
+
+## 2026-09-28: Fixed Google Auth Login Bypass Security Threat
+- **Description**: Added validation in the login page for Google Auth to reject newly created Google users or users with incomplete profiles, enforcing that they must go through the dedicated signup portal to provide their DOB and Phone number.
+- **Files Modified**: 
+  - frontend/dashboard/src/components/citizen/CitizenLogin.tsx
+  - frontend/dashboard/src/services/authService.ts
+- **Rationale**: Plugs a critical logic gap where Firebase's signInWithPopup auto-creates users, which previously allowed users to skip mandatory fields (DOB, Phone) and access the dashboard directly without a complete profile.
+
+## 2026-09-28: Google Auth Redirect to Signup with Prefilled Data
+- **Description**: Replaced the error-based rejection of new Google Auth users on the Login page with a seamless redirect to the Create Account page. The user's Name and Email from Google are now prefilled automatically, and they only need to provide DOB and Phone to complete registration. Google OAuth does not expose DOB, so it must be collected on the form.
+- **Files Modified**: 
+  - frontend/dashboard/src/App.tsx (added googlePrefill state, wired onGoogleNewUser callback)
+  - frontend/dashboard/src/components/citizen/CitizenLogin.tsx (replaced error+logout with onGoogleNewUser callback)
+  - frontend/dashboard/src/components/citizen/CitizenSignup.tsx (accepts googlePrefill prop, auto-initializes state)
+- **Rationale**: Better UX than showing an error. New Google users are seamlessly redirected to complete their profile instead of being blocked.
+
+## 2026-09-28: Updated Citizen Profile Page with Full User Details
+- **Description**: Updated CitizenProfile sidebar to display Email, Date of Birth, Phone Number, and Citizen ID. DOB is formatted as a human-readable Indian locale date (e.g. '28 September 2026'). Also fixed missing email field in App.tsx default state and logout reset.
+- **Files Modified**: 
+  - frontend/dashboard/src/components/citizen/CitizenProfile.tsx
+  - frontend/dashboard/src/App.tsx
+- **Rationale**: Profile page was only showing Phone and Citizen ID. Now reflects all fields collected during the new multi-step registration flow.
+
+### Landing Page and Dashboard Fixes (Plan Executed)
+- **Removed Duplicate Menu Item**: Removed 'Public Feed' from the citizen profile dropdown menu in rontend/dashboard/src/components/navigation/Navbar.tsx since 'Dashboard' does the same.
+- **Added Inline Vote Button**: Added a direct 'Vote ?' button on the demand cards in the citizen public feed (rontend/dashboard/src/components/citizen/CitizenPortalHome.tsx). Integrated castVote API call in rontend/dashboard/src/services/demandService.ts.
+- **Updated 'What You Can Demand' Grid**: Converted the basic text cards into a photographic 3x2 grid in rontend/dashboard/src/components/landing/WhatYouCanDemandSection.tsx. Generated 6 high-quality AI images and placed them in rontend/dashboard/public/images/categories/.
+- **Replaced Hero Canvas Map with Leaflet Heatmap**: Replaced the non-functional canvas animation in rontend/dashboard/src/components/landing/HeroSection.tsx with a fully locked eact-leaflet map and leaflet.heat heatmap layer. Added leaflet.heat to package.json and created typings in rontend/dashboard/src/leaflet-heat.d.ts.

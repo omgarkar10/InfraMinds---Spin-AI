@@ -5,7 +5,8 @@ import {
   updateProfile,
   signInWithCredential,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  getAdditionalUserInfo
 } from "firebase/auth";
 import { googleProvider } from "../config/firebase";
 
@@ -59,20 +60,20 @@ function getFriendlyAuthErrorMessage(error: any): string {
   }
 }
 
-// Convert phone number to a synthetic email for Firebase Email/Password provider
-const getSyntheticEmail = (phone: string) => `${phone}@citizen.spin.local`;
+// Removed synthetic email logic
 
 export async function citizenSignup(payload: {
   name: string;
+  email: string;
   countryCode: string;
   phone: string;
   password: string;
+  dob: string;
   captcha_token?: string;
   captcha_answer?: string;
 }) {
   try {
-    const syntheticEmail = getSyntheticEmail(payload.phone);
-    const userCredential = await createUserWithEmailAndPassword(auth, syntheticEmail, payload.password);
+    const userCredential = await createUserWithEmailAndPassword(auth, payload.email, payload.password);
     
     await updateProfile(userCredential.user, {
       displayName: payload.name,
@@ -86,7 +87,8 @@ export async function citizenSignup(payload: {
         id: userCredential.user.uid,
         name: payload.name,
         phone: payload.phone,
-        email: syntheticEmail
+        email: payload.email,
+        dob: payload.dob
       },
       access_token: token
     };
@@ -117,10 +119,9 @@ export async function citizenGoogleLogin(idToken: string) {
   }
 }
 
-export async function citizenLogin(payload: { countryCode: string; phone: string; password: string; }) {
+export async function citizenLogin(payload: { email: string; password: string; }) {
   try {
-    const syntheticEmail = getSyntheticEmail(payload.phone);
-    const userCredential = await signInWithEmailAndPassword(auth, syntheticEmail, payload.password);
+    const userCredential = await signInWithEmailAndPassword(auth, payload.email, payload.password);
     const token = await userCredential.user.getIdToken();
     
     localStorage.setItem("citizen_token", token);
@@ -129,8 +130,8 @@ export async function citizenLogin(payload: { countryCode: string; phone: string
       user: {
         id: userCredential.user.uid,
         name: userCredential.user.displayName || "Citizen",
-        phone: payload.phone,
-        email: syntheticEmail
+        phone: "", // In a real app, fetch from Firestore
+        email: payload.email
       },
       access_token: token
     };
@@ -143,6 +144,7 @@ export async function citizenFirebaseGoogleLogin() {
   try {
     const result = await signInWithPopup(auth, googleProvider);
     const token = await result.user.getIdToken();
+    const additionalInfo = getAdditionalUserInfo(result);
     localStorage.setItem("citizen_token", token);
     
     return {
@@ -152,6 +154,7 @@ export async function citizenFirebaseGoogleLogin() {
         phone: result.user.phoneNumber || "",
         email: result.user.email || ""
       },
+      isNewUser: additionalInfo?.isNewUser || false,
       access_token: token
     };
   } catch (error: any) {

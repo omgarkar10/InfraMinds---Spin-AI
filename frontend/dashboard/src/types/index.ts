@@ -139,7 +139,8 @@ export interface CitizenUser {
   id: string;
   name: string;
   phone: string;
-  email?: string;
+  email: string;
+  dob?: string;
   isLoggedIn: boolean;
 }
 

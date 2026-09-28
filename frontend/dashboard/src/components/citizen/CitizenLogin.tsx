@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import "../../styles/citizen.css";
 import { setStoredCitizenUser } from "../../services/demandService";
-import { getCountriesConfig, citizenLogin, citizenFirebaseGoogleLogin } from "../../services/authService";
+import { citizenLogin, citizenFirebaseGoogleLogin } from "../../services/authService";
 import type { CitizenUser } from "../../types";
-import { validatePhoneNumber, CountryPhoneConfig } from "../../utils/phoneValidation";
-import { PhoneNumberField } from "./PhoneNumberField";
 import { PasswordField } from "./PasswordField";
 
 interface CitizenLoginProps {
@@ -14,6 +12,7 @@ interface CitizenLoginProps {
   onSignupClick?: () => void;
   onForgotPasswordClick?: () => void;
   onSwitchToStaff?: () => void;
+  onGoogleNewUser?: (prefill: { name: string; email: string }) => void;
 }
 
 export const CitizenLogin: React.FC<CitizenLoginProps> = ({
@@ -22,51 +21,17 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
   onSignupClick,
   onForgotPasswordClick,
   onSwitchToStaff,
+  onGoogleNewUser,
 }) => {
-  const [countries, setCountries] = useState<CountryPhoneConfig[]>([]);
-  const [loadingConfig, setLoadingConfig] = useState(true);
-
-  const [countryCode, setCountryCode] = useState<string>("IN");
-  const [phone, setPhone] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const validationResult = validatePhoneNumber(countryCode, phone, countries);
-
-  useEffect(() => {
-    async function fetchConfig() {
-      try {
-        const res = await getCountriesConfig();
-        setCountries(res.countries || []);
-        if (res.countries && res.countries.length > 0) {
-          setCountryCode(res.countries[0].code);
-        }
-      } catch (err) {
-        const fallbackConfig: CountryPhoneConfig[] = [
-          {
-            code: "IN",
-            name: "India",
-            flag: "🇮🇳",
-            dialCode: "+91",
-            minLength: 10,
-            maxLength: 10,
-            pattern: "^[6-9]\\d{9}$",
-            placeholder: "9876543210",
-          },
-        ];
-        setCountries(fallbackConfig);
-      } finally {
-        setLoadingConfig(false);
-      }
-    }
-    fetchConfig();
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validationResult.isValid || !validationResult.normalizedNumber || !password) {
+    if (!email || !password) {
       return;
     }
 
@@ -75,8 +40,7 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
 
     try {
       const result = await citizenLogin({
-        countryCode,
-        phone: validationResult.normalizedNumber,
+        email,
         password,
       });
 
@@ -84,29 +48,20 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
         id: result.user.id,
         name: result.user.name,
         phone: result.user.phone,
+        email: result.user.email,
         isLoggedIn: true,
       };
 
       setStoredCitizenUser(user);
       onLoginSuccess(user);
     } catch (err: any) {
-      setError(err.message || "Invalid phone number or password. Please check your credentials.");
+      setError(err.message || "Invalid email or password. Please check your credentials.");
     } finally {
       setLoading(false);
     }
   };
 
-  if (loadingConfig) {
-    return (
-      <div className="citizen-portal-container">
-        <div className="container">
-          <div className="login-card" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "300px" }}>
-            <p>Loading configuration...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+
 
   return (
     <div className="citizen-portal-container">
@@ -134,14 +89,18 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
           )}
 
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-            <PhoneNumberField
-              configs={countries}
-              selectedCountryCode={countryCode}
-              onCountryChange={setCountryCode}
-              phoneNumber={phone}
-              onPhoneChange={(e) => setPhone(e.target.value)}
-              errorText={phone.length > 0 && !validationResult.isValid ? validationResult.errorMessage : null}
-            />
+            <div className="form-group" style={{ marginBottom: "1rem" }}>
+              <label className="form-label" htmlFor="login-email">Email</label>
+              <input
+                id="login-email"
+                type="email"
+                className="form-input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="citizen@example.com"
+                required
+              />
+            </div>
 
             <PasswordField
               id="login-password"
@@ -162,13 +121,13 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
 
             <button
               type="submit"
-              disabled={!validationResult.isValid || !password || loading}
+              disabled={!email || !password || loading}
               className="service-card-btn service-card-btn-orange"
               style={{
                 width: "100%",
                 justifyContent: "center",
-                opacity: validationResult.isValid && password && !loading ? 1 : 0.5,
-                cursor: validationResult.isValid && password && !loading ? "pointer" : "not-allowed",
+                opacity: email && password && !loading ? 1 : 0.5,
+                cursor: email && password && !loading ? "pointer" : "not-allowed",
               }}
             >
               {loading ? "Signing in..." : "Login"}
@@ -197,10 +156,21 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
                   setLoading(true);
                   setError(null);
                   const res = await citizenFirebaseGoogleLogin();
+                  
+                  if (res.isNewUser || !res.user.phone) {
+                    // New user or incomplete profile — redirect to signup with prefilled data
+                    if (onGoogleNewUser) {
+                      onGoogleNewUser({ name: res.user.name, email: res.user.email });
+                    }
+                    setLoading(false);
+                    return;
+                  }
+
                   const user: CitizenUser = {
                     id: res.user.id,
                     name: res.user.name,
-                    phone: res.user.phone || res.user.email,
+                    phone: res.user.phone || "",
+                    email: res.user.email,
                     isLoggedIn: true,
                   };
                   setStoredCitizenUser(user);

@@ -96,13 +96,21 @@ export const CitizenProfile: React.FC<CitizenProfileProps> = ({ user, onNavigate
             </div>
           </div>
           
-          <div style={{ borderTop: "1px solid #eee", paddingTop: "16px" }}>
-            <div style={{ marginBottom: "12px" }}>
-              <div style={{ fontSize: "11px", color: "#666", textTransform: "uppercase", fontWeight: "600" }}>Phone Number</div>
-              <div style={{ fontSize: "14px" }}>{user.phone}</div>
+          <div style={{ borderTop: "1px solid #eee", paddingTop: "16px", display: "flex", flexDirection: "column", gap: "14px" }}>
+            <div>
+              <div style={{ fontSize: "11px", color: "#666", textTransform: "uppercase", fontWeight: "600", marginBottom: "2px" }}>Email</div>
+              <div style={{ fontSize: "14px", wordBreak: "break-all" }}>{user.email || "—"}</div>
             </div>
-            <div style={{ marginBottom: "12px" }}>
-              <div style={{ fontSize: "11px", color: "#666", textTransform: "uppercase", fontWeight: "600" }}>Citizen ID</div>
+            <div>
+              <div style={{ fontSize: "11px", color: "#666", textTransform: "uppercase", fontWeight: "600", marginBottom: "2px" }}>Date of Birth</div>
+              <div style={{ fontSize: "14px" }}>{user.dob ? new Date(user.dob + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }) : "—"}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: "11px", color: "#666", textTransform: "uppercase", fontWeight: "600", marginBottom: "2px" }}>Phone Number</div>
+              <div style={{ fontSize: "14px" }}>{user.phone || "—"}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: "11px", color: "#666", textTransform: "uppercase", fontWeight: "600", marginBottom: "2px" }}>Citizen ID</div>
               <div style={{ fontSize: "14px", fontFamily: "monospace" }}>{user.id}</div>
             </div>
           </div>

@@ -87,3 +87,17 @@ export async function analyzeRequestWithGemini(...args: any[]) {
   return { status: "success", data: { category: "Other", issue: "Mock", priority: "Low", location: "Mock", confidence: 90, nearbyDemands: 0, redZone: false, reasoning: "Mock" } };
 }
 
+export async function castVote(demandId: string): Promise<{ status: string }> {
+  const token = localStorage.getItem("citizen_token");
+  const response = await fetch(`${API_URL}/demands/${demandId}/vote`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+  if (!response.ok) {
+    throw new Error("Failed to cast vote");
+  }
+  return response.json();
+}

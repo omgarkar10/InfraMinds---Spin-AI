@@ -254,16 +254,6 @@ export function Navbar({ view, user, onViewChange }: NavbarProps) {
                     >
                       👤 My Profile
                     </button>
-                    <button
-                      className="navbar-profile-item"
-                      role="menuitem"
-                      onClick={() => {
-                        setProfileMenuOpen(false);
-                        onViewChange("citizen");
-                      }}
-                    >
-                      📊 Public Feed
-                    </button>
                     <div className="navbar-profile-divider"></div>
                     <button
                       className="navbar-profile-item logout-item"

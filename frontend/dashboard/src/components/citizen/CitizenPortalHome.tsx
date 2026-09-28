@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "../../styles/citizen.css";
 import type { CitizenUser } from "../../types";
-import { fetchDemands } from "../../services/demandService";
+import { fetchDemands, castVote } from "../../services/demandService";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from 'leaflet';
@@ -32,6 +32,24 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
   const [activeTab, setActiveTab] = useState("Trending");
   const [contextLocation, setContextLocation] = useState("All");
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [votedIds, setVotedIds] = useState<Set<string>>(new Set());
+
+  const handleVote = async (e: React.MouseEvent, demandId: string) => {
+    e.stopPropagation();
+    if (votedIds.has(demandId)) return;
+    try {
+      await castVote(demandId);
+      setVotedIds(prev => new Set(prev).add(demandId));
+      setDemands(prev => prev.map(d => {
+        if ((d.id || d.Demand_id) === demandId) {
+          return { ...d, votes: (d.votes || 0) + 1 };
+        }
+        return d;
+      }));
+    } catch (err) {
+      console.error("Vote failed", err);
+    }
+  };
 
   useEffect(() => {
     async function load() {
@@ -138,8 +156,31 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
                      <span className={`status-pill ${demand.status || 'SUBMITTED'}`}>{demand.status || "Gathering Support"}</span>
                    </div>
                    <p style={{ fontSize: "13px", color: "#666", margin: "0 0 12px 0" }}>{demand.description || demand.specific_issue}</p>
-                   <div style={{ background: "#eee", height: "6px", borderRadius: "3px", width: "100%", marginBottom: "6px" }}>
-                      <div style={{ background: "var(--col-orange)", height: "100%", borderRadius: "3px", width: `${Math.min((demand.votes || 0) / (demand.vote_threshold || 100) * 100, 100)}%` }} />
+                   <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
+                     <div style={{ background: "#eee", height: "6px", borderRadius: "3px", flex: 1 }}>
+                       <div style={{ background: "var(--col-orange)", height: "100%", borderRadius: "3px", width: `${Math.min((demand.votes || 0) / (demand.vote_threshold || 100) * 100, 100)}%` }} />
+                     </div>
+                     <button
+                       onClick={(e) => handleVote(e, demand.id || demand.Demand_id)}
+                       disabled={votedIds.has(demand.id || demand.Demand_id)}
+                       style={{
+                         padding: "4px 12px",
+                         borderRadius: "6px",
+                         border: votedIds.has(demand.id || demand.Demand_id) ? "1px solid #ccc" : "1px solid var(--col-orange)",
+                         background: votedIds.has(demand.id || demand.Demand_id) ? "#f0f0f0" : "rgba(234, 88, 12, 0.08)",
+                         color: votedIds.has(demand.id || demand.Demand_id) ? "#999" : "var(--col-orange)",
+                         fontWeight: 700,
+                         fontSize: "12px",
+                         cursor: votedIds.has(demand.id || demand.Demand_id) ? "default" : "pointer",
+                         whiteSpace: "nowrap" as const,
+                         display: "flex",
+                         alignItems: "center",
+                         gap: "4px",
+                         transition: "all 0.2s ease",
+                       }}
+                     >
+                       {votedIds.has(demand.id || demand.Demand_id) ? "✓ Voted" : "▲ Vote"}
+                     </button>
                    </div>
                    <div style={{ fontSize: "11px", color: "#666", fontWeight: "bold" }}>
                      {demand.votes || 0} / {demand.vote_threshold || 100} votes needed

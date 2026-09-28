@@ -53,12 +53,13 @@ function AppInner() {
   const [resetPhone, setResetPhone] = useState<string>("");
 
   const [citizenUser, setCitizenUser] = useState<CitizenUser>(
-    (getStoredCitizenUser() as CitizenUser) || { id: "", name: "", phone: "", isLoggedIn: false }
+    (getStoredCitizenUser() as CitizenUser) || { id: "", name: "", phone: "", email: "", isLoggedIn: false }
   );
   const [staffUser, setStaffUser] = useState<StaffUser>(
     (getStoredStaffUser() as StaffUser) || { id: "", name: "", employeeId: "", email: "", department: "", role: "Department Officer", isLoggedIn: false }
   );
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+  const [googlePrefill, setGooglePrefill] = useState<{ name: string; email: string } | null>(null);
 
   const VIEW_TO_URL: Record<string, string> = {
     "landing": "",
@@ -117,7 +118,7 @@ function AppInner() {
 
     if (newView === "citizen-logout") {
       clearStoredCitizenUser();
-      setCitizenUser({ id: "", name: "", phone: "", isLoggedIn: false });
+      setCitizenUser({ id: "", name: "", phone: "", email: "", isLoggedIn: false });
       handleNavigate("citizen-login");
       return;
     }
@@ -222,16 +223,21 @@ function AppInner() {
           onLoginSuccess={handleCitizenLoginSuccess}
           targetViewAfterLogin={targetViewAfterLogin}
           onCancel={() => setView("landing")}
-          onSignupClick={() => setView("citizen-signup")}
+          onSignupClick={() => { setGooglePrefill(null); setView("citizen-signup"); }}
           onForgotPasswordClick={() => setView("citizen-forgot-password")}
           onSwitchToStaff={() => setView("staff-login")}
+          onGoogleNewUser={(prefill) => {
+            setGooglePrefill(prefill);
+            setView("citizen-signup");
+          }}
         />
       )}
 
       {view === "citizen-signup" && (
         <CitizenSignup
-          onLoginClick={() => setView("citizen-login")}
+          onLoginClick={() => { setGooglePrefill(null); setView("citizen-login"); }}
           onSignupSuccess={handleCitizenLoginSuccess}
+          googlePrefill={googlePrefill}
         />
       )}
 
