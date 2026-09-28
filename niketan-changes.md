@@ -190,15 +190,18 @@ otranslate class to the SPIN branding logo to prevent AI translation distortion.
  # # #   S e e d   S t a f f   A c c o u n t s   S c r i p t   F i x e s 
  -   * * D e s c r i p t i o n * * :   U p d a t e d   s c r i p t s / s e e d _ s t a f f _ a c c o u n t s . p y   t o   c o r r e c t l y   i n i t i a l i z e   t h e   F i r e b a s e   A d m i n   S D K   u s i n g   e x p l i c i t   s e r v i c e   a c c o u n t   p a t h s ,   a n d   f i x e d   U n i c o d e   c h a r a c t e r   o u t p u t   f o r   W i n d o w s   c o m p a t i b i l i t y .   C r e a t e d   s e c r e t s   d i r e c t o r y   a n d   c o p i e d    a c k e n d / s e r v i c e - a c c o u n t . j s o n   t o   s e c r e t s / s e r v i c e - a c c o u n t . j s o n . 
  -   * * F i l e s   U p d a t e d * * :   s c r i p t s / s e e d _ s t a f f _ a c c o u n t s . p y   ( u p d a t e d   l o g i c   f o r   i n i t i a l i z e _ a p p   a n d   r e p l a c e d   u n i c o d e   c h a r a c t e r s ) ,   s e c r e t s / s e r v i c e - a c c o u n t . j s o n   ( a d d e d ) . 
- -   * * R a t i o n a l e * * :   T h e   s c r i p t   p r e v i o u s l y   i n i t i a l i z e d    i r e b a s e _ a d m i n   w i t h o u t   c r e d e n t i a l s   w h i c h   c a u s e d   s u b s e q u e n t   a u t h   s e r v i c e   A P I   c a l l s   t o   f a i l .   A d d i t i o n a l l y ,   t h e   b o x - d r a w i n g   c h a r a c t e r s   u s e d   i n   o u t p u t   c a u s e d   a   U n i c o d e E n c o d e E r r o r   o n   W i n d o w s   c o n s o l e s .  
+ -   * * R a t i o n a l e * * :   T h e   s c r i p t   p r e v i o u s l y   i n i t i a l i z e d    i r e b a s e _ a d m i n   w i t h o u t   c r e d e n t i a l s   w h i c h   c a u s e d   s u b s e q u e n t   a u t h   s e r v i c e   A P I   c a l l s   t o   f a i l .   A d d i t i o n a l l y ,   t h e   b o x - d r a w i n g   c h a r a c t e r s   u s e d   i n   o u t p u t   c a u s e d   a   U n i c o d e E n c o d e E r r o r   o n   W i n d o w s   c o n s o l e s . 
+ 
  
  # # #   F i x   a u t h S e r v i c e . t s   R o l e   P a r s i n g 
  -   * * D e s c r i p t i o n * * :   U p d a t e d   \  r o n t e n d / d a s h b o a r d / s r c / s e r v i c e s / a u t h S e r v i c e . t s \   t o   u s e   \ 	 o k e n R e s u l t . c l a i m s . r o l e \   i n s t e a d   o f   m a n u a l l y   p a r s i n g   t h e   e m a i l   a d d r e s s . 
- -   * * F i l e s   U p d a t e d * * :   \  r o n t e n d / d a s h b o a r d / s r c / s e r v i c e s / a u t h S e r v i c e . t s \ ` n -   * * R a t i o n a l e * * :   T h e   m a n u a l   p a r s i n g   w a s   p r e v i o u s l y   b r o k e n   b e c a u s e   i t   c h e c k e d   f o r   \ . f i e l d . \   i n s t e a d   o f   \ . f i e l d @ \ ,   a n d   n o w   t h a t   t h e   A d m i n   S D K   s u c c e s s f u l l y   s e e d e d   t h e   c u s t o m   c l a i m s ,   w e   c a n   d i r e c t l y   r e a d   t h e   e x a c t   r o l e s   s a f e l y .  
+ -   * * F i l e s   U p d a t e d * * :   \  r o n t e n d / d a s h b o a r d / s r c / s e r v i c e s / a u t h S e r v i c e . t s \ ` n -   * * R a t i o n a l e * * :   T h e   m a n u a l   p a r s i n g   w a s   p r e v i o u s l y   b r o k e n   b e c a u s e   i t   c h e c k e d   f o r   \ . f i e l d . \   i n s t e a d   o f   \ . f i e l d @ \ ,   a n d   n o w   t h a t   t h e   A d m i n   S D K   s u c c e s s f u l l y   s e e d e d   t h e   c u s t o m   c l a i m s ,   w e   c a n   d i r e c t l y   r e a d   t h e   e x a c t   r o l e s   s a f e l y . 
+ 
  
  # # #   R e m o v e d   A u t h e n t i c a t i o n   B a c k d o o r 
  -   * * D e s c r i p t i o n * * :   R e m o v e d   t h e   h a r d c o d e d   f a l l b a c k   l o g i n   l o g i c   f r o m   \  u t h S e r v i c e . t s \   t h a t   a l l o w e d   a n y   u s e r   w i t h   a   \ @ g o v . i n \   e m a i l   t o   b y p a s s   F i r e b a s e   A u t h e n t i c a t i o n   u s i n g   a   h a r d c o d e d   s t a t i c   p a s s w o r d   ( \ s e c u r e s p i n 2 6 \ ) . 
- -   * * F i l e s   U p d a t e d * * :   \  r o n t e n d / d a s h b o a r d / s r c / s e r v i c e s / a u t h S e r v i c e . t s \ ` n -   * * R a t i o n a l e * * :   A   h a r d c o d e d   b a c k d o o r   t h a t   b y p a s s e s   t h e   p r i m a r y   a u t h e n t i c a t i o n   m e c h a n i s m   i s   a   s e v e r e   s e c u r i t y   v u l n e r a b i l i t y ,   e s p e c i a l l y   f o r   a   g o v e r n m e n t   s i t e .   I t   r e s u l t e d   i n   u s e r s   r e c e i v i n g   m o c k   a u t h o r i z a t i o n   t o k e n s   a n d   i n c o r r e c t   d e f a u l t   r o l e s   i f   t h e i r   F i r e b a s e   A u t h   f a i l e d   o r   c a c h e d   s t a t e   w a s   m i s m a t c h e d .  
+ -   * * F i l e s   U p d a t e d * * :   \  r o n t e n d / d a s h b o a r d / s r c / s e r v i c e s / a u t h S e r v i c e . t s \ ` n -   * * R a t i o n a l e * * :   A   h a r d c o d e d   b a c k d o o r   t h a t   b y p a s s e s   t h e   p r i m a r y   a u t h e n t i c a t i o n   m e c h a n i s m   i s   a   s e v e r e   s e c u r i t y   v u l n e r a b i l i t y ,   e s p e c i a l l y   f o r   a   g o v e r n m e n t   s i t e .   I t   r e s u l t e d   i n   u s e r s   r e c e i v i n g   m o c k   a u t h o r i z a t i o n   t o k e n s   a n d   i n c o r r e c t   d e f a u l t   r o l e s   i f   t h e i r   F i r e b a s e   A u t h   f a i l e d   o r   c a c h e d   s t a t e   w a s   m i s m a t c h e d . 
+ 
  
 
 ## 2026-09-28: .gitignore Updated to Exclude Secrets Folder
@@ -227,13 +230,13 @@ Backend was sending `serviceId: ''` (empty string) in every Bhashini pipeline re
 ### Rationale
 Bhashini Dhruva API requires valid serviceId or key must be absent. Empty string causes 500.
 
-## Fix: Bhashini ASR 400 Bad Request — Complete Rewrite (2026-09-28)
+## Fix: Bhashini ASR 400 Bad Request  Complete Rewrite (2026-09-28)
 
 ### Root Cause
 Previous fix added fake hardcoded serviceIds (ai4i-conformer-mr-gpu etc.) that caused HTTP 400 Bad Request from Bhashini. Also, inference headers incorrectly included userID and ulcaApiKey which are only for ULCA config endpoint.
 
 ### Fix Applied
-- **backend/spin_agents/routers/bhashini_router.py** — Full rewrite:
+- **backend/spin_agents/routers/bhashini_router.py**  Full rewrite:
   - Removed all hardcoded serviceId maps
   - Split headers: _inference_headers() uses only Authorization; _ulca_headers() uses userID + ulcaApiKey
   - Implemented correct 2-step Bhashini flow: call ULCA pipeline config endpoint first to get real serviceIds, then call Dhruva inference
@@ -244,3 +247,68 @@ Previous fix added fake hardcoded serviceIds (ai4i-conformer-mr-gpu etc.) that c
 
 ### Rationale
 Bhashini requires correct serviceIds from its own catalog. The meity-auth endpoint returns the right serviceId for each language+task combination. This is the official recommended Bhashini integration pattern.
+
+- **Added `citizen-redesign.md`**: Saved the Citizen Portal redesign implementation plan (including Leaflet map integration, Phone Auth, and feed filters) to the workspace as requested.
+-   R e p l a c e d   i n l i n e   C i t i z e n   P r o f i l e   m o d a l   i n   N a v b a r . t s x   w i t h   d e d i c a t e d   C i t i z e n P r o f i l e   c o m p o n e n t   r o u t i n g . 
+ -   C r e a t e d   C i t i z e n P r o f i l e . t s x   w i t h   t a b s   f o r   ' M y   S u b m i s s i o n s '   a n d   ' D e m a n d s   I   S u p p o r t e d ' . 
+ -   R e w r o t e   C i t i z e n P o r t a l H o m e . t s x   t o   a c t   a s   t h e   m a i n   g l o b a l   D e m a n d   F e e d ,   i n t e g r a t i n g   r e a c t - l e a f l e t   M a p C o n t a i n e r   a n d   s o r t i n g   t a b s . 
+ -   A d d e d   L e a f l e t   M a p   P i n   D r o p ,   E X I F   u p l o a d   b u t t o n   m o c k ,   a n d   W h a t s A p p   s h o r t c u t   b a n n e r   t o   C r e a t e D e m a n d F o r m . t s x   t o   f u l f i l l   r e d e s i g n   r e q u i r e m e n t s . 
+ 
+ 
+- Fixed login redirect bug in App.tsx by using setView directly instead of checking old state.
+- Removed landing Navbar from citizen views in App.tsx and added inline Profile/Logout buttons to CitizenPortalHome.tsx and CitizenProfile.tsx.
+
+- Migrated manual React state navigation to Native URL Routing (window.history.pushState/popstate) to fully resolve browser back-button navigation issues across the entire application and provide clean URL paths like /citizen and /landing.
+
+- Added SPIN logo to Citizen Dashboard header.\n- Implemented Geolocation request on citizen feed load, zooming the map to user location and adding a blue You Are Here marker.\n
+## 2026-09-28: Fixed Login and Registration Workflow
+- **Description**: Replaced the synthetic email mapping with authentic email Firebase auth, implemented a multi-step registration workflow (Info, OTP, Password) for new users, and ensured Google Auth seamlessly pre-fills new user registration while auto-logging in existing users.
+- **Files Modified**: 
+  - frontend/dashboard/src/services/authService.ts
+  - frontend/dashboard/src/components/citizen/CitizenLogin.tsx
+  - frontend/dashboard/src/components/citizen/CitizenSignup.tsx
+  - frontend/dashboard/src/types/index.ts
+- **Rationale**: Removes phone-only dependency which corrupted user data with fake domains. Allows robust email usage, real OTP simulation, and smooth Google single-sign-on.
+
+## 2026-09-28: Fixed Google Auth Login Bypass Security Threat
+- **Description**: Added validation in the login page for Google Auth to reject newly created Google users or users with incomplete profiles, enforcing that they must go through the dedicated signup portal to provide their DOB and Phone number.
+- **Files Modified**: 
+  - frontend/dashboard/src/components/citizen/CitizenLogin.tsx
+  - frontend/dashboard/src/services/authService.ts
+- **Rationale**: Plugs a critical logic gap where Firebase's signInWithPopup auto-creates users, which previously allowed users to skip mandatory fields (DOB, Phone) and access the dashboard directly without a complete profile.
+
+## 2026-09-28: Google Auth Redirect to Signup with Prefilled Data
+- **Description**: Replaced the error-based rejection of new Google Auth users on the Login page with a seamless redirect to the Create Account page. The user's Name and Email from Google are now prefilled automatically, and they only need to provide DOB and Phone to complete registration. Google OAuth does not expose DOB, so it must be collected on the form.
+- **Files Modified**: 
+  - frontend/dashboard/src/App.tsx (added googlePrefill state, wired onGoogleNewUser callback)
+  - frontend/dashboard/src/components/citizen/CitizenLogin.tsx (replaced error+logout with onGoogleNewUser callback)
+  - frontend/dashboard/src/components/citizen/CitizenSignup.tsx (accepts googlePrefill prop, auto-initializes state)
+- **Rationale**: Better UX than showing an error. New Google users are seamlessly redirected to complete their profile instead of being blocked.
+
+## 2026-09-28: Updated Citizen Profile Page with Full User Details
+- **Description**: Updated CitizenProfile sidebar to display Email, Date of Birth, Phone Number, and Citizen ID. DOB is formatted as a human-readable Indian locale date (e.g. '28 September 2026'). Also fixed missing email field in App.tsx default state and logout reset.
+- **Files Modified**: 
+  - frontend/dashboard/src/components/citizen/CitizenProfile.tsx
+  - frontend/dashboard/src/App.tsx
+- **Rationale**: Profile page was only showing Phone and Citizen ID. Now reflects all fields collected during the new multi-step registration flow.
+
+### Landing Page and Dashboard Fixes (Plan Executed)
+- **Removed Duplicate Menu Item**: Removed 'Public Feed' from the citizen profile dropdown menu in rontend/dashboard/src/components/navigation/Navbar.tsx since 'Dashboard' does the same.
+- **Added Inline Vote Button**: Added a direct 'Vote ?' button on the demand cards in the citizen public feed (rontend/dashboard/src/components/citizen/CitizenPortalHome.tsx). Integrated castVote API call in rontend/dashboard/src/services/demandService.ts.
+- **Updated 'What You Can Demand' Grid**: Converted the basic text cards into a photographic 3x2 grid in rontend/dashboard/src/components/landing/WhatYouCanDemandSection.tsx. Generated 6 high-quality AI images and placed them in rontend/dashboard/public/images/categories/.
+- **Replaced Hero Canvas Map with Leaflet Heatmap**: Replaced the non-functional canvas animation in rontend/dashboard/src/components/landing/HeroSection.tsx with a fully locked 
+eact-leaflet map and leaflet.heat heatmap layer. Added leaflet.heat to package.json and created typings in rontend/dashboard/src/leaflet-heat.d.ts.
+
+### Responsive Design and Staff KPI Grid (Plan Executed)
+- **Staff Dashboard KPI Grid Fix**: Modified rontend/dashboard/src/components/staff/DemandKPIBar.css and DemandKPIBar.tsx. Consolidated classes to .kpi-grid for a responsive 2x2 grid. Used .kpi-content-left and .kpi-content-right to align the sparkline graphs to the right of the stats in each box.
+- **Citizen Feed Mobile Layout**: Updated rontend/dashboard/src/components/citizen/CitizenPortalHome.tsx to remove inline hardcoded 1fr 1fr grids. Added .citizen-feed-grid and .feed-map to rontend/dashboard/src/styles/citizen.css so that the feed and map correctly stack vertically on mobile screens (max-width: 768px).
+- **Staff Dashboards Mobile Layout**: Replaced inline 1fr 1fr grids in rontend/dashboard/src/components/staff/DepartmentOfficerDashboard.tsx with a new responsive .dashboard-grid class defined in rontend/dashboard/src/styles/dashboard.css. Ensured tables have .table-responsive wrapping for horizontal scrolling.
+-   M o d i f i e d   \ C r e a t e D e m a n d F o r m . t s x \   t o   f i x   U I   i s s u e s   w i t h   m a n u a l   e n t r y ,   a d d i n g   d e f a u l t   e m p t y   s e l e c t i o n s   f o r   i n f r a s t r u c t u r e   c a t e g o r y   a n d   c u s t o m   t e x t   i n p u t s   w h e n   ' O t h e r '   i s   s e l e c t e d .   A l s o   r e p l a c e d   t h e   S h a d o w   D O M   P l a c e A u t o c o m p l e t e E l e m e n t   w i t h   a   c u s t o m   G o o g l e   P l a c e s   A u t o c o m p l e t e   U I   t o   m a t c h   t h e   t h e m e ,   i m p l e m e n t e d   a   f a l l b a c k   f o r   m a n u a l   a d d r e s s   e n t r y ,   a n d   a d d e d   a u t o m a t i c   r e v e r s e - g e o c o d i n g   w h e n   t h e   m a p   p i n   i s   m o v e d .   T h i s   f i x e d   v a l i d a t i o n   i s s u e s   f o r   S t e p   2 ' s   N e x t   b u t t o n . 
+ 
+ -   F i x e d   l o c a l   n e t w o r k   t e s t i n g   i s s u e   b y   d y n a m i c a l l y   d e t e r m i n i n g   t h e   A P I _ U R L   u s i n g   w i n d o w . l o c a t i o n . h o s t n a m e   i n   t h e   f r o n t e n d   ( a u t h S e r v i c e . t s ,   d e m a n d S e r v i c e . t s ,   e t c . )   r a t h e r   t h a n   h a r d c o d i n g   l o c a l h o s t .   A l s o   u p d a t e d   t h e   F a s t A P I   b a c k e n d   C O R S   p o l i c y   t o   a l l o w   a n y   o r i g i n   u s i n g   r e g e x ,   s o   t e a m m a t e s   c a n   a c c e s s   t h e   d e v   s e r v e r   v i a   t h e i r   l o c a l   I P   a d d r e s s . 
+ 
+ -   I m p l e m e n t e d   F i r e s t o r e   p e r s i s t e n c e   f o r   G o o g l e   S i g n - I n   m i s s i n g   p r o f i l e   d a t a   ( P h o n e / D O B )   s o   t h a t   u s e r s   a r e n ' t   p r o m p t e d   o n   e v e r y   l o g i n .   U p d a t e d   C i t i z e n S i g n u p . t s x   a n d   a u t h S e r v i c e . t s   t o   u s e   F i r e s t o r e   c o l l e c t i o n   ' u s e r s ' . 
+ 
+ -   W i r e d   u p   s u b m i t R e q u e s t T o B a c k e n d   i n   d e m a n d S e r v i c e . t s   t o   h i t   P O S T   / a p i / p i p e l i n e / r u n   a n d   m o d i f i e d   t h e   b a c k e n d   p r o c e s s _ p i p e l i n e _ r u n   i n   d e m a n d _ s e r v i c e . p y   t o   s a v e   p r o c e s s e d   d e m a n d s   i n t o   t h e   ' d e m a n d s '   F i r e s t o r e   c o l l e c t i o n .   A l s o   w i r e d   u p   g e t M y R e q u e s t s F r o m B a c k e n d   t o   p r o p e r l y   r e a d   a c t u a l   d e m a n d s . 
+ 
+ 

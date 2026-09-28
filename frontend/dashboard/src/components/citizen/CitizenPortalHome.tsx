@@ -1,7 +1,25 @@
 import React, { useState, useEffect } from "react";
 import "../../styles/citizen.css";
 import type { CitizenUser } from "../../types";
-import { getMyRequestsFromBackend } from "../../services/demandService";
+import { fetchDemands, castVote } from "../../services/demandService";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from 'leaflet';
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+
+let DefaultIcon = L.icon({
+    iconUrl: icon,
+    shadowUrl: iconShadow,
+    iconAnchor: [12, 41]
+});
+L.Marker.prototype.options.icon = DefaultIcon;
+
+function ChangeMapView({ center, zoom }: { center: [number, number]; zoom: number }) {
+  const map = useMap();
+  map.setView(center, zoom);
+  return null;
+}
 
 interface CitizenPortalHomeProps {
   user: CitizenUser;
@@ -9,231 +27,204 @@ interface CitizenPortalHomeProps {
 }
 
 export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNavigate }) => {
-  const [requests, setRequests] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [demands, setDemands] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("Trending");
+  const [contextLocation, setContextLocation] = useState("All");
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [votedIds, setVotedIds] = useState<Set<string>>(new Set());
+
+  const handleVote = async (e: React.MouseEvent, demandId: string) => {
+    e.stopPropagation();
+    if (votedIds.has(demandId)) return;
+    try {
+      await castVote(demandId);
+      setVotedIds(prev => new Set(prev).add(demandId));
+      setDemands(prev => prev.map(d => {
+        if ((d.id || d.Demand_id) === demandId) {
+          return { ...d, votes: (d.votes || 0) + 1 };
+        }
+        return d;
+      }));
+    } catch (err) {
+      console.error("Vote failed", err);
+    }
+  };
 
   useEffect(() => {
-    async function loadRequests() {
-      if (!user.isLoggedIn) {
-        setLoading(false);
-        return;
-      }
+    async function load() {
       try {
-        const data = await getMyRequestsFromBackend();
-        setRequests(Array.isArray(data) ? data : []);
+        setLoading(true);
+        const res = await fetchDemands();
+        setDemands(Array.isArray(res) ? res : []);
       } catch (err) {
-        setRequests([]);
+        console.error("Failed to fetch demands for feed", err);
       } finally {
         setLoading(false);
       }
     }
-    loadRequests();
-  }, [user.isLoggedIn]);
+    load();
 
-  const activeCount = requests.filter((r) => r.status !== "RESOLVED").length;
-  const resolvedCount = requests.filter((r) => r.status === "RESOLVED").length;
+    // Ask for location on load
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation([position.coords.latitude, position.coords.longitude]);
+        },
+        (error) => {
+          console.warn("Geolocation denied or error", error);
+        }
+      );
+    }
+  }, [user.isLoggedIn]);
 
   return (
     <div className="citizen-portal-container">
-      {/* Top Government Service Header */}
       <div className="portal-header-bar">
         <div className="container portal-header-inner" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-            <button
-              className="btn-outline"
-              style={{
-                color: "#fff",
-                borderColor: "rgba(255,255,255,0.4)",
-                background: "rgba(255,255,255,0.1)",
-                fontSize: "12px",
-                fontWeight: "700",
-                padding: "6px 12px",
-                borderRadius: "6px",
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-              }}
-              onClick={() => onNavigate("landing")}
-            >
-              ← Back to Home
-            </button>
-
-            <div className="portal-title-group">
-              <span className="portal-org">SPIN · SYMBIOTIC PUBLIC INFRASTRUCTURE NETWORK</span>
-              <h1 className="portal-heading" style={{ fontSize: "24px" }}>
-                Citizen Dashboard
-              </h1>
-              <p className="portal-subtext" style={{ fontSize: "13px" }}>
-                {user.isLoggedIn && user.name ? `Welcome, ${user.name}` : "Infrastructure Demand & Adoption Stage Services"}
-              </p>
-            </div>
-          </div>
-
+           <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
+             <button className="navbar-logo notranslate" onClick={() => onNavigate("landing")} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
+               <span className="navbar-wordmark" style={{ fontSize: "28px", color: "var(--col-brand-blue)", fontWeight: 900, letterSpacing: "-1px" }}>SPIN</span>
+             </button>
+             <div className="portal-title-group" style={{ borderLeft: "1px solid #ddd", paddingLeft: "24px" }}>
+                <h1 className="portal-heading" style={{ fontSize: "24px" }}>Public Demands Feed</h1>
+                <p className="portal-subtext" style={{ fontSize: "13px" }}>Discover and support infrastructure proposals in your community.</p>
+             </div>
+           </div>
+           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+             <button className="service-card-btn service-card-btn-orange" onClick={() => onNavigate("citizen-raise")}>
+               + Propose New Demand
+             </button>
+             {user?.isLoggedIn && (
+               <>
+                 <button className="btn-outline" onClick={() => onNavigate("citizen-profile")} style={{ padding: "6px 12px", fontSize: "12px", background: "white" }}>
+                   👤 My Profile
+                 </button>
+                 <button className="btn-outline" onClick={() => onNavigate("citizen-logout")} style={{ padding: "6px 12px", fontSize: "12px", background: "white" }}>
+                   Log Out
+                 </button>
+               </>
+             )}
+           </div>
         </div>
       </div>
 
-      <div className="container">
-        {/* Real Account-Specific Metrics (0 for new user, no fake seed numbers) */}
-        {user.isLoggedIn && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "24px" }}>
-            <div className="stat-card">
-              <span className="stat-label">TOTAL SUBMISSIONS</span>
-              <span className="stat-value">{loading ? "..." : requests.length}</span>
-            </div>
-            <div className="stat-card accent">
-              <span className="stat-label">ACTIVE / UNDER REVIEW</span>
-              <span className="stat-value" style={{ color: "var(--col-orange)" }}>
-                {loading ? "..." : activeCount}
-              </span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-label">RESOLVED</span>
-              <span className="stat-value" style={{ color: "var(--col-green)" }}>
-                {loading ? "..." : resolvedCount}
-              </span>
-            </div>
-          </div>
-        )}
-
-
-        {/* Primary Service Cards */}
-        <div className="service-cards-grid" style={{ marginBottom: "24px" }}>
-          {/* CARD 1: START A PUBLIC DEMAND */}
-          <div className="service-card">
-            <span className="service-card-tag">SERVICE 01 · CITIZEN INTAKE</span>
-            <h2 className="service-card-title">START A PUBLIC DEMAND</h2>
-            <p className="service-card-desc">
-              Propose a new infrastructure facility for your neighborhood and rally community votes.
-            </p>
-            <ul className="service-card-examples">
-              <li>• New development request (New clinic, school room, paved road, water line)</li>
-              <li>• Community spaces and educational facilities</li>
-              <li>• Multilingual speech recognition &amp; audio intake</li>
-              <li>• Strict GPS geolocation verification</li>
-              <li>• Real-time photo evidence attachments</li>
-            </ul>
-            <button
-              className="service-card-btn service-card-btn-orange"
-              onClick={() => onNavigate("citizen-raise")}
-            >
-              + Start a Demand →
-            </button>
-          </div>
-
-          {/* CARD 2: MY DEMANDS & TRACKING */}
-          <div className="service-card">
-            <span className="service-card-tag">SERVICE 02 · TRACKING</span>
-            <h2 className="service-card-title">MY PUBLIC DEMANDS</h2>
-            <p className="service-card-desc">
-              Check community vote thresholds, feasibility study outcomes, and government review status.
-            </p>
-            <ul className="service-card-examples">
-              <li>• Genuine demand ID retrieval and real status tracking</li>
-              <li>• Review official department assignments</li>
-              <li>• Spatial cluster correlation updates</li>
-              <li>• Transparent government policy timeline</li>
-              <li>• Citizen feedback on resolution</li>
-            </ul>
-            <button
-              className="service-card-btn"
-              onClick={() => onNavigate("citizen-track")}
-            >
-              View My Requests ({requests.length}) →
-            </button>
-          </div>
+      <div className="citizen-feed-container container" style={{ marginTop: "24px" }}>
+        <div style={{ marginBottom: "16px", display: "flex", alignItems: "center", gap: "12px" }}>
+          <strong>Location Filter:</strong>
+          <select value={contextLocation} onChange={e => setContextLocation(e.target.value)} style={{ padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }}>
+            <option value="All">All Regions</option>
+            <option value="My Ward">My Ward</option>
+            <option value="My District">My District</option>
+          </select>
         </div>
-
-        {/* My Recent Requests / Clean Empty State Section */}
-        {user.isLoggedIn && (
-          <div className="form-card" style={{ marginBottom: "24px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-              <div>
-                <span className="label-eyebrow">YOUR RECENT SUBMISSIONS</span>
-                <h3 className="editorial-h3" style={{ fontSize: "18px", marginTop: "4px" }}>
-                  Submitted Infrastructure Demands
-                </h3>
-              </div>
-              {requests.length > 0 && (
-                <button
-                  type="button"
-                  className="btn-outline"
-                  style={{ fontSize: "12px" }}
-                  onClick={() => onNavigate("citizen-track")}
-                >
-                  View All ({requests.length})
-                </button>
-              )}
+        
+        <div className="feed-layout citizen-feed-grid">
+          
+          {/* Feed List */}
+          <div className="feed-list" style={{ overflowY: "auto", paddingRight: "8px" }}>
+            <div style={{ display: "flex", gap: "12px", marginBottom: "16px", borderBottom: "1px solid #eee", paddingBottom: "8px" }}>
+               {['Trending', 'Top Voted', 'Most Recent', 'Category'].map(tab => (
+                 <button 
+                   key={tab} 
+                   onClick={() => setActiveTab(tab)}
+                   style={{ 
+                     background: "none", 
+                     border: "none", 
+                     fontWeight: activeTab === tab ? "bold" : "normal",
+                     color: activeTab === tab ? "var(--col-navy)" : "#666",
+                     cursor: "pointer"
+                   }}
+                 >
+                   {tab}
+                 </button>
+               ))}
             </div>
 
             {loading ? (
-              <p style={{ textAlign: "center", padding: "20px", color: "var(--col-text-muted)", fontSize: "13px" }}>
-                Loading your requests from authoritative registry...
-              </p>
-            ) : requests.length === 0 ? (
-              /* Clean Empty State for New Citizens */
-              <div style={{ textAlign: "center", padding: "32px 16px", background: "var(--col-panel)", borderRadius: "8px" }}>
-                <div style={{ fontSize: "36px", marginBottom: "8px" }}>📋</div>
-                <h4 style={{ color: "var(--col-navy)", fontSize: "16px", margin: "0 0 6px 0" }}>
-                  No Infrastructure Demands Submitted Yet
-                </h4>
-                <p style={{ color: "var(--col-text-muted)", fontSize: "13px", maxWidth: "460px", margin: "0 auto 16px auto" }}>
-                  When you report an infrastructure need or submit a new development proposal, its official status and department review timeline will be tracked here.
-                </p>
-                <button
-                  type="button"
-                  className="service-card-btn service-card-btn-orange"
-                  style={{ display: "inline-block" }}
-                  onClick={() => onNavigate("citizen-raise")}
-                >
-                  + Submit Your First Proposal
-                </button>
+              <p>Loading demands...</p>
+            ) : demands.length === 0 ? (
+              <div style={{ padding: "40px", textAlign: "center", background: "#f9f9f9", borderRadius: "8px" }}>
+                 <p>No active demands found for this location.</p>
+                 <button className="btn-outline" style={{ marginTop: "12px" }} onClick={() => onNavigate("citizen-raise")}>Submit the first one</button>
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                {requests.slice(0, 5).map((req) => (
-                  <div
-                    key={req.Demand_id}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: "12px 16px",
-                      background: "var(--col-panel)",
-                      borderRadius: "6px",
-                      border: "1px solid var(--col-border)",
-                      flexWrap: "wrap",
-                      gap: "8px",
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontWeight: 700, color: "var(--col-navy)", fontSize: "14px" }}>
-                        {req.Demand_id}{" "}
-                        <span style={{ fontSize: "11px", fontWeight: 400, color: "var(--col-text-muted)" }}>
-                          ({req.request_type === "new_development" ? "New Development" : "Current Need"})
-                        </span>
-                      </div>
-                      <div style={{ fontSize: "12px", color: "var(--col-text-mid)", marginTop: "2px" }}>
-                        <strong>{req.category}</strong> · {req.district}, {req.state}
-                      </div>
-                    </div>
-
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                      <span className={`status-pill ${req.status}`}>{req.status}</span>
-                      <button
-                        type="button"
-                        className="btn-outline"
-                        style={{ fontSize: "12px", padding: "4px 10px" }}
-                        onClick={() => onNavigate("citizen-detail", req.Demand_id)}
-                      >
-                        Details →
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              demands.map(demand => (
+                <div key={demand.id || demand.Demand_id} className="form-card" style={{ padding: "16px", marginBottom: "16px", cursor: "pointer" }} onClick={() => onNavigate("citizen-detail", demand.id || demand.Demand_id)}>
+                   <div style={{ display: "flex", justifyContent: "space-between" }}>
+                     <h3 style={{ margin: "0 0 8px 0", fontSize: "16px", color: "var(--col-navy)" }}>{demand.title || demand.category}</h3>
+                     <span className={`status-pill ${demand.status || 'SUBMITTED'}`}>{demand.status || "Gathering Support"}</span>
+                   </div>
+                   <p style={{ fontSize: "13px", color: "#666", margin: "0 0 12px 0" }}>{demand.description || demand.specific_issue}</p>
+                   <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
+                     <div style={{ background: "#eee", height: "6px", borderRadius: "3px", flex: 1 }}>
+                       <div style={{ background: "var(--col-orange)", height: "100%", borderRadius: "3px", width: `${Math.min((demand.votes || 0) / (demand.vote_threshold || 100) * 100, 100)}%` }} />
+                     </div>
+                     <button
+                       onClick={(e) => handleVote(e, demand.id || demand.Demand_id)}
+                       disabled={votedIds.has(demand.id || demand.Demand_id)}
+                       style={{
+                         padding: "4px 12px",
+                         borderRadius: "6px",
+                         border: votedIds.has(demand.id || demand.Demand_id) ? "1px solid #ccc" : "1px solid var(--col-orange)",
+                         background: votedIds.has(demand.id || demand.Demand_id) ? "#f0f0f0" : "rgba(234, 88, 12, 0.08)",
+                         color: votedIds.has(demand.id || demand.Demand_id) ? "#999" : "var(--col-orange)",
+                         fontWeight: 700,
+                         fontSize: "12px",
+                         cursor: votedIds.has(demand.id || demand.Demand_id) ? "default" : "pointer",
+                         whiteSpace: "nowrap" as const,
+                         display: "flex",
+                         alignItems: "center",
+                         gap: "4px",
+                         transition: "all 0.2s ease",
+                       }}
+                     >
+                       {votedIds.has(demand.id || demand.Demand_id) ? "✓ Voted" : "▲ Vote"}
+                     </button>
+                   </div>
+                   <div style={{ fontSize: "11px", color: "#666", fontWeight: "bold" }}>
+                     {demand.votes || 0} / {demand.vote_threshold || 100} votes needed
+                   </div>
+                </div>
+              ))
             )}
           </div>
-        )}
 
+          {/* Feed Map */}
+          <div className="feed-map">
+            <MapContainer center={userLocation || [22.5937, 78.9629]} zoom={userLocation ? 13 : 4} style={{ height: "100%", width: "100%" }}>
+              <ChangeMapView center={userLocation || [22.5937, 78.9629]} zoom={userLocation ? 13 : 4} />
+              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
+              
+              {userLocation && (
+                <Marker 
+                  position={userLocation} 
+                  icon={new L.Icon({ 
+                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png', 
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', 
+                    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] 
+                  })}
+                >
+                  <Popup>You are here</Popup>
+                </Marker>
+              )}
+
+              {demands.map(demand => {
+                if (!demand.lat || !demand.lng) return null;
+                return (
+                  <Marker key={demand.id || demand.Demand_id} position={[demand.lat, demand.lng]}>
+                    <Popup>
+                      <strong>{demand.title || demand.category}</strong><br/>
+                      {demand.votes || 0} Votes<br/>
+                      <button onClick={() => onNavigate("citizen-detail", demand.id || demand.Demand_id)} style={{ marginTop: "4px", padding: "2px 8px", fontSize: "11px", cursor: "pointer" }}>View</button>
+                    </Popup>
+                  </Marker>
+                )
+              })}
+            </MapContainer>
+          </div>
+
+        </div>
       </div>
     </div>
   );

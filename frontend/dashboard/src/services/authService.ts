@@ -5,11 +5,13 @@ import {
   updateProfile,
   signInWithCredential,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  getAdditionalUserInfo
 } from "firebase/auth";
-import { googleProvider } from "../config/firebase";
+import { googleProvider, db } from "../config/firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8080/api`;
 
 export async function getCountriesConfig() {
   const response = await fetch(`${API_URL}/config/countries`);
@@ -59,20 +61,20 @@ function getFriendlyAuthErrorMessage(error: any): string {
   }
 }
 
-// Convert phone number to a synthetic email for Firebase Email/Password provider
-const getSyntheticEmail = (phone: string) => `${phone}@citizen.spin.local`;
+// Removed synthetic email logic
 
 export async function citizenSignup(payload: {
   name: string;
+  email: string;
   countryCode: string;
   phone: string;
   password: string;
+  dob: string;
   captcha_token?: string;
   captcha_answer?: string;
 }) {
   try {
-    const syntheticEmail = getSyntheticEmail(payload.phone);
-    const userCredential = await createUserWithEmailAndPassword(auth, syntheticEmail, payload.password);
+    const userCredential = await createUserWithEmailAndPassword(auth, payload.email, payload.password);
     
     await updateProfile(userCredential.user, {
       displayName: payload.name,
@@ -86,7 +88,8 @@ export async function citizenSignup(payload: {
         id: userCredential.user.uid,
         name: payload.name,
         phone: payload.phone,
-        email: syntheticEmail
+        email: payload.email,
+        dob: payload.dob
       },
       access_token: token
     };
@@ -117,10 +120,9 @@ export async function citizenGoogleLogin(idToken: string) {
   }
 }
 
-export async function citizenLogin(payload: { countryCode: string; phone: string; password: string; }) {
+export async function citizenLogin(payload: { email: string; password: string; }) {
   try {
-    const syntheticEmail = getSyntheticEmail(payload.phone);
-    const userCredential = await signInWithEmailAndPassword(auth, syntheticEmail, payload.password);
+    const userCredential = await signInWithEmailAndPassword(auth, payload.email, payload.password);
     const token = await userCredential.user.getIdToken();
     
     localStorage.setItem("citizen_token", token);
@@ -129,8 +131,8 @@ export async function citizenLogin(payload: { countryCode: string; phone: string
       user: {
         id: userCredential.user.uid,
         name: userCredential.user.displayName || "Citizen",
-        phone: payload.phone,
-        email: syntheticEmail
+        phone: "", // In a real app, fetch from Firestore
+        email: payload.email
       },
       access_token: token
     };
@@ -143,21 +145,46 @@ export async function citizenFirebaseGoogleLogin() {
   try {
     const result = await signInWithPopup(auth, googleProvider);
     const token = await result.user.getIdToken();
+    const additionalInfo = getAdditionalUserInfo(result);
     localStorage.setItem("citizen_token", token);
+    
+    // Check if the user already has a complete profile in Firestore
+    const userDocRef = doc(db, "users", result.user.uid);
+    let isComplete = false;
+    let phone = result.user.phoneNumber || "";
+    let dob = "";
+    
+    try {
+      const userDoc = await getDoc(userDocRef);
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        if (data.phone && data.dob) {
+          isComplete = true;
+          phone = data.phone;
+          dob = data.dob;
+        }
+      }
+    } catch (e) {
+      console.warn("Firestore offline or unavailable, treating as new user.", e);
+    }
     
     return {
       user: {
         id: result.user.uid,
         name: result.user.displayName || "Citizen",
-        phone: result.user.phoneNumber || "",
-        email: result.user.email || ""
+        phone: phone,
+        email: result.user.email || "",
+        dob: dob
       },
+      isNewUser: !isComplete, // If profile is complete, treat as returning user
       access_token: token
     };
   } catch (error: any) {
     throw new Error(getFriendlyAuthErrorMessage(error));
   }
 }
+
+
 
 export async function citizenForgotPassword(payload: { countryCode: string; phone: string; }) {
   // Phone password reset usually requires SMS OTP in Firebase.

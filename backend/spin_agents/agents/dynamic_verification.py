@@ -300,7 +300,7 @@ def execute_dynamic_verification(
             break
 
     # If all questions answered or none required, and confirmed
-    is_ready = (not has_remaining_critical_questions) and (explicitly_confirmed or bool(corrections))
+    is_ready = explicitly_confirmed or ((not has_remaining_critical_questions) and bool(corrections))
 
     # Construct partial or full grievance object
     partial_grievance = GrievanceSchema(

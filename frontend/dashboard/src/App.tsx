@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { APIProvider } from "@vis.gl/react-google-maps";
 import { LanguageProvider } from "./hooks/useLanguage";
 import { Navbar } from "./components/navigation/Navbar";
@@ -23,6 +23,7 @@ import { CitizenResetPassword } from "./components/citizen/CitizenResetPassword"
 import { CreateDemandForm } from "./components/citizen/CreateDemandForm";
 import { TrackDemands } from "./components/citizen/TrackDemands";
 import { DemandDetail } from "./components/citizen/DemandDetail";
+import { CitizenProfile } from "./components/citizen/CitizenProfile";
 import { StaffLogin } from "./components/staff/StaffLogin";
 import { StaffDashboard } from "./components/staff/StaffDashboard";
 import { getStoredCitizenUser, getStoredStaffUser, clearStoredCitizenUser } from "./services/demandService";
@@ -39,12 +40,12 @@ export type ViewState =
   | "citizen-raise"
   | "citizen-track"
   | "citizen-detail"
+  | "citizen-profile"
   | "staff-login"
   | "staff-dashboard";
 
 function AppInner() {
   const [view, setView] = useState<ViewState>("landing");
-  const [historyStack, setHistoryStack] = useState<ViewState[]>([]);
   const [targetViewAfterLogin, setTargetViewAfterLogin] = useState<string>("citizen");
   const [selectedDemandId, setSelectedDemandId] = useState<string>("");
 
@@ -52,12 +53,62 @@ function AppInner() {
   const [resetPhone, setResetPhone] = useState<string>("");
 
   const [citizenUser, setCitizenUser] = useState<CitizenUser>(
-    (getStoredCitizenUser() as CitizenUser) || { id: "", name: "", phone: "", isLoggedIn: false }
+    (getStoredCitizenUser() as CitizenUser) || { id: "", name: "", phone: "", email: "", isLoggedIn: false }
   );
   const [staffUser, setStaffUser] = useState<StaffUser>(
     (getStoredStaffUser() as StaffUser) || { id: "", name: "", employeeId: "", email: "", department: "", role: "Department Officer", isLoggedIn: false }
   );
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+  const [googlePrefill, setGooglePrefill] = useState<{ name: string; email: string } | null>(null);
+
+  const VIEW_TO_URL: Record<string, string> = {
+    "landing": "",
+    "citizen": "feed",
+    "citizen-login": "login",
+    "citizen-signup": "signup",
+    "citizen-forgot-password": "forgot-password",
+    "citizen-reset-password": "reset-password",
+    "citizen-raise": "propose",
+    "citizen-track": "track",
+    "citizen-detail": "detail", 
+    "citizen-profile": "profile",
+    "staff-login": "staff-login",
+    "staff-dashboard": "staff-dashboard",
+    "dashboard": "admin-dashboard",
+  };
+
+  const URL_TO_VIEW: Record<string, string> = Object.entries(VIEW_TO_URL).reduce((acc, [view, url]) => {
+    acc[url] = view;
+    return acc;
+  }, {} as Record<string, string>);
+
+  // Sync with Browser URL
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname.substring(1) || "";
+      const parts = path.split("/");
+      const urlView = parts[0];
+      const newView = URL_TO_VIEW[urlView] || "landing";
+      if (parts[1]) setSelectedDemandId(parts[1]);
+      
+      // Prevent bypassing auth by manually typing URL
+      if (["citizen", "citizen-raise", "citizen-track", "citizen-detail", "citizen-profile"].includes(newView) && !citizenUser.isLoggedIn) {
+        setView("citizen-login");
+      } else if (["staff-dashboard", "dashboard"].includes(newView) && !staffUser.isLoggedIn) {
+        setView("staff-login");
+      } else {
+        setView(newView as ViewState);
+      }
+    };
+    
+    // Initialize view based on current URL on mount
+    if (window.location.pathname !== "/") {
+       handlePopState();
+    }
+    
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [citizenUser.isLoggedIn, staffUser.isLoggedIn]);
 
   /* Navigation handler with Citizen Auth Protection */
   const handleNavigate = (newView: string, extraId?: string) => {
@@ -67,40 +118,35 @@ function AppInner() {
 
     if (newView === "citizen-logout") {
       clearStoredCitizenUser();
-      setCitizenUser({ id: "", name: "", phone: "", isLoggedIn: false });
-      setView("citizen-login");
+      setCitizenUser({ id: "", name: "", phone: "", email: "", isLoggedIn: false });
+      handleNavigate("citizen-login");
       return;
     }
 
-    // Require Citizen Login BEFORE "Propose Initiative" or "Track Proposals"
-    if ((newView === "citizen-raise" || newView === "citizen-track" || newView === "citizen") && !citizenUser.isLoggedIn) {
+    // Require Citizen Login BEFORE "Propose Initiative" or "Track Proposals" or Profile
+    if ((newView === "citizen-raise" || newView === "citizen-track" || newView === "citizen" || newView === "citizen-profile") && !citizenUser.isLoggedIn) {
       setTargetViewAfterLogin(newView);
-      setView("citizen-login");
+      handleNavigate("citizen-login");
       return;
     }
 
     // Require Staff Login BEFORE Staff Dashboard
-    if (newView === "staff-dashboard" && !staffUser.isLoggedIn) {
-      setHistoryStack((prev) => [...prev, view]);
-      setView("staff-login");
+    if ((newView === "staff-dashboard" || newView === "dashboard") && !staffUser.isLoggedIn) {
+      handleNavigate("staff-login");
       return;
     }
 
-    setHistoryStack((prev) => [...prev, view]);
+    const baseUrl = VIEW_TO_URL[newView] || newView;
+    const url = extraId ? `/${baseUrl}/${extraId}` : `/${baseUrl}`;
+    if (window.location.pathname !== url) {
+       window.history.pushState({}, "", url);
+    }
     setView(newView as ViewState);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleNavigateBack = () => {
-    if (historyStack.length > 0) {
-      const newStack = [...historyStack];
-      const previousView = newStack.pop();
-      setHistoryStack(newStack);
-      setView(previousView as ViewState);
-    } else {
-      setView("landing");
-    }
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.history.back();
   };
 
   /* Citizen Login Success Callback */
@@ -108,25 +154,32 @@ function AppInner() {
     setCitizenUser(user);
     const destination = targetViewAfterLogin || "citizen";
     setTargetViewAfterLogin("citizen");
-    handleNavigate(destination);
+    
+    const baseUrl = VIEW_TO_URL[destination] || destination;
+    const url = `/${baseUrl}`;
+    // Replace the login view in history so 'Back' doesn't go to login
+    window.history.replaceState({}, "", url);
+    setView(destination as ViewState);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   /* Staff Login Success Callback */
   const handleStaffLoginSuccess = (user: StaffUser) => {
     setStaffUser(user);
-    if (user.role === "Policymaker") {
-      setView("dashboard");
-    } else {
-      setView("staff-dashboard");
-    }
+    const destination = user.role === "Policymaker" ? "dashboard" : "staff-dashboard";
+    const baseUrl = VIEW_TO_URL[destination] || destination;
+    window.history.replaceState({}, "", `/${baseUrl}`);
+    setView(destination as ViewState);
   };
 
   const handleStaffLogout = () => {
     import("./services/demandService").then(({ clearStoredStaffUser }) => clearStoredStaffUser());
     localStorage.removeItem("staff_token");
     setStaffUser({ id: "", email: "", isLoggedIn: false, name: "", employeeId: "", department: "", role: "Department Officer" } as StaffUser);
-    setView("landing");
+    handleNavigate("landing");
   };
+
+  const isCitizenPortalView = ["citizen", "citizen-raise", "citizen-track", "citizen-detail", "citizen-profile"].includes(view);
 
   return (
     <>
@@ -140,7 +193,7 @@ function AppInner() {
           onViewChange={(v) => handleNavigate(v)}
           onLogout={handleStaffLogout}
         />
-      ) : (
+      ) : isCitizenPortalView ? null : (
         <Navbar
           view={view}
           user={citizenUser.isLoggedIn ? citizenUser : undefined}
@@ -170,16 +223,21 @@ function AppInner() {
           onLoginSuccess={handleCitizenLoginSuccess}
           targetViewAfterLogin={targetViewAfterLogin}
           onCancel={() => setView("landing")}
-          onSignupClick={() => setView("citizen-signup")}
+          onSignupClick={() => { setGooglePrefill(null); setView("citizen-signup"); }}
           onForgotPasswordClick={() => setView("citizen-forgot-password")}
           onSwitchToStaff={() => setView("staff-login")}
+          onGoogleNewUser={(prefill) => {
+            setGooglePrefill(prefill);
+            setView("citizen-signup");
+          }}
         />
       )}
 
       {view === "citizen-signup" && (
         <CitizenSignup
-          onLoginClick={() => setView("citizen-login")}
+          onLoginClick={() => { setGooglePrefill(null); setView("citizen-login"); }}
           onSignupSuccess={handleCitizenLoginSuccess}
+          googlePrefill={googlePrefill}
         />
       )}
 
@@ -220,6 +278,13 @@ function AppInner() {
           user={citizenUser}
           DemandId={selectedDemandId}
           onNavigate={(v) => handleNavigate(v)}
+        />
+      )}
+
+      {view === "citizen-profile" && (
+        <CitizenProfile
+          user={citizenUser}
+          onNavigate={(v, id) => handleNavigate(v, id)}
         />
       )}
 

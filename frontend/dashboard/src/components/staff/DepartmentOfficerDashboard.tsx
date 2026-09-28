@@ -167,7 +167,7 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
             <button onClick={() => setViewMode("queue")} style={{ background: "none", border: "none", fontSize: "24px", cursor: "pointer", color: "var(--col-text-muted)" }}>×</button>
           </div>
           <div style={{ padding: "20px" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
+            <div className="dashboard-grid" style={{ marginBottom: "20px" }}>
               <div style={{ background: "#f8f9fa", padding: "16px", borderRadius: "8px" }}>
                 <h4 style={{ margin: "0 0 10px 0", fontSize: "12px", color: "var(--col-text-muted)", textTransform: "uppercase" }}>Demand Details</h4>
                 <div style={{ fontWeight: 600, fontSize: "16px", color: "var(--col-navy)", marginBottom: "8px" }}>{selectedDemand.description}</div>
@@ -202,7 +202,7 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
             ← Back to Queue
           </button>
           
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}>
+          <div className="dashboard-grid">
             
             {/* Left: Original Demand */}
             <div className="panel">

@@ -26,11 +26,14 @@ export const DemandKPIBar: React.FC<DemandKPIBarProps> = ({
         </span>
       </div>
 
-      <div className="proposal-kpi-grid">
+      <div className="kpi-grid">
         {/* METRIC 01: TOTAL DEMANDS */}
         <div className="kpi-metric-card">
-          <div className="kpi-card-top">
+          <div className="kpi-content-left">
             <span className="kpi-label">TOTAL DEMANDS</span>
+            <span className="kpi-value">{totalDemands.toLocaleString()}</span>
+          </div>
+          <div className="kpi-content-right">
             {/* Sparkline SVG */}
             <svg className="kpi-sparkline" viewBox="0 0 100 30" aria-hidden="true" role="img">
               <path
@@ -48,16 +51,15 @@ export const DemandKPIBar: React.FC<DemandKPIBarProps> = ({
               />
             </svg>
           </div>
-
-          <div className="kpi-card-middle">
-            <span className="kpi-value">{totalDemands.toLocaleString()}</span>
-          </div>
         </div>
 
         {/* METRIC 02: PENDING DEMANDS */}
         <div className="kpi-metric-card">
-          <div className="kpi-card-top">
+          <div className="kpi-content-left">
             <span className="kpi-label">PENDING DEMANDS</span>
+            <span className="kpi-value">{pendingDemands.toLocaleString()}</span>
+          </div>
+          <div className="kpi-content-right">
             {/* Sparkline SVG */}
             <svg className="kpi-sparkline" viewBox="0 0 100 30" aria-hidden="true" role="img">
               <path
@@ -75,16 +77,15 @@ export const DemandKPIBar: React.FC<DemandKPIBarProps> = ({
               />
             </svg>
           </div>
-
-          <div className="kpi-card-middle">
-            <span className="kpi-value">{pendingDemands.toLocaleString()}</span>
-          </div>
         </div>
 
         {/* METRIC 03: AVG. RESOLUTION TIME */}
         <div className="kpi-metric-card">
-          <div className="kpi-card-top">
+          <div className="kpi-content-left">
             <span className="kpi-label">AVG. RESOLUTION TIME</span>
+            <span className="kpi-value">{avgResolutionDays}</span>
+          </div>
+          <div className="kpi-content-right">
             {/* Sparkline SVG */}
             <svg className="kpi-sparkline" viewBox="0 0 100 30" aria-hidden="true" role="img">
               <path
@@ -102,16 +103,15 @@ export const DemandKPIBar: React.FC<DemandKPIBarProps> = ({
               />
             </svg>
           </div>
-
-          <div className="kpi-card-middle">
-            <span className="kpi-value">{avgResolutionDays}</span>
-          </div>
         </div>
 
         {/* METRIC 04: HIGH PRIORITY */}
         <div className="kpi-metric-card">
-          <div className="kpi-card-top">
+          <div className="kpi-content-left">
             <span className="kpi-label">HIGH PRIORITY</span>
+            <span className="kpi-value">{highPriorityCount}</span>
+          </div>
+          <div className="kpi-content-right">
             {/* Sparkline SVG */}
             <svg className="kpi-sparkline" viewBox="0 0 100 30" aria-hidden="true" role="img">
               <path
@@ -128,10 +128,6 @@ export const DemandKPIBar: React.FC<DemandKPIBarProps> = ({
                 opacity="0.4"
               />
             </svg>
-          </div>
-
-          <div className="kpi-card-middle">
-            <span className="kpi-value">{highPriorityCount}</span>
           </div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import { useLanguage, COUNTRIES, type CountryCode } from "../../hooks/useLanguage";
+import { Shield } from "lucide-react";
 import type { CitizenUser } from "../../types";
 import "../navigation/Navbar.css";
 
@@ -97,6 +98,15 @@ export function Navbar({ view, user, onViewChange }: NavbarProps) {
 
   const isCitizenView = view.startsWith("citizen");
 
+  const handleLogoClick = () => {
+    if (user?.isLoggedIn) {
+      onViewChange("citizen");
+    } else {
+      onViewChange("landing");
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <header className="gov-header-wrapper">
       {/* Top Utility Bar (UX4G Government Standard) */}
@@ -190,7 +200,7 @@ export function Navbar({ view, user, onViewChange }: NavbarProps) {
       <nav className="navbar">
         <div className="navbar-inner container">
           {/* Logo */}
-          <button className="navbar-logo notranslate" onClick={() => { onViewChange("landing"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+          <button className="navbar-logo notranslate" onClick={handleLogoClick}>
             <span className="navbar-wordmark">SPIN</span>
             <div className="navbar-title-group">
               <span className="navbar-descriptor">SYMBIOTIC PUBLIC INFRASTRUCTURE NETWORK</span>
@@ -208,6 +218,13 @@ export function Navbar({ view, user, onViewChange }: NavbarProps) {
 
           {/* Right Action CTAs */}
           <div className="navbar-actions">
+            <button
+              className="navbar-link"
+              style={{ fontWeight: 600, color: "var(--col-brand-orange)", marginRight: "16px", background: "none", border: "none", cursor: "pointer" }}
+              onClick={() => onViewChange("citizen")}
+            >
+              Dashboard
+            </button>
             {user?.isLoggedIn ? (
               <div className="navbar-profile-wrapper" ref={profileMenuRef}>
                 <button
@@ -232,7 +249,7 @@ export function Navbar({ view, user, onViewChange }: NavbarProps) {
                       role="menuitem"
                       onClick={() => {
                         setProfileMenuOpen(false);
-                        setProfileModalOpen(true);
+                        onViewChange("citizen-profile");
                       }}
                     >
                       👤 My Profile
@@ -259,6 +276,16 @@ export function Navbar({ view, user, onViewChange }: NavbarProps) {
                 Sign In
               </button>
             )}
+            {!user?.isLoggedIn && (
+              <button 
+                className="staff-login-icon" 
+                onClick={() => onViewChange("staff-login")} 
+                aria-label="Staff Portal"
+                style={{ background: 'transparent', border: 'none', color: '#666', cursor: 'pointer', marginLeft: '12px' }}
+              >
+                <Shield size={16} />
+              </button>
+            )}
           </div>
 
           {/* Mobile Hamburger */}
@@ -279,7 +306,7 @@ export function Navbar({ view, user, onViewChange }: NavbarProps) {
 
             {user?.isLoggedIn ? (
               <>
-                <button className="navbar-mobile-link" onClick={() => { setProfileModalOpen(true); setMenuOpen(false); }}>
+                <button className="navbar-mobile-link" onClick={() => { onViewChange("citizen-profile"); setMenuOpen(false); }}>
                   👤 My Profile
                 </button>
                 <button className="navbar-mobile-link" onClick={() => { onViewChange("citizen-logout"); setMenuOpen(false); }}>
@@ -295,76 +322,6 @@ export function Navbar({ view, user, onViewChange }: NavbarProps) {
         )}
       </nav>
 
-      {/* Citizen Profile Inline Modal */}
-      {profileModalOpen && user && (
-        <div className="profile-modal-overlay">
-          <div className="profile-modal-box" ref={profileModalRef} role="dialog" aria-modal="true" aria-labelledby="profile-modal-title">
-            <div className="profile-modal-header">
-              <div>
-                <h2 id="profile-modal-title" className="profile-modal-title">CITIZEN PROFILE</h2>
-                <p className="profile-modal-subtitle">Your registered account information</p>
-              </div>
-              <button className="profile-modal-close" onClick={() => setProfileModalOpen(false)} aria-label="Close profile">✕</button>
-            </div>
-
-            <div className="profile-modal-body">
-              <div className="profile-modal-identity">
-                <div className="profile-modal-avatar">👤</div>
-                <div className="profile-modal-user-info">
-                  <div className="profile-modal-name">{user.name || "Not provided"}</div>
-                  <div className="profile-modal-role">
-                    <span className="status-dot"></span> Verified Citizen
-                  </div>
-                </div>
-              </div>
-
-              <div className="profile-modal-section">
-                <h3 className="profile-modal-section-title">PERSONAL INFORMATION</h3>
-
-                <div className="profile-modal-field">
-                  <span className="profile-modal-label">Full Name</span>
-                  <span className="profile-modal-val">{user.name || "Not provided"}</span>
-                </div>
-
-                <div className="profile-modal-field">
-                  <span className="profile-modal-label">Registered Phone</span>
-                  <span className="profile-modal-val">{user.phone || "Not provided"}</span>
-                </div>
-
-                <div className="profile-modal-field">
-                  <span className="profile-modal-label">Citizen ID</span>
-                  <div className="profile-modal-id-row">
-                    <span className="profile-modal-val id-val">{user.id || "Not provided"}</span>
-                    {user.id && (
-                      <button className="profile-copy-btn" onClick={() => handleCopyId(user.id)}>
-                        Copy ID
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                <div className="profile-modal-field">
-                  <span className="profile-modal-label">Account Role</span>
-                  <span className="profile-modal-val">Citizen Verified</span>
-                </div>
-
-                <div className="profile-modal-field">
-                  <span className="profile-modal-label">Preferred Language</span>
-                  <span className="profile-modal-val">{country.language || "English"}</span>
-                </div>
-              </div>
-
-              <div className="profile-modal-footer">
-                <p>Your profile information is managed through your registered authentication account.</p>
-              </div>
-            </div>
-          </div>
-          {toastMessage && (
-            <div className="profile-toast">{toastMessage}</div>
-          )}
-        </div>
-      )}
     </header>
   );
 }
-

@@ -206,7 +206,7 @@ export const DemandDetail: React.FC<DemandDetailProps> = ({
                       <div key={idx} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                         <span>📎</span>
                         <a
-                          href={`http://localhost:8080${url}`}
+                          href={`http://${window.location.hostname}:8080${url}`}
                           target="_blank"
                           rel="noreferrer"
                           style={{ color: "var(--col-orange)", textDecoration: "underline" }}
