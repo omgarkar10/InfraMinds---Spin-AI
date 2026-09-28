@@ -64,12 +64,19 @@ export function PolicyDashboard() {
               </option>
             ))}
           </select>
+          <button 
+            className="btn-outline"
+            onClick={() => alert("Downloading PDF Impact Report...")}
+            style={{ borderColor: "var(--col-navy)", color: "var(--col-navy)", background: "#fff", padding: "6px 12px", fontSize: "12px", fontWeight: "bold" }}
+          >
+            📥 Export Impact Summary
+          </button>
           <button
             className="refresh-btn"
             onClick={() => refresh(districtFilter || undefined)}
             disabled={loading}
           >
-            {loading ? "Refreshing..." : "Refresh"}
+            {loading ? "Refreshing..." : "Refresh Map"}
           </button>
         </div>
       </header>
@@ -129,8 +136,38 @@ export function PolicyDashboard() {
         </section>
 
         {/* Right Panel Stack */}
-        <section className="side-panels">
+        <section className="side-panels" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           <ExecutiveSummaryPanel summary={summary} loading={loading} />
+          
+          <div className="panel" style={{ padding: "20px" }}>
+            <div className="panel-header" style={{ marginBottom: "16px" }}>
+              <h2 className="panel-title">Vote Velocity & Trend Panel</h2>
+            </div>
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+                <span style={{ fontSize: "12px", color: "var(--col-text-muted)" }}>Current Support Velocity</span>
+                <span style={{ fontSize: "12px", color: "var(--col-green)", fontWeight: "bold" }}>↑ +420 votes/hr</span>
+              </div>
+              <svg viewBox="0 0 100 30" style={{ width: "100%", height: "40px" }} aria-hidden="true" role="img">
+                <path d="M0 24 L15 22 L30 18 L45 20 L60 12 L75 14 L90 6 L100 2" fill="none" stroke="var(--col-orange)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M0 24 L15 22 L30 18 L45 20 L60 12 L75 14 L90 6 L100 2 L100 30 L0 30 Z" fill="var(--col-orange-dim)" opacity="0.4" />
+              </svg>
+            </div>
+            <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid #eee" }}>
+              <div style={{ fontSize: "12px", fontWeight: 600, marginBottom: "10px", color: "var(--col-navy)" }}>Category Allocation Breakdown</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "12px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}><span>Public Transit</span> <span>45%</span></div>
+                <div style={{ width: "100%", background: "#eee", height: "6px", borderRadius: "3px" }}><div style={{ width: "45%", background: "var(--col-blue)", height: "100%", borderRadius: "3px" }}/></div>
+                
+                <div style={{ display: "flex", justifyContent: "space-between" }}><span>Sanitation</span> <span>30%</span></div>
+                <div style={{ width: "100%", background: "#eee", height: "6px", borderRadius: "3px" }}><div style={{ width: "30%", background: "var(--col-orange)", height: "100%", borderRadius: "3px" }}/></div>
+                
+                <div style={{ display: "flex", justifyContent: "space-between" }}><span>Public Parks</span> <span>25%</span></div>
+                <div style={{ width: "100%", background: "#eee", height: "6px", borderRadius: "3px" }}><div style={{ width: "25%", background: "var(--col-green)", height: "100%", borderRadius: "3px" }}/></div>
+              </div>
+            </div>
+          </div>
+
           <BudgetReallocationPanel
             onApprove={handleApprove}
             redZoneDomain={topRedZoneDomain}

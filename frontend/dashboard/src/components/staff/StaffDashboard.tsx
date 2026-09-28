@@ -1,15 +1,10 @@
 import React, { useState, useEffect } from "react";
 import "../../styles/citizen.css";
-import {
-  getStaffDemands,
-  getStaffDemandById,
-  updateStaffDecision,
-  updateDemandStatus,
-} from "../../services/demandService";
-import type { StaffUser, Proposal, DemandStatus } from "../../types";
+import { getStaffDemands } from "../../services/demandService";
+import type { StaffUser, Proposal } from "../../types";
 
-import { DemandKPIBar } from "./DemandKPIBar";
 import { FieldOfficerDashboard } from "./FieldOfficerDashboard";
+import { DepartmentOfficerDashboard } from "./DepartmentOfficerDashboard";
 
 interface StaffDashboardProps {
   user: StaffUser;
@@ -17,17 +12,7 @@ interface StaffDashboardProps {
 }
 
 export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate }) => {
-  if (user.role === "Field Officer") {
-    return <FieldOfficerDashboard user={user} />;
-  }
-
-  const [proposals, setDemands] = useState<Proposal[]>(getStaffDemands(user));
-  const [selectedDemand, setSelectedDemand] = useState<Proposal | null>(null);
-  const [staffNote, setStaffNote] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
-  const [categoryFilter, setCategoryFilter] = useState<string>("");
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [authError, setAuthError] = useState<string>("");
+  const [proposals, setDemands] = useState<Proposal[]>([]);
 
   useEffect(() => {
     // Whenever logged in user changes, reload department-scoped proposals
@@ -37,335 +22,32 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
   const refreshData = () => {
     const list = getStaffDemands(user);
     setDemands(list);
-    if (selectedDemand) {
-      const authorized = getStaffDemandById(selectedDemand.id, user);
-      if (authorized) {
-        setSelectedDemand(authorized);
-      } else {
-        setSelectedDemand(null);
-      }
-    }
   };
 
-  const handleOpenDossier = (g: Proposal) => {
-    const authorized = getStaffDemandById(g.id, user);
-    if (authorized) {
-      setSelectedDemand(authorized);
-      setAuthError("");
-    } else {
-      setAuthError(`Access Denied: Proposal ${g.id} belongs to a different department.`);
-    }
-  };
+  if (user.role === "Field Inspector" || user.role === "Field Officer") {
+    return <FieldOfficerDashboard user={user} />;
+  }
 
-  const handleDecision = (decision: "ACCEPTED" | "MODIFIED" | "REJECTED") => {
-    if (!selectedDemand) return;
-    const authorized = getStaffDemandById(selectedDemand.id, user);
-    if (!authorized) {
-      setAuthError("Access Denied: Unauthorized modification attempt.");
-      setSelectedDemand(null);
-      return;
-    }
-    updateStaffDecision(selectedDemand.id, decision, staffNote || `Officer ${decision.toLowerCase()} recommendation.`);
-    setStaffNote("");
-    refreshData();
-  };
+  if (user.role === "Policymaker") {
+    // If they navigated here manually, we can redirect or show a message.
+    // However, App.tsx handles the actual dashboard rendering. We'll just null return or prompt them.
+    return (
+      <div style={{ textAlign: "center", padding: "50px" }}>
+        <h2>Routing to Analytics Map...</h2>
+      </div>
+    );
+  }
 
-  const handleStatusChange = (newStatus: DemandStatus) => {
-    if (!selectedDemand) return;
-    const authorized = getStaffDemandById(selectedDemand.id, user);
-    if (!authorized) {
-      setAuthError("Access Denied: Unauthorized status change attempt.");
-      setSelectedDemand(null);
-      return;
-    }
-    updateDemandStatus(selectedDemand.id, newStatus, staffNote || `Officer changed status to ${newStatus}.`);
-    setStaffNote("");
-    refreshData();
-  };
-
-  const filteredDemands = proposals.filter((g) => {
-    if (statusFilter && g.status !== statusFilter) return false;
-    if (categoryFilter && g.category !== categoryFilter) return false;
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      const matchId = g.id.toLowerCase().includes(q);
-      const matchDesc = g.description.toLowerCase().includes(q);
-      const matchLoc = (g.location.address || "").toLowerCase().includes(q) || (g.location.district || "").toLowerCase().includes(q);
-      if (!matchId && !matchDesc && !matchLoc) return false;
-    }
-    return true;
-  });
-
-  // Calculate statistics STRICTLY from department-scoped proposals
-  const activeCount = proposals.filter((g) => g.status !== "RESOLVED").length;
-  const criticalCount = proposals.filter((g) => g.priority === "Critical" || g.priority === "High").length;
-  const pendingCount = proposals.filter((g) => g.decisionStatus === "PENDING" || !g.decisionStatus).length;
-  const resolvedCount = proposals.filter((g) => g.status === "RESOLVED").length;
-  const escalatedCount = proposals.filter((g) => g.status === "REOPENED").length;
-
-  // Extract unique categories present in department queue for filter
-  const uniqueCategories = Array.from(new Set(proposals.map((g) => g.category)));
-
+  // Department Officer & Administrator 
   return (
-    <div className="citizen-portal-container">
-      {/* Top Staff Header */}
-      <div className="portal-header-bar" style={{ background: "var(--col-header-bg)", color: "#fff" }}>
-        <div className="container portal-header-inner">
-          <div className="portal-title-group">
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <span className="portal-org" style={{ color: "var(--col-orange)" }}>SPIN STAFF PORTAL</span>
-              <span className="user-badge-dot" />
-              <span style={{ fontSize: "11px", color: "#4ADE80", letterSpacing: "0.1em" }}>SYSTEM OPERATIONAL</span>
-            </div>
-            <h1 className="portal-heading" style={{ color: "#fff", fontSize: "22px" }}>
-              Department Operations & Proposal Queue
-            </h1>
-            <p className="portal-subtext" style={{ color: "rgba(255,255,255,0.7)", fontSize: "13px" }}>
-              Officer: <strong>{user.name}</strong> ({user.employeeId}) · Dept: <strong>{user.department}</strong>
-            </p>
-          </div>
-
-          <div style={{ display: "flex", gap: "10px" }}>
-            <button className="btn-outline" style={{ color: "#fff", borderColor: "rgba(255,255,255,0.3)" }} onClick={() => onNavigate("dashboard")}>
-              Open Policymaker Map →
-            </button>
-          </div>
-        </div>
-      </div>
-
+    <div className="citizen-portal-container" style={{ paddingTop: "32px", minHeight: "calc(100vh - 60px)" }}>
       <div className="container">
-        {authError && (
-          <div style={{ background: "#ffe6e6", border: "1px solid red", color: "red", padding: "10px 14px", borderRadius: "6px", marginBottom: "16px", fontSize: "13px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span>🚫 {authError}</span>
-            <button style={{ border: "none", background: "transparent", color: "red", cursor: "pointer", fontWeight: "bold" }} onClick={() => setAuthError("")}>✕</button>
-          </div>
-        )}
-
-        {/* DEPARTMENT-SCOPED KPI BAR */}
-        <DemandKPIBar proposals={proposals} />
-
-        {/* KPI Overview Cards (Strictly Department Scoped) */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "12px", marginBottom: "24px" }}>
-          <div className="stat-card">
-            <span className="stat-label">ACTIVE DemandS</span>
-            <span className="stat-value">{activeCount}</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-label">CRITICAL ISSUES</span>
-            <span className="stat-value" style={{ color: "var(--col-red)" }}>{criticalCount}</span>
-          </div>
-          <div className="stat-card accent">
-            <span className="stat-label">PENDING REVIEW</span>
-            <span className="stat-value" style={{ color: "var(--col-orange)" }}>{pendingCount}</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-label">RESOLVED</span>
-            <span className="stat-value" style={{ color: "var(--col-green)" }}>{resolvedCount}</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-label">ESCALATED / REOPENED</span>
-            <span className="stat-value" style={{ color: "var(--col-amber)" }}>{escalatedCount}</span>
-          </div>
-        </div>
-
-        {/* Filter Controls & Proposal Queue Table */}
-        <div className="form-card" style={{ padding: "20px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px", flexWrap: "wrap", gap: "12px" }}>
-            <div>
-              <span className="label-eyebrow">DEPARTMENT QUEUE</span>
-              <h2 className="portal-heading" style={{ fontSize: "18px" }}>
-                {user.department} Queue ({filteredDemands.length})
-              </h2>
-            </div>
-
-            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-              <input
-                type="text"
-                className="form-input"
-                placeholder="Search ID or description..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ width: "180px", padding: "6px 10px", fontSize: "12px" }}
-              />
-
-              <select className="form-select" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} style={{ width: "160px" }}>
-                <option value="">All Categories</option>
-                {uniqueCategories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-
-              <select className="form-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={{ width: "160px" }}>
-                <option value="">All Statuses</option>
-                <option value="SUBMITTED">Submitted</option>
-                <option value="UNDER_REVIEW">Under Review</option>
-                <option value="INSPECTION_SCHEDULED">Inspection Scheduled</option>
-                <option value="ACTION_TAKEN">Action Taken</option>
-                <option value="RESOLVED">Resolved</option>
-                <option value="REOPENED">Reopened</option>
-              </select>
-            </div>
-          </div>
-
-          <table className="staff-table">
-            <thead>
-              <tr>
-                <th>Demand ID</th>
-                <th>CATEGORY</th>
-                <th>LOCATION</th>
-                <th>SEVERITY</th>
-                <th>SUBMITTED</th>
-                <th>STATUS</th>
-                <th>ASSIGNED TO</th>
-                <th>ACTION</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredDemands.length > 0 ? (
-                filteredDemands.map((g) => (
-                  <tr key={g.id}>
-                    <td className="mono" style={{ fontWeight: "700" }}>{g.id}</td>
-                    <td>{g.category}</td>
-                    <td>{g.location.district} ({g.location.address})</td>
-                    <td>
-                      <span style={{ color: g.priority === "Critical" || g.priority === "High" ? "var(--col-red)" : "var(--col-navy)", fontWeight: "700" }}>
-                        {g.priority}
-                      </span>
-                    </td>
-                    <td>{g.createdAt}</td>
-                    <td><span className={`status-pill ${g.status}`}>{g.status.replace(/_/g, " ")}</span></td>
-                    <td>{g.assignedTo}</td>
-                    <td>
-                      <button
-                        className="service-card-btn"
-                        style={{ padding: "4px 10px", fontSize: "11px" }}
-                        onClick={() => handleOpenDossier(g)}
-                      >
-                        Open Dossier →
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={8} style={{ textAlign: "center", padding: "40px 20px", color: "var(--col-text-muted)" }}>
-                    <div style={{ fontSize: "15px", fontWeight: "600", color: "var(--col-navy)" }}>
-                      No proposals assigned to your department.
-                    </div>
-                    <div style={{ fontSize: "12px", marginTop: "4px", color: "var(--col-text-mid)" }}>
-                      Proposals submitted for <strong>{user.department}</strong> will automatically populate in this queue.
-                    </div>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <DepartmentOfficerDashboard 
+          user={user} 
+          demands={proposals} 
+          onRefresh={refreshData} 
+        />
       </div>
-
-      {/* STAFF DETAIL MODAL / DRAWER */}
-      {selectedDemand && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(15,30,54,0.6)", display: "flex", justifyContent: "center", alignItems: "center", padding: "20px" }}>
-          <div className="form-card" style={{ width: "100%", maxWidth: "800px", maxHeight: "90vh", overflowY: "auto", borderTop: "4px solid var(--col-navy)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <div>
-                <span className="label-eyebrow">STAFF REVIEW DOSSIER</span>
-                <h2 className="portal-heading" style={{ fontSize: "22px" }}>{selectedDemand.id}</h2>
-                <p className="portal-subtext" style={{ fontSize: "14px", color: "var(--col-navy)" }}>
-                  {selectedDemand.category} — {selectedDemand.issueType} ({selectedDemand.location.district}) · Dept: <strong>{selectedDemand.department}</strong>
-                </p>
-              </div>
-
-              <button className="btn-outline" style={{ padding: "4px 10px" }} onClick={() => setSelectedDemand(null)}>
-                ✕ Close
-              </button>
-            </div>
-
-            {/* Citizen Community Demand & Evidence Breakdown */}
-            <div className="ai-review-card">
-              <span className="label-eyebrow">CITIZEN COMPLAINT & EVIDENCE</span>
-              <p className="body-md" style={{ color: "var(--col-navy)" }}>"{selectedDemand.description}"</p>
-              <div style={{ fontSize: "12px", color: "var(--col-text-mid)" }}>
-                <strong>Citizen Contributor:</strong> {selectedDemand.citizenName || "Citizen"} ({selectedDemand.citizenPhone || "Identity Protected"})
-                <br />
-                <strong>Address:</strong> {selectedDemand.location.address || selectedDemand.location.district}
-              </div>
-            </div>
-
-            {/* AI RECOMMENDATION BOX */}
-            <div className="process-flow-box" style={{ background: "var(--col-orange-dim)", border: "1px solid var(--col-orange-line)", padding: "16px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span className="label-orange">SPIN AI RECOMMENDATION</span>
-                <span className="location-status-badge verified">CONFIDENCE {selectedDemand.aiAnalysis?.confidence || 94}%</span>
-              </div>
-
-              <h4 style={{ fontSize: "16px", color: "var(--col-navy)", margin: "6px 0" }}>
-                "{selectedDemand.aiAnalysis?.reasoning || "Prioritize field inspection and departmental action."}"
-              </h4>
-
-              <div style={{ background: "var(--col-surface)", padding: "12px", borderRadius: "6px", fontSize: "12px", margin: "8px 0" }}>
-                <strong>EMPIRICAL EVIDENCE BACKBONE (WHY?):</strong>
-                <ul style={{ listStyle: "none", paddingLeft: "4px", marginTop: "4px", display: "flex", flexDirection: "column", gap: "2px" }}>
-                  <li>• {selectedDemand.aiAnalysis?.nearbyDemands || 24} related proposals in cluster</li>
-                  <li>• Department: {selectedDemand.department}</li>
-                  <li>• Priority Level: {selectedDemand.priority}</li>
-                  <li>• Location: {selectedDemand.location.address || selectedDemand.location.district}</li>
-                </ul>
-              </div>
-
-              {/* HUMAN APPROVAL REQUIRED BANNER */}
-              <div style={{ background: "var(--col-navy)", color: "#fff", padding: "10px 14px", borderRadius: "6px", marginTop: "12px", fontSize: "11px", fontWeight: "700", letterSpacing: "0.08em", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span>🛡️ AI RECOMMENDATION — HUMAN APPROVAL REQUIRED</span>
-                <span style={{ color: "var(--col-orange)" }}>STATUS: {selectedDemand.decisionStatus || "PENDING"}</span>
-              </div>
-            </div>
-
-            {/* Officer Note & Action Buttons */}
-            <div className="form-group">
-              <label className="form-label">Officer Inspection Notes / Remarks</label>
-              <textarea
-                className="form-textarea"
-                rows={2}
-                value={staffNote}
-                onChange={(e) => setStaffNote(e.target.value)}
-                placeholder="Enter official departmental instructions or inspection findings..."
-              />
-            </div>
-
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-              <div style={{ display: "flex", gap: "8px" }}>
-                <button className="service-card-btn service-card-btn-orange" onClick={() => handleDecision("ACCEPTED")}>
-                  ✓ Accept Recommendation
-                </button>
-                <button className="btn-outline" onClick={() => handleDecision("MODIFIED")}>
-                  ✏️ Modify
-                </button>
-                <button className="btn-outline" style={{ color: "var(--col-red)", borderColor: "rgba(220,38,38,0.3)" }} onClick={() => handleDecision("REJECTED")}>
-                  ✕ Reject
-                </button>
-              </div>
-
-              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                <span className="body-sm" style={{ fontSize: "11px" }}>Update Status:</span>
-                <select
-                  className="form-select"
-                  style={{ width: "160px", padding: "6px" }}
-                  value={selectedDemand.status}
-                  onChange={(e) => handleStatusChange(e.target.value as DemandStatus)}
-                >
-                  <option value="SUBMITTED">Submitted</option>
-                  <option value="UNDER_REVIEW">Under Review</option>
-                  <option value="INSPECTION_SCHEDULED">Inspection Scheduled</option>
-                  <option value="ACTION_TAKEN">Action Taken</option>
-                  <option value="RESOLVED">Resolved</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

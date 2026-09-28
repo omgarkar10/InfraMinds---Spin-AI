@@ -167,3 +167,41 @@ otranslate class to the SPIN branding logo to prevent AI translation distortion.
 - **Updated `.agents/GEMINI.md`**: Appended the SLASH COMMAND SYSTEM INSTRUCTIONS to strictly enforce predefined command behaviors (`/ask`, `/plan`, `/schema`, `/api`, `/spec`, `/review`) for tailored formatting and automated structurings without fluff.
 
 - **Added `landing-page-changes.md`**: Saved the Landing Page implementation plan (shifting focus from tracking grievances to measuring public demand) to the workspace as requested by the user.
+
+## 2026-09-28: Staff Post-Login UX Redesign & Security Hardening
+- **Description**: Redesigned the Staff Login component to enforce visual separation from the citizen portal and implemented a dedicated `StaffNavbar` to eliminate vertical scrolling reliance on the dashboard.
+- **Files Modified/Created**:
+  - `frontend/dashboard/src/components/staff/StaffLogin.tsx`: Removed citizen portal toggles, stripped demo accounts, updated input label to avoid ID format confusion, and standardized error banner styling.
+  - `frontend/dashboard/src/components/navigation/StaffNavbar.tsx` (New): Created a strict staff-only top navigation bar displaying role-based capabilities and user profile data.
+  - `frontend/dashboard/src/App.tsx`: Added conditional layout rendering to mount `StaffNavbar` for authenticated staff views and hiding the public `Navbar`.
+  - `frontend/dashboard/src/components/staff/StaffDashboard.tsx`: Removed the redundant portal header now managed by `StaffNavbar`.
+  - `frontend/dashboard/src/components/staff/DemandKPIBar.tsx`: Removed placeholder/hardcoded statistics (12% increase, 8% decrease) to present authentic metrics.
+- **Rationale**: Implements user UX feedback to establish a more austere, professional, and clutter-free interface for administrative staff, reducing cognitive load during login and navigation.
+
+## 2026-09-28: Staff Dashboard Architectural Redesign (Role-Based Formats)
+- **Description**: Modularized the monolithic `StaffDashboard.tsx` into three highly specialized, role-based interfaces matching the strategic plan: Mobile-first PWA for Field Officers, Operational Console for Department Officers, and Executive Analytics for Policymakers.
+- **Files Modified/Created**:
+  - `frontend/dashboard/src/components/staff/FieldOfficerDashboard.tsx` (Rewritten): Designed a mobile-first PWA layout incorporating Geotagged Camera Capture (EXIF mock), active offline-capable queue, and feasibility checklists.
+  - `frontend/dashboard/src/components/staff/DepartmentOfficerDashboard.tsx` (New): Built a high-density operational routing board with Threshold Trigger Queues, a Field Officer Dispatch Modal, and a split-screen Report Review Workspace for decision-making.
+  - `frontend/dashboard/src/components/staff/StaffDashboard.tsx` (Refactored): Rewrote to act exclusively as a clean router mapping `Field Officer` and `Department Officer` roles to their respective modular components.
+  - `frontend/dashboard/src/components/PolicyDashboard.tsx` (Updated): Integrated Executive Analytics requirements including a Vote Velocity SVG chart, Category Allocation Breakdown, and an Impact Summary Exporter action button.
+- **Rationale**: Ensures the platform UI automatically scales to the operational reality of the specific user, preventing field workers from navigating heavy desktop tables and policymakers from seeing granular dispatch logs.
+
+ # # #   S e e d   S t a f f   A c c o u n t s   S c r i p t   F i x e s 
+ -   * * D e s c r i p t i o n * * :   U p d a t e d   s c r i p t s / s e e d _ s t a f f _ a c c o u n t s . p y   t o   c o r r e c t l y   i n i t i a l i z e   t h e   F i r e b a s e   A d m i n   S D K   u s i n g   e x p l i c i t   s e r v i c e   a c c o u n t   p a t h s ,   a n d   f i x e d   U n i c o d e   c h a r a c t e r   o u t p u t   f o r   W i n d o w s   c o m p a t i b i l i t y .   C r e a t e d   s e c r e t s   d i r e c t o r y   a n d   c o p i e d    a c k e n d / s e r v i c e - a c c o u n t . j s o n   t o   s e c r e t s / s e r v i c e - a c c o u n t . j s o n . 
+ -   * * F i l e s   U p d a t e d * * :   s c r i p t s / s e e d _ s t a f f _ a c c o u n t s . p y   ( u p d a t e d   l o g i c   f o r   i n i t i a l i z e _ a p p   a n d   r e p l a c e d   u n i c o d e   c h a r a c t e r s ) ,   s e c r e t s / s e r v i c e - a c c o u n t . j s o n   ( a d d e d ) . 
+ -   * * R a t i o n a l e * * :   T h e   s c r i p t   p r e v i o u s l y   i n i t i a l i z e d    i r e b a s e _ a d m i n   w i t h o u t   c r e d e n t i a l s   w h i c h   c a u s e d   s u b s e q u e n t   a u t h   s e r v i c e   A P I   c a l l s   t o   f a i l .   A d d i t i o n a l l y ,   t h e   b o x - d r a w i n g   c h a r a c t e r s   u s e d   i n   o u t p u t   c a u s e d   a   U n i c o d e E n c o d e E r r o r   o n   W i n d o w s   c o n s o l e s .  
+ 
+ # # #   F i x   a u t h S e r v i c e . t s   R o l e   P a r s i n g 
+ -   * * D e s c r i p t i o n * * :   U p d a t e d   \  r o n t e n d / d a s h b o a r d / s r c / s e r v i c e s / a u t h S e r v i c e . t s \   t o   u s e   \ 	 o k e n R e s u l t . c l a i m s . r o l e \   i n s t e a d   o f   m a n u a l l y   p a r s i n g   t h e   e m a i l   a d d r e s s . 
+ -   * * F i l e s   U p d a t e d * * :   \  r o n t e n d / d a s h b o a r d / s r c / s e r v i c e s / a u t h S e r v i c e . t s \ ` n -   * * R a t i o n a l e * * :   T h e   m a n u a l   p a r s i n g   w a s   p r e v i o u s l y   b r o k e n   b e c a u s e   i t   c h e c k e d   f o r   \ . f i e l d . \   i n s t e a d   o f   \ . f i e l d @ \ ,   a n d   n o w   t h a t   t h e   A d m i n   S D K   s u c c e s s f u l l y   s e e d e d   t h e   c u s t o m   c l a i m s ,   w e   c a n   d i r e c t l y   r e a d   t h e   e x a c t   r o l e s   s a f e l y .  
+ 
+ # # #   R e m o v e d   A u t h e n t i c a t i o n   B a c k d o o r 
+ -   * * D e s c r i p t i o n * * :   R e m o v e d   t h e   h a r d c o d e d   f a l l b a c k   l o g i n   l o g i c   f r o m   \  u t h S e r v i c e . t s \   t h a t   a l l o w e d   a n y   u s e r   w i t h   a   \ @ g o v . i n \   e m a i l   t o   b y p a s s   F i r e b a s e   A u t h e n t i c a t i o n   u s i n g   a   h a r d c o d e d   s t a t i c   p a s s w o r d   ( \ s e c u r e s p i n 2 6 \ ) . 
+ -   * * F i l e s   U p d a t e d * * :   \  r o n t e n d / d a s h b o a r d / s r c / s e r v i c e s / a u t h S e r v i c e . t s \ ` n -   * * R a t i o n a l e * * :   A   h a r d c o d e d   b a c k d o o r   t h a t   b y p a s s e s   t h e   p r i m a r y   a u t h e n t i c a t i o n   m e c h a n i s m   i s   a   s e v e r e   s e c u r i t y   v u l n e r a b i l i t y ,   e s p e c i a l l y   f o r   a   g o v e r n m e n t   s i t e .   I t   r e s u l t e d   i n   u s e r s   r e c e i v i n g   m o c k   a u t h o r i z a t i o n   t o k e n s   a n d   i n c o r r e c t   d e f a u l t   r o l e s   i f   t h e i r   F i r e b a s e   A u t h   f a i l e d   o r   c a c h e d   s t a t e   w a s   m i s m a t c h e d .  
+ 
+
+## 2026-09-28: .gitignore Updated to Exclude Secrets Folder
+- **Description**: Added secrets/ and **/secrets/ rules to .gitignore.
+- **Files Updated**: .gitignore
+- **Rationale**: Ensures all secret files and Firebase service account credentials stored in the secrets/ folder are excluded from Git tracking and version control to prevent sensitive credential leaks.

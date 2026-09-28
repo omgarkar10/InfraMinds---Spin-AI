@@ -177,19 +177,18 @@ export function citizenLogout() {
 export async function staffLogin(identifier: string, password: string) {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, identifier, password);
-    const tokenResult = await userCredential.user.getIdTokenResult();
+    const tokenResult = await userCredential.user.getIdTokenResult(true);
     const token = tokenResult.token;
-    
-    // Extract custom claims or default to Staff role
-    const role = tokenResult.claims.role || "Department Officer";
-    const department = tokenResult.claims.department || "General Administration";
+    let role = (tokenResult.claims.role as string) || "Department Officer";
+    let department = (tokenResult.claims.department as string) || "General Administration";
+    let name = userCredential.user.displayName || `${department} ${role}`;
     
     localStorage.setItem("staff_token", token);
     
     return {
       user: {
         id: userCredential.user.uid,
-        name: userCredential.user.displayName || "Government Officer",
+        name: name,
         email: userCredential.user.email,
         employeeId: "EMP-" + userCredential.user.uid.substring(0,5).toUpperCase(),
         department: department,
@@ -198,64 +197,6 @@ export async function staffLogin(identifier: string, password: string) {
       access_token: token
     };
   } catch (error: any) {
-    // If Firebase user isn't seeded or auth fails, provide seamless fallback for official accounts using securespin26!
-    if ((password === "securespin26" || password === "SecureSPIN2026!") && (identifier.endsWith("@gov.in") || identifier.endsWith("@government.gov.in") || identifier.endsWith("@nic.in") || identifier.includes("spin.gov.in"))) {
-      const emailLower = identifier.toLowerCase();
-      let role = "Department Officer";
-      let department = "General Administration";
-      let name = "Government Officer";
-
-      if (emailLower.startsWith("admin@")) {
-        role = "Administrator";
-        department = "General Administration";
-        name = "System Administrator";
-      } else if (emailLower.startsWith("ministry@")) {
-        role = "Policymaker";
-        department = "Ministry of Housing & Urban Affairs (MoHUA)";
-        name = "Dr. R. K. Sharma (Joint Secretary)";
-      } else {
-        const parts = emailLower.split("@")[0].split(".");
-        if (emailLower.includes(".field.")) {
-          role = "Field Inspector";
-        } else if (emailLower.includes(".policy.")) {
-          role = "Policymaker";
-        } else {
-          role = "Department Officer";
-        }
-        
-        const deptPrefix = parts[0];
-        const deptMap: Record<string, string> = {
-          "water": "Water Supply",
-          "electricity": "Electricity",
-          "roads": "Roads & Transport",
-          "sanitation": "Sanitation",
-          "public": parts[1] === "health" ? "Public Health" : "Public Transport",
-          "police": "Police / Law & Order",
-          "education": "Education",
-          "housing": "Housing & Urban Development",
-          "environment": "Environment & Forestry",
-          "social": "Social Welfare & Pensions",
-          "general": "General Administration"
-        };
-        department = deptMap[deptPrefix] || "General Administration";
-        name = `${department} ${role}`;
-      }
-
-      const mockToken = "mock-staff-jwt-" + Date.now();
-      localStorage.setItem("staff_token", mockToken);
-
-      return {
-        user: {
-          id: "staff-" + identifier.replace(/[^a-z0-9]/gi, ""),
-          name: name,
-          email: identifier,
-          employeeId: "EMP-GOV-2026",
-          department: department,
-          role: role
-        },
-        access_token: mockToken
-      };
-    }
-    throw new Error("Invalid staff credentials. Make sure you enter your official @gov.in / @nic.in email and password.");
+    throw new Error(error.message || "Invalid credentials.");
   }
 }

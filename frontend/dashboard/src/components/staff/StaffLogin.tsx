@@ -32,7 +32,8 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel
 
     try {
       const { user } = await staffLogin(email, password);
-      performLoginWithUser(user as StaffUser);
+      const staffUserToStore = { ...user, isLoggedIn: true } as StaffUser;
+      performLoginWithUser(staffUserToStore);
     } catch (err: any) {
       setError(err.message || "Invalid credentials.");
     } finally {
@@ -43,38 +44,34 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel
 
 
   return (
-    <div className="citizen-portal-container">
+    <div className="admin-login-wrapper" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--col-bg)" }}>
       <div className="container">
-        <div className="login-card" style={{ borderTop: "4px solid var(--col-navy)", maxWidth: "520px" }}>
-          <div style={{ display: "flex", borderBottom: "1px solid #eee", marginBottom: "20px" }}>
-            <button type="button" style={{ flex: 1, padding: "12px", borderBottom: "2px solid transparent", color: "var(--col-text-muted)", background: "transparent", borderTop: "none", borderLeft: "none", borderRight: "none", cursor: "pointer" }} onClick={onSwitchToCitizen}>Citizen Login</button>
-            <button style={{ flex: 1, padding: "12px", borderBottom: "2px solid var(--col-navy)", fontWeight: 700, color: "var(--col-navy)", background: "transparent", borderTop: "none", borderLeft: "none", borderRight: "none" }}>Staff Login</button>
-          </div>
+        <div className="login-card" style={{ borderTop: "4px solid var(--col-navy)", maxWidth: "460px", background: "var(--col-surface)", margin: "0 auto", padding: "32px", borderRadius: "8px", boxShadow: "0 8px 32px rgba(0,0,0,0.1)" }}>
           <div>
             <span className="label-eyebrow" style={{ color: "var(--col-navy)" }}>AUTHORIZED GOVERNMENT INTERFACE</span>
           </div>
 
-          <div>
-            <h2 className="portal-heading" style={{ fontSize: "22px" }}>SPIN Staff Portal</h2>
-            <p className="portal-subtext" style={{ fontSize: "13px" }}>
+          <div style={{ marginBottom: "24px" }}>
+            <h2 className="portal-heading" style={{ fontSize: "22px", color: "var(--col-navy)" }}>SPIN Staff Portal</h2>
+            <p className="portal-subtext" style={{ fontSize: "13px", color: "var(--col-text-muted)" }}>
               Restricted interface for municipal department officers & policymakers. Secure routing based on assigned department.
             </p>
           </div>
 
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             {error && (
-              <div style={{ color: "red", fontSize: "13px", padding: "8px", background: "#ffe6e6", borderRadius: "4px" }}>
+              <div className="error-banner" style={{ background: "rgba(220, 38, 38, 0.1)", color: "#ef4444", border: "1px solid #ef4444", padding: "12px", borderRadius: "6px", fontSize: "13px" }}>
                 {error}
               </div>
             )}
             <div className="form-group">
-              <label className="form-label">Official Email / Employee ID *</label>
+              <label className="form-label">Official Email *</label>
               <input
-                type="text"
+                type="email"
                 className="form-input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="e.g. water.supply.officer@gov.in or admin@gov.in"
+                placeholder="e.g. water.supply.officer@gov.in"
                 required
               />
             </div>
@@ -84,12 +81,12 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel
               label="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password (Default: securespin26)"
+              placeholder="Enter password"
             />
 
 
 
-            <div className="form-group" style={{ background: "#f8f9fa", border: "1px solid #ddd", padding: "12px", borderRadius: "4px", display: "flex", alignItems: "center", gap: "10px" }}>
+            <div className="form-group" style={{ background: "var(--col-bg)", border: "1px solid var(--col-border)", padding: "12px", borderRadius: "4px", display: "flex", alignItems: "center", gap: "10px", color: "var(--col-navy)" }}>
               <input type="checkbox" required id="captcha" />
               <label htmlFor="captcha" style={{ fontSize: "14px", cursor: "pointer" }}>I am not a robot (Captcha Verification)</label>
             </div>
@@ -101,11 +98,11 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel
 
 
 
-          <div style={{ borderTop: "1px solid var(--col-border)", paddingTop: "14px", marginTop: "14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span className="disclaimer" style={{ fontSize: "10px" }}>
+          <div style={{ borderTop: "1px solid var(--col-border)", paddingTop: "16px", marginTop: "24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span className="disclaimer" style={{ fontSize: "10px", color: "var(--col-text-muted)" }}>
               RESTRICTED SYSTEM · GOVT PROTOCOL 2026
             </span>
-            <button type="button" className="btn-outline" style={{ border: "none", fontSize: "12px" }} onClick={onCancel}>
+            <button type="button" className="btn-outline" style={{ border: "none", fontSize: "12px", color: "var(--col-text-mid)" }} onClick={onCancel}>
               ← Return to Main Site
             </button>
           </div>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { APIProvider } from "@vis.gl/react-google-maps";
 import { LanguageProvider } from "./hooks/useLanguage";
 import { Navbar } from "./components/navigation/Navbar";
+import { StaffNavbar } from "./components/navigation/StaffNavbar";
 import { HeroSection } from "./components/landing/HeroSection";
 import { WhySpinSection } from "./components/landing/WhySpinSection";
 import { HowItHelpsSection } from "./components/landing/HowItHelpsSection";
@@ -113,7 +114,18 @@ function AppInner() {
   /* Staff Login Success Callback */
   const handleStaffLoginSuccess = (user: StaffUser) => {
     setStaffUser(user);
-    setView("staff-dashboard");
+    if (user.role === "Policymaker") {
+      setView("dashboard");
+    } else {
+      setView("staff-dashboard");
+    }
+  };
+
+  const handleStaffLogout = () => {
+    import("./services/demandService").then(({ clearStoredStaffUser }) => clearStoredStaffUser());
+    localStorage.removeItem("staff_token");
+    setStaffUser({ id: "", email: "", isLoggedIn: false, name: "", employeeId: "", department: "", role: "Department Officer" } as StaffUser);
+    setView("landing");
   };
 
   return (
@@ -121,11 +133,20 @@ function AppInner() {
       {view !== "landing" && (
         <BackButton onClick={handleNavigateBack} label="Back" />
       )}
-      <Navbar
-        view={view}
-        user={citizenUser.isLoggedIn ? citizenUser : undefined}
-        onViewChange={(v) => handleNavigate(v)}
-      />
+      
+      {(view === "staff-dashboard" || view === "dashboard") && staffUser.id ? (
+        <StaffNavbar
+          user={staffUser as StaffUser}
+          onViewChange={(v) => handleNavigate(v)}
+          onLogout={handleStaffLogout}
+        />
+      ) : (
+        <Navbar
+          view={view}
+          user={citizenUser.isLoggedIn ? citizenUser : undefined}
+          onViewChange={(v) => handleNavigate(v)}
+        />
+      )}
 
       <DemoModal
         isOpen={isDemoModalOpen}

@@ -51,14 +51,7 @@ export const DemandKPIBar: React.FC<DemandKPIBarProps> = ({
 
           <div className="kpi-card-middle">
             <span className="kpi-value">{totalDemands.toLocaleString()}</span>
-            <span className="kpi-trend trend-neutral" title="Increased 12% vs previous 7 days">
-              ↑ 12%
-            </span>
           </div>
-
-          <span className="kpi-caption" aria-label="Proposals increased 12% compared to the previous 7 days">
-            vs previous 7 days
-          </span>
         </div>
 
         {/* METRIC 02: PENDING DEMANDS */}
@@ -85,14 +78,7 @@ export const DemandKPIBar: React.FC<DemandKPIBarProps> = ({
 
           <div className="kpi-card-middle">
             <span className="kpi-value">{pendingDemands.toLocaleString()}</span>
-            <span className="kpi-trend trend-positive" title="Decreased 8% vs previous 7 days (Positive)">
-              ↓ 8%
-            </span>
           </div>
-
-          <span className="kpi-caption" aria-label="Pending proposals decreased 8% compared to the previous 7 days">
-            vs previous 7 days
-          </span>
         </div>
 
         {/* METRIC 03: AVG. RESOLUTION TIME */}
@@ -119,14 +105,7 @@ export const DemandKPIBar: React.FC<DemandKPIBarProps> = ({
 
           <div className="kpi-card-middle">
             <span className="kpi-value">{avgResolutionDays}</span>
-            <span className="kpi-trend trend-positive" title="15% faster resolution time vs previous period">
-              ↓ 15% faster
-            </span>
           </div>
-
-          <span className="kpi-caption" aria-label="Adoption Stage time decreased 15% faster compared to previous period">
-            vs previous period
-          </span>
         </div>
 
         {/* METRIC 04: HIGH PRIORITY */}
@@ -153,14 +132,7 @@ export const DemandKPIBar: React.FC<DemandKPIBarProps> = ({
 
           <div className="kpi-card-middle">
             <span className="kpi-value">{highPriorityCount}</span>
-            <span className="kpi-trend trend-negative" title="Increased 6% requiring attention">
-              ↑ 6%
-            </span>
           </div>
-
-          <span className="kpi-caption" aria-label="High priority proposals increased 6% requiring immediate attention">
-            requiring attention
-          </span>
         </div>
       </div>
     </section>
