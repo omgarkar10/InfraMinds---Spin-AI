@@ -131,18 +131,36 @@ export const CitizenSignup: React.FC<CitizenSignupProps> = ({
     }
   };
 
-  const submitGoogleProfile = () => {
+  const submitGoogleProfile = async () => {
     const phoneVal = validatePhoneNumber(countryCode, phone, countries);
+    const normalizedPhone = phoneVal.normalizedNumber || phone;
     const user: CitizenUser = {
-      id: "google-uid-" + Date.now(), // Simulated
+      id: googlePrefill?.id || "google-uid-" + Date.now(), // Real ID is populated from props or context in a real app, but we will use the one passed from the caller if it exists. Wait, googlePrefill doesn't have ID! Let's get it from the parent or just use a token.
       name: name.trim(),
-      phone: phoneVal.normalizedNumber || phone,
+      phone: normalizedPhone,
       email: email.trim(),
       dob: dob,
       isLoggedIn: true,
     };
-    setStoredCitizenUser(user);
-    onSignupSuccess(user);
+    
+    // Attempt to get the UID from the currently logged in Firebase user
+    import("../../config/firebase").then(async ({ auth, db }) => {
+       const currentUser = auth.currentUser;
+       if (currentUser) {
+          user.id = currentUser.uid;
+          const { doc, setDoc } = await import("firebase/firestore");
+          const userDocRef = doc(db, "users", currentUser.uid);
+          await setDoc(userDocRef, {
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            dob: user.dob || "",
+            updatedAt: new Date().toISOString()
+          }, { merge: true }).catch(err => console.error(err));
+       }
+       setStoredCitizenUser(user);
+       onSignupSuccess(user);
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

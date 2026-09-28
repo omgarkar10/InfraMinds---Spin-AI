@@ -8,7 +8,8 @@ import {
   signInWithPopup,
   getAdditionalUserInfo
 } from "firebase/auth";
-import { googleProvider } from "../config/firebase";
+import { googleProvider, db } from "../config/firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8080/api`;
 
@@ -147,20 +148,39 @@ export async function citizenFirebaseGoogleLogin() {
     const additionalInfo = getAdditionalUserInfo(result);
     localStorage.setItem("citizen_token", token);
     
+    // Check if the user already has a complete profile in Firestore
+    const userDocRef = doc(db, "users", result.user.uid);
+    const userDoc = await getDoc(userDocRef);
+    let isComplete = false;
+    let phone = result.user.phoneNumber || "";
+    let dob = "";
+    
+    if (userDoc.exists()) {
+      const data = userDoc.data();
+      if (data.phone && data.dob) {
+        isComplete = true;
+        phone = data.phone;
+        dob = data.dob;
+      }
+    }
+    
     return {
       user: {
         id: result.user.uid,
         name: result.user.displayName || "Citizen",
-        phone: result.user.phoneNumber || "",
-        email: result.user.email || ""
+        phone: phone,
+        email: result.user.email || "",
+        dob: dob
       },
-      isNewUser: additionalInfo?.isNewUser || false,
+      isNewUser: !isComplete, // If profile is complete, treat as returning user
       access_token: token
     };
   } catch (error: any) {
     throw new Error(getFriendlyAuthErrorMessage(error));
   }
 }
+
+
 
 export async function citizenForgotPassword(payload: { countryCode: string; phone: string; }) {
   // Phone password reset usually requires SMS OTP in Firebase.

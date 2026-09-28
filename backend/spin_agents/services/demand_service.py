@@ -76,6 +76,27 @@ async def process_pipeline_run(payload: dict) -> dict:
         user_message=translation["english_translation"],
         intake_payload=intake,
     )
+    
+    if result.get("pipeline_status") == "completed":
+        parsed = result.get("parsed_payload", {})
+        lat = parsed.get("lat_long", {}).get("lat", 0.0)
+        lng = parsed.get("lat_long", {}).get("lng", 0.0)
+        
+        payload_for_db = {
+            "user_id": intake.get("user_id"),
+            "domain": parsed.get("domain"),
+            "category": parsed.get("category"),
+            "original_text": intake.get("original_text"),
+            "english_translation": intake.get("english_translation"),
+            "district": parsed.get("district"),
+            "state": parsed.get("state"),
+        }
+        
+        demand_id = result.get("policy_routing_output", {}).get("query_id") if result.get("policy_routing_output") else str(uuid.uuid4())
+        
+        persist_demand_to_db(demand_id, payload_for_db, lat, lng)
+        result["demand_id"] = demand_id
+
     return {"status": "completed", **result}
 
 def get_demands_list(limit: int = 50) -> dict:
