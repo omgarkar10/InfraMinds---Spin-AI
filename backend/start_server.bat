@@ -1,5 +1,6 @@
 @echo off
 echo Starting SPIN Backend Server...
+cd /d "%~dp0"
 call ..\venv\Scripts\activate.bat
 echo Running FastAPI Server on http://localhost:8081...
 uvicorn spin_agents.api:app --host 0.0.0.0 --port 8081 --reload
