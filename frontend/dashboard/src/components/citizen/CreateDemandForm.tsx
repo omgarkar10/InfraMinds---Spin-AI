@@ -282,25 +282,28 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
     bigquery_synced: boolean;
   } | null>(null);
 
-  // Initialize SpeechRecognition on mount (language: auto — browser picks up from audio)
+  // Initialize SpeechRecognition on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
       const SpeechRecognition =
         (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (SpeechRecognition) {
         const rec = new SpeechRecognition();
-        rec.continuous = false;
+        rec.continuous = true; // KEEP LISTENING continuously!
         rec.interimResults = false;
-        // Use "hi-IN" as default hint — Bhashini TLD will override with actual detection
+        // Let the browser use its best default (often system language)
+        // Note: For full Indian language support, Google Chrome supports many if we specify, but "hi-IN" is a good baseline
         rec.lang = "hi-IN";
 
         rec.onresult = (event: any) => {
-          const text = event.results[0][0].transcript;
+          let text = "";
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            text += event.results[i][0].transcript;
+          }
           setSpeechTranscript((prev) => (prev ? `${prev} ${text}` : text));
           if (intakeMode === "manual") {
             setDescription((prev) => (prev ? `${prev}\n${text}` : text));
           }
-          setIsListening(false);
         };
 
         rec.onerror = (e: any) => {
@@ -318,7 +321,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
         setSpeechSupported(false);
       }
     }
-  }, [intakeMode]);
+  }, []); // Remove intakeMode dependency so it is not re-created constantly
 
   // Auto-detect language + translate via Bhashini whenever transcript changes (debounced)
   const runBhashiniDetect = useCallback(async (text: string) => {
@@ -597,6 +600,8 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
       intended_beneficiaries: requestType === "new_development" ? intendedBeneficiaries.trim() || undefined : undefined,
       evidence_urls: uploadedEvidenceUrls.length > 0 ? uploadedEvidenceUrls : undefined,
       source_language: detectedLangCode !== "auto" ? detectedLangCode : "auto",
+      // Include the translated text for staff members!
+      bhashini_translated_text: bhashiniTranslatedText || undefined,
     };
 
     try {

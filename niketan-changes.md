@@ -205,3 +205,7 @@ otranslate class to the SPIN branding logo to prevent AI translation distortion.
 - **Description**: Added secrets/ and **/secrets/ rules to .gitignore.
 - **Files Updated**: .gitignore
 - **Rationale**: Ensures all secret files and Firebase service account credentials stored in the secrets/ folder are excluded from Git tracking and version control to prevent sensitive credential leaks.
+
+- Fixed continuous voice dictation by setting rec.continuous = true in CreateDemandForm.tsx and optimizing the effect hook.
+- Included bhashini_translated_text in the SubmitRequestPayload so staff can view the english translation.
+- Updated backend/.env to add all required local dev ports to CORS_ORIGINS.

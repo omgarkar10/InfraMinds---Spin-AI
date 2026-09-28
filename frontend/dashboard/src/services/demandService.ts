@@ -63,10 +63,25 @@ export function clearStoredStaffUser() {
 export interface SubmitRequestPayload {
   description: string;
   category: string;
-  location: any;
-  priority: string;
-  language: string;
+  location?: any;
+  priority?: string;
+  language?: string;
   request_type?: string;
+  specific_issue?: string;
+  state?: string;
+  district?: string;
+  landmark?: string;
+  address?: string;
+  pincode?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  start_date?: string;
+  frequency?: string;
+  reason?: string;
+  intended_beneficiaries?: string;
+  evidence_urls?: string[];
+  source_language?: string;
+  bhashini_translated_text?: string;
 }
 
 export function getStoredDemands(...args: any[]): any[] { return []; }
