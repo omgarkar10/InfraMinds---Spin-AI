@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
 import "../../styles/citizen.css";
 import {
@@ -7,6 +7,7 @@ import {
   analyzeRequestWithGemini,
   SubmitRequestPayload,
 } from "../../services/demandService";
+import { detectAndTranslate } from "../../services/bhashiniService";
 import type { CitizenUser } from "../../types";
 
 interface CreateDemandFormProps {
@@ -237,9 +238,15 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
   // Speech Recognition & Voice Intake
   const [isListening, setIsListening] = useState<boolean>(false);
   const [speechTranscript, setSpeechTranscript] = useState<string>("");
-  const [speechLanguage, setSpeechLanguage] = useState<string>("hi-IN");
   const [speechSupported, setSpeechSupported] = useState<boolean>(true);
   const [recognitionInstance, setRecognitionInstance] = useState<any>(null);
+
+  // Bhashini auto-detection state
+  const [detectedLangCode, setDetectedLangCode] = useState<string>("auto");
+  const [detectedLangName, setDetectedLangName] = useState<string>("");
+  const [bhashiniTranslatedText, setBhashiniTranslatedText] = useState<string>("");
+  const [isBhashiniLoading, setIsBhashiniLoading] = useState<boolean>(false);
+  const [bhashiniError, setBhashiniError] = useState<string | null>(null);
 
   // AI Interpretation State
   const [isAiLoading, setIsAiLoading] = useState<boolean>(false);
@@ -275,7 +282,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
     bigquery_synced: boolean;
   } | null>(null);
 
-  // Initialize SpeechRecognition on mount
+  // Initialize SpeechRecognition on mount (language: auto — browser picks up from audio)
   useEffect(() => {
     if (typeof window !== "undefined") {
       const SpeechRecognition =
@@ -284,12 +291,12 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
         const rec = new SpeechRecognition();
         rec.continuous = false;
         rec.interimResults = false;
-        rec.lang = speechLanguage;
+        // Use "hi-IN" as default hint — Bhashini TLD will override with actual detection
+        rec.lang = "hi-IN";
 
         rec.onresult = (event: any) => {
           const text = event.results[0][0].transcript;
           setSpeechTranscript((prev) => (prev ? `${prev} ${text}` : text));
-          // If in manual mode, dictation appends directly into description
           if (intakeMode === "manual") {
             setDescription((prev) => (prev ? `${prev}\n${text}` : text));
           }
@@ -311,15 +318,34 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
         setSpeechSupported(false);
       }
     }
-  }, [speechLanguage, intakeMode]);
+  }, [intakeMode]);
 
-  // Update speech recognition language when changed
-  const handleLanguageChange = (lang: string) => {
-    setSpeechLanguage(lang);
-    if (recognitionInstance) {
-      recognitionInstance.lang = lang;
+  // Auto-detect language + translate via Bhashini whenever transcript changes (debounced)
+  const runBhashiniDetect = useCallback(async (text: string) => {
+    if (!text || text.trim().length < 3) return;
+    setIsBhashiniLoading(true);
+    setBhashiniError(null);
+    try {
+      const result = await detectAndTranslate(text, "en");
+      setDetectedLangCode(result.detected_language_code);
+      setDetectedLangName(result.detected_language_name);
+      setBhashiniTranslatedText(result.translated_text);
+    } catch (err: any) {
+      setBhashiniError("Auto-detection unavailable. Proceeding with raw text.");
+    } finally {
+      setIsBhashiniLoading(false);
     }
-  };
+  }, []);
+
+  // Debounce — trigger Bhashini TLD 800ms after the user stops typing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (speechTranscript.trim().length >= 3) {
+        runBhashiniDetect(speechTranscript);
+      }
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [speechTranscript, runBhashiniDetect]);
 
   const toggleListening = () => {
     if (!recognitionInstance) {
@@ -570,7 +596,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
       reason: requestType === "new_development" ? reason.trim() || undefined : undefined,
       intended_beneficiaries: requestType === "new_development" ? intendedBeneficiaries.trim() || undefined : undefined,
       evidence_urls: uploadedEvidenceUrls.length > 0 ? uploadedEvidenceUrls : undefined,
-      source_language: speechLanguage.split("-")[0] || "auto",
+      source_language: detectedLangCode !== "auto" ? detectedLangCode : "auto",
     };
 
     try {
@@ -826,38 +852,21 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
 
                 {/* Voice Recording Control */}
                 <div style={{ background: "var(--col-panel)", padding: "20px", borderRadius: "10px", marginBottom: "20px", border: "1px solid var(--col-border)", textAlign: "center" }}>
-                  <div style={{ marginBottom: "16px", textAlign: "left" }}>
-                    <label className="form-label" style={{ fontSize: "12px", display: "block" }}>Select Speaking Language:</label>
-                    <select 
-                      className="form-input" 
-                      style={{ fontSize: "13px", padding: "8px", width: "100%", maxWidth: "300px", margin: "0 auto", display: "block" }}
-                      value={speechLanguage}
-                      onChange={(e) => handleLanguageChange(e.target.value)}
-                    >
-                      <option value="en-US">English</option>
-                      <option value="hi-IN">Hindi</option>
-                      <option value="as-IN">Assamese</option>
-                      <option value="bn-IN">Bengali</option>
-                      <option value="brx-IN">Bodo</option>
-                      <option value="doi-IN">Dogri</option>
-                      <option value="gu-IN">Gujarati</option>
-                      <option value="kn-IN">Kannada</option>
-                      <option value="ks-IN">Kashmiri</option>
-                      <option value="kok-IN">Konkani</option>
-                      <option value="mai-IN">Maithili</option>
-                      <option value="ml-IN">Malayalam</option>
-                      <option value="mni-IN">Manipuri</option>
-                      <option value="mr-IN">Marathi</option>
-                      <option value="ne-IN">Nepali</option>
-                      <option value="or-IN">Odia</option>
-                      <option value="pa-IN">Punjabi</option>
-                      <option value="sa-IN">Sanskrit</option>
-                      <option value="sat-IN">Santali</option>
-                      <option value="sd-IN">Sindhi</option>
-                      <option value="ta-IN">Tamil</option>
-                      <option value="te-IN">Telugu</option>
-                      <option value="ur-IN">Urdu</option>
-                    </select>
+                  {/* Bhashini Auto-Detection Badge — replaces manual language dropdown */}
+                  <div style={{ marginBottom: "16px", textAlign: "left", display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                    <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--col-text-muted)" }}>🧠 Language:</span>
+                    {isBhashiniLoading ? (
+                      <span style={{ fontSize: "12px", color: "var(--col-orange)", fontStyle: "italic" }}>Detecting language...</span>
+                    ) : detectedLangName ? (
+                      <span style={{ fontSize: "12px", background: "rgba(224, 90, 43, 0.1)", border: "1px solid var(--col-orange)", borderRadius: "20px", padding: "2px 12px", fontWeight: 700, color: "var(--col-orange)" }}>
+                        ✓ {detectedLangName} ({detectedLangCode})
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: "12px", color: "var(--col-text-muted)", fontStyle: "italic" }}>Auto-detected via Bhashini · Speak in any Indian language</span>
+                    )}
+                    {bhashiniError && (
+                      <span style={{ fontSize: "11px", color: "#ef4444" }}>{bhashiniError}</span>
+                    )}
                   </div>
                   <button
                     type="button"
@@ -886,7 +895,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
 
                   <div style={{ marginTop: "16px", textAlign: "left" }}>
                     <label className="form-label" style={{ fontSize: "12px", fontWeight: 700 }}>
-                      Recognized Voice Transcript (Editable):
+                      Your Voice Transcript (Editable):
                     </label>
                     <textarea
                       className="form-input"
@@ -897,6 +906,25 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                       style={{ fontSize: "14px", marginTop: "4px" }}
                     />
                   </div>
+
+                  {/* Bhashini Live Translation Preview */}
+                  {bhashiniTranslatedText && speechTranscript && (
+                    <div style={{
+                      marginTop: "12px",
+                      textAlign: "left",
+                      background: "rgba(224, 90, 43, 0.05)",
+                      border: "1px solid rgba(224, 90, 43, 0.3)",
+                      borderRadius: "8px",
+                      padding: "12px 14px",
+                    }}>
+                      <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--col-orange)", marginBottom: "4px", letterSpacing: "0.05em" }}>
+                        🌐 BHASHINI TRANSLATION PREVIEW (English)
+                      </div>
+                      <div style={{ fontSize: "13px", color: "var(--col-navy)", lineHeight: "1.5" }}>
+                        {bhashiniTranslatedText}
+                      </div>
+                    </div>
+                  )}
 
                   <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "12px" }}>
                     <button
