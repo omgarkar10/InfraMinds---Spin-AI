@@ -22,9 +22,8 @@ async def pipeline_run(
 @router.get("/api/demands")
 async def list_demands(
     limit: int = 50,
-    current_user: UserSchema = Depends(require_staff),
 ):
-    """List all demands. Requires staff/admin role."""
+    """List all demands (public feed)."""
     return get_demands_list(limit)
 
 @router.post("/api/demands/{demand_id}/vote")

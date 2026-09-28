@@ -150,18 +150,22 @@ export async function citizenFirebaseGoogleLogin() {
     
     // Check if the user already has a complete profile in Firestore
     const userDocRef = doc(db, "users", result.user.uid);
-    const userDoc = await getDoc(userDocRef);
     let isComplete = false;
     let phone = result.user.phoneNumber || "";
     let dob = "";
     
-    if (userDoc.exists()) {
-      const data = userDoc.data();
-      if (data.phone && data.dob) {
-        isComplete = true;
-        phone = data.phone;
-        dob = data.dob;
+    try {
+      const userDoc = await getDoc(userDocRef);
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        if (data.phone && data.dob) {
+          isComplete = true;
+          phone = data.phone;
+          dob = data.dob;
+        }
       }
+    } catch (e) {
+      console.warn("Firestore offline or unavailable, treating as new user.", e);
     }
     
     return {

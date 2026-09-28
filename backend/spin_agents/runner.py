@@ -42,7 +42,8 @@ async def run_pipeline(
         proxy_filed_for=proxy_for,
     )
 
-    result = run_sequential_pipeline(request)
+    explicitly_confirmed = channel == ChannelType.PWA
+    result = run_sequential_pipeline(request, explicitly_confirmed=explicitly_confirmed)
     sem = result.semantic_output
     ver = result.verification_output
     pol = result.policy_output

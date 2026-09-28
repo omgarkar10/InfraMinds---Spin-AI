@@ -101,6 +101,9 @@ async def process_pipeline_run(payload: dict) -> dict:
 
 def get_demands_list(limit: int = 50) -> dict:
     db = get_firestore_db()
+    if not db:
+        return {"count": 0, "demands": []}
+    
     demands_ref = db.collection("demands").order_by("created_at", direction=firestore.Query.DESCENDING).limit(limit)
     docs = demands_ref.stream()
     
@@ -117,6 +120,9 @@ def get_demands_list(limit: int = 50) -> dict:
 
 def persist_demand_to_db(demand_id: str, payload: dict, lat: float, lng: float) -> str:
     db = get_firestore_db()
+    if not db:
+        return demand_id
+    
     doc_ref = db.collection("demands").document(demand_id)
     
     demand_data = {
@@ -145,6 +151,9 @@ def persist_demand_to_db(demand_id: str, payload: dict, lat: float, lng: float) 
 
 def cast_vote(demand_id: str, user_id: str) -> bool:
     db = get_firestore_db()
+    if not db:
+        return True
+    
     vote_id = f"{demand_id}_{user_id}"
     vote_ref = db.collection("demand_votes").document(vote_id)
     
