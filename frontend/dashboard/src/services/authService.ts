@@ -35,6 +35,30 @@ export async function getCaptchaChallenge() {
   return response.json();
 }
 
+function getFriendlyAuthErrorMessage(error: any): string {
+  const code = error?.code || "";
+  switch (code) {
+    case "auth/unauthorized-domain":
+      return "This domain is not authorized. Please add localhost to Firebase Console -> Authentication -> Authorized Domains.";
+    case "auth/operation-not-allowed":
+      return "This login method is disabled. Please enable Google Sign-In in Firebase Console -> Authentication -> Sign-in method.";
+    case "auth/email-already-in-use":
+      return "An account with this phone number already exists.";
+    case "auth/wrong-password":
+    case "auth/invalid-credential":
+    case "auth/user-not-found":
+      return "Incorrect phone number or password.";
+    case "auth/popup-closed-by-user":
+      return "Google Sign-in was cancelled.";
+    case "auth/network-request-failed":
+      return "Network error. Please check your internet connection or adblocker.";
+    case "auth/too-many-requests":
+      return "Too many failed login attempts. Please try again later.";
+    default:
+      return error?.message || "Authentication failed. Please try again.";
+  }
+}
+
 // Convert phone number to a synthetic email for Firebase Email/Password provider
 const getSyntheticEmail = (phone: string) => `${phone}@citizen.spin.local`;
 
@@ -67,7 +91,7 @@ export async function citizenSignup(payload: {
       access_token: token
     };
   } catch (error: any) {
-    throw new Error(error.message || "Unable to create your account.");
+    throw new Error(getFriendlyAuthErrorMessage(error));
   }
 }
 
@@ -89,7 +113,7 @@ export async function citizenGoogleLogin(idToken: string) {
       access_token: token
     };
   } catch (error: any) {
-    throw new Error(error.message || "Google authentication failed.");
+    throw new Error(getFriendlyAuthErrorMessage(error));
   }
 }
 
@@ -111,7 +135,7 @@ export async function citizenLogin(payload: { countryCode: string; phone: string
       access_token: token
     };
   } catch (error: any) {
-    throw new Error("Invalid phone number or password.");
+    throw new Error(getFriendlyAuthErrorMessage(error));
   }
 }
 
@@ -131,7 +155,7 @@ export async function citizenFirebaseGoogleLogin() {
       access_token: token
     };
   } catch (error: any) {
-    throw new Error(error.message || "Google authentication failed.");
+    throw new Error(getFriendlyAuthErrorMessage(error));
   }
 }
 

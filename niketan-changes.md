@@ -128,5 +128,17 @@ otranslate class to the SPIN branding logo to prevent AI translation distortion.
   - `frontend/dashboard/src/components/citizen/CreateDemandForm.tsx`: Renamed `RaiseDemandFormProps` and `export const RaiseDemandForm` to `CreateDemandForm`.
 - **Rationale**: Solves the Vite `Uncaught SyntaxError: does not provide an export named 'CreateDemandForm'` error that caused a blank screen after we updated `App.tsx` to import the correct file name.
 
+## 2026-09-28: Backend FastAPI Crash Fix (ImportError)
+- **Description**: Fixed `ImportError: cannot import name 'User' from 'spin_agents.models'` in the dashboard router.
+- **Files Modified**:
+  - `backend/spin_agents/routers/dashboard_router.py`: Replaced `User` type hint and import with `UserSchema` to match the current definition in `models.py`.
+- **Rationale**: The legacy backend router was importing `User` instead of the renamed `UserSchema`, causing a fatal crash during the `uvicorn` startup sequence.
+
+## 2026-09-28: Friendly Firebase Auth Error Mapping
+- **Description**: Implemented user-friendly error mapping for all Firebase Authentication errors.
+- **Files Modified**:
+  - `frontend/dashboard/src/services/authService.ts`: Added `getFriendlyAuthErrorMessage` and applied it to all citizen authentication catch blocks (`citizenSignup`, `citizenGoogleLogin`, `citizenLogin`, `citizenFirebaseGoogleLogin`).
+- **Rationale**: Previously, native Firebase SDK errors like `Firebase: Error (auth/unauthorized-domain).` were being dumped directly into the UI. The mapping now gracefully translates them (e.g., advising the user to add `localhost` to authorized domains).
+
 
 - **Updated `.agents/GEMINI.md`**: Appended the SLASH COMMAND SYSTEM INSTRUCTIONS to strictly enforce predefined command behaviors (`/ask`, `/plan`, `/schema`, `/api`, `/spec`, `/review`) for tailored formatting and automated structurings without fluff.
