@@ -56,7 +56,7 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
       try {
         setLoading(true);
         const res = await fetchDemands();
-        setDemands(Array.isArray(res) ? res : []);
+        setDemands(res.demands || (Array.isArray(res) ? res : []));
       } catch (err) {
         console.error("Failed to fetch demands for feed", err);
       } finally {
