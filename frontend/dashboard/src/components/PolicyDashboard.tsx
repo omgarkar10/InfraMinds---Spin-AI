@@ -3,43 +3,18 @@ import { HeatMap } from "./HeatMap";
 import { ExecutiveSummaryPanel } from "./ExecutiveSummaryPanel";
 import { BudgetReallocationPanel } from "./BudgetReallocationPanel";
 import { usePolicyData } from "../hooks/usePolicyData";
-import { getDistrictsByState, getAllStateNames } from "../data/indiaGeoData";
 import type { BudgetAllocation } from "../types";
 
-export function PolicyDashboard({ onNavigate }: { onNavigate?: (view: string) => void }) {
+export function PolicyDashboard() {
   const { summary, redZones, loading, error, refresh, approvePolicyAction } = usePolicyData();
-
-  const [stateFilter, setStateFilter] = useState<string>("");
   const [districtFilter, setDistrictFilter] = useState<string>("");
-  const [stateSearch, setStateSearch] = useState<string>("");
-  const [districtSearch, setDistrictSearch] = useState<string>("");
 
-  const allStateNames = useMemo(() => getAllStateNames(), []);
-
-  const filteredStates = useMemo(() =>
-    stateSearch
-      ? allStateNames.filter((s) => s.toLowerCase().includes(stateSearch.toLowerCase()))
-      : allStateNames,
-    [allStateNames, stateSearch]
-  );
-
-  const districtsForState = useMemo(() =>
-    stateFilter ? getDistrictsByState(stateFilter) : [],
-    [stateFilter]
-  );
-
-  const filteredDistricts = useMemo(() =>
-    districtSearch
-      ? districtsForState.filter((d) => d.toLowerCase().includes(districtSearch.toLowerCase()))
-      : districtsForState,
-    [districtsForState, districtSearch]
+  const districts = useMemo(
+    () => [...new Set(redZones.map((z) => z.district))].sort(),
+    [redZones]
   );
 
   const topRedZoneDomain = redZones[0]?.domain;
-
-  const handleSearch = () => {
-    refresh(districtFilter || undefined, stateFilter || undefined);
-  };
 
   const handleApprove = async (allocations: BudgetAllocation[]) => {
     const topAllocation = allocations.reduce((max, a) =>
@@ -51,43 +26,20 @@ export function PolicyDashboard({ onNavigate }: { onNavigate?: (view: string) =>
       target_language: "hi",
       action: "reallocated",
       budget_cr: topAllocation.proposed_cr,
-      message_en: `Budget reallocation approved for ${topAllocation.domain} infrastructure.`,
+      message_en: `Budget reallocation approved for ${topAllocation.domain} infrastructure. Your proposal is being addressed.`,
     });
-    await refresh(districtFilter || undefined, stateFilter || undefined);
+    await refresh(districtFilter || undefined);
   };
 
   return (
     <div className="dashboard">
-      {/* Header with Back to Home on the Left */}
+      {/* Policymaker Operational Header */}
       <header className="dashboard-header">
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          {onNavigate && (
-            <button
-              onClick={() => onNavigate("landing")}
-              className="btn-outline"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "6px 12px",
-                fontSize: "12px",
-                fontWeight: "700",
-                color: "var(--col-navy)",
-                background: "var(--col-surface)",
-                borderColor: "var(--col-border)",
-                borderRadius: "6px",
-                cursor: "pointer",
-                whiteSpace: "nowrap"
-              }}
-            >
-              ← Back to Home
-            </button>
-          )}
-
-          <div className="dashboard-title-group">
-            <h1>POLICYMAKER / LIVE INTELLIGENCE</h1>
-            <span className="dashboard-subtitle">Public Infrastructure Intelligence Command Center</span>
-          </div>
+        <div className="dashboard-title-group">
+          <h1>POLICYMAKER / LIVE INTELLIGENCE</h1>
+          <span className="dashboard-subtitle">
+            Public Infrastructure Intelligence Command Center
+          </span>
         </div>
 
         <div className="dashboard-status">
@@ -95,122 +47,57 @@ export function PolicyDashboard({ onNavigate }: { onNavigate?: (view: string) =>
           SYSTEM OPERATIONAL
         </div>
 
-        {/* State + District Selector Controls */}
-        <div className="header-controls" style={{ display: "flex", flexDirection: "column", gap: "8px", minWidth: "380px" }}>
-          {/* State Row */}
-          <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-            <div style={{ position: "relative", flex: 1 }}>
-              <input
-                type="text"
-                placeholder="Search state..."
-                value={stateSearch}
-                onChange={(e) => setStateSearch(e.target.value)}
-                style={{
-                  width: "100%", padding: "6px 8px", fontSize: "12px", border: "1px solid var(--col-border)",
-                  borderRadius: "4px", background: "var(--col-surface)", boxSizing: "border-box"
-                }}
-              />
-            </div>
-            <select
-              value={stateFilter}
-              onChange={(e) => {
-                setStateFilter(e.target.value);
-                setDistrictFilter(""); // reset district on state change
-                setDistrictSearch("");
-              }}
-              className="district-select"
-              aria-label="Filter by state"
-              style={{ flex: 2 }}
-            >
-              <option value="">All States / UTs</option>
-              {filteredStates.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* District Row — only shown when a state is selected */}
-          {stateFilter && (
-            <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-              <div style={{ position: "relative", flex: 1 }}>
-                <input
-                  type="text"
-                  placeholder="Search district..."
-                  value={districtSearch}
-                  onChange={(e) => setDistrictSearch(e.target.value)}
-                  style={{
-                    width: "100%", padding: "6px 8px", fontSize: "12px", border: "1px solid var(--col-border)",
-                    borderRadius: "4px", background: "var(--col-surface)", boxSizing: "border-box"
-                  }}
-                />
-              </div>
-              <select
-                value={districtFilter}
-                onChange={(e) => setDistrictFilter(e.target.value)}
-                className="district-select"
-                aria-label="Filter by district"
-                style={{ flex: 2 }}
-              >
-                <option value="">All Districts in {stateFilter}</option>
-                {filteredDistricts.map((d) => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Search & Refresh buttons */}
-          <div style={{ display: "flex", gap: "6px" }}>
-            <button
-              className="refresh-btn"
-              onClick={handleSearch}
-              disabled={loading}
-              style={{ flex: 1, background: "var(--col-orange)", color: "#fff", border: "none", borderRadius: "6px", padding: "8px", fontSize: "12px", fontWeight: "700", cursor: "pointer" }}
-            >
-              {loading ? "Loading..." : "🔍 Search"}
-            </button>
-            <button
-              className="refresh-btn"
-              onClick={() => {
-                setStateFilter("");
-                setDistrictFilter("");
-                setStateSearch("");
-                setDistrictSearch("");
-                refresh(undefined, undefined);
-              }}
-              disabled={loading}
-            >
-              Reset
-            </button>
-            {onNavigate && (
-              <button
-                className="refresh-btn"
-                onClick={() => onNavigate("approval-portal")}
-                style={{ whiteSpace: "nowrap", fontSize: "11px" }}
-              >
-                📋 Approval Portal
-              </button>
-            )}
-          </div>
+        <div className="header-controls">
+          <select
+            value={districtFilter}
+            onChange={(e) => {
+              setDistrictFilter(e.target.value);
+              refresh(e.target.value || undefined);
+            }}
+            className="district-select"
+            aria-label="Filter by district"
+          >
+            <option value="">All Districts</option>
+            {districts.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
+          <button 
+            className="btn-outline"
+            onClick={() => alert("Downloading PDF Impact Report...")}
+            style={{ borderColor: "var(--col-navy)", color: "var(--col-navy)", background: "#fff", padding: "6px 12px", fontSize: "12px", fontWeight: "bold" }}
+          >
+            📥 Export Impact Summary
+          </button>
+          <button
+            className="refresh-btn"
+            onClick={() => refresh(districtFilter || undefined)}
+            disabled={loading}
+          >
+            {loading ? "Refreshing..." : "Refresh Map"}
+          </button>
         </div>
       </header>
 
-      {/* Error Banner */}
+      {/* Error Recovery Banner */}
       {error && (
         <div className="error-banner" role="alert">
           <div className="error-banner-content">
             <strong>LIVE INTELLIGENCE UNAVAILABLE</strong>
-            <span> — Could not retrieve the latest intelligence feed.</span>
+            <span> — The dashboard could not retrieve the latest intelligence feed.</span>
           </div>
-          <button className="error-retry-btn" onClick={() => refresh(districtFilter || undefined, stateFilter || undefined)}>
+          <button className="error-retry-btn" onClick={() => refresh(districtFilter || undefined)}>
             Retry
           </button>
         </div>
       )}
 
-      {/* Main Grid */}
+      {/* Main Grid: GIS Map Container + Right Intelligence Panels */}
       <main className="dashboard-main">
         <section className="map-section">
+          {/* Top Surrounding Overlay */}
           <div className="map-label">
             <div className="map-label-left">
               <span className="red-dot" />
@@ -219,43 +106,71 @@ export function PolicyDashboard({ onNavigate }: { onNavigate?: (view: string) =>
             </div>
             <div className="map-label-right">
               {districtFilter ? (
-                <span className="district-tag">District: {districtFilter}, {stateFilter}</span>
-              ) : stateFilter ? (
-                <span className="district-tag">State: {stateFilter}</span>
+                <span className="district-tag">District: {districtFilter}</span>
               ) : (
-                <span className="district-tag">All India Coverage</span>
+                <span className="district-tag">All Districts Coverage</span>
               )}
             </div>
           </div>
 
+          {/* Locked Map Component Area */}
           <div className="map-wrapper" style={{ position: "relative", flex: 1, minHeight: "520px" }}>
             <HeatMap
               redZones={redZones}
               selectedDistrict={districtFilter || undefined}
-              selectedState={stateFilter || undefined}
             />
+
+            {/* Bottom-Left Map Legend Overlay (Surrounding UI only) */}
             <div className="map-legend-overlay">
               <div className="legend-title">GIS LAYER LEGEND</div>
               <div className="legend-item">
                 <span className="legend-dot red" />
-                <span>Red Zone Cluster — High Severity</span>
+                <span>Red Zone Cluster — High Priority</span>
               </div>
               <div className="legend-item">
                 <span className="legend-dot blue" />
-                <span>Verified Civic Grievance Location</span>
+                <span>Verified Civic Proposal Location</span>
               </div>
             </div>
           </div>
         </section>
 
         {/* Right Panel Stack */}
-        <section className="side-panels">
+        <section className="side-panels" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           <ExecutiveSummaryPanel summary={summary} loading={loading} />
+          
+          <div className="panel" style={{ padding: "20px" }}>
+            <div className="panel-header" style={{ marginBottom: "16px" }}>
+              <h2 className="panel-title">Vote Velocity & Trend Panel</h2>
+            </div>
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+                <span style={{ fontSize: "12px", color: "var(--col-text-muted)" }}>Current Support Velocity</span>
+                <span style={{ fontSize: "12px", color: "var(--col-green)", fontWeight: "bold" }}>↑ +420 votes/hr</span>
+              </div>
+              <svg viewBox="0 0 100 30" style={{ width: "100%", height: "40px" }} aria-hidden="true" role="img">
+                <path d="M0 24 L15 22 L30 18 L45 20 L60 12 L75 14 L90 6 L100 2" fill="none" stroke="var(--col-orange)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M0 24 L15 22 L30 18 L45 20 L60 12 L75 14 L90 6 L100 2 L100 30 L0 30 Z" fill="var(--col-orange-dim)" opacity="0.4" />
+              </svg>
+            </div>
+            <div style={{ marginTop: "16px", paddingTop: "16px", borderTop: "1px solid #eee" }}>
+              <div style={{ fontSize: "12px", fontWeight: 600, marginBottom: "10px", color: "var(--col-navy)" }}>Category Allocation Breakdown</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "12px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}><span>Public Transit</span> <span>45%</span></div>
+                <div style={{ width: "100%", background: "#eee", height: "6px", borderRadius: "3px" }}><div style={{ width: "45%", background: "var(--col-blue)", height: "100%", borderRadius: "3px" }}/></div>
+                
+                <div style={{ display: "flex", justifyContent: "space-between" }}><span>Sanitation</span> <span>30%</span></div>
+                <div style={{ width: "100%", background: "#eee", height: "6px", borderRadius: "3px" }}><div style={{ width: "30%", background: "var(--col-orange)", height: "100%", borderRadius: "3px" }}/></div>
+                
+                <div style={{ display: "flex", justifyContent: "space-between" }}><span>Public Parks</span> <span>25%</span></div>
+                <div style={{ width: "100%", background: "#eee", height: "6px", borderRadius: "3px" }}><div style={{ width: "25%", background: "var(--col-green)", height: "100%", borderRadius: "3px" }}/></div>
+              </div>
+            </div>
+          </div>
+
           <BudgetReallocationPanel
             onApprove={handleApprove}
             redZoneDomain={topRedZoneDomain}
-            selectedState={stateFilter || undefined}
-            selectedDistrict={districtFilter || undefined}
           />
         </section>
       </main>
@@ -263,5 +178,3 @@ export function PolicyDashboard({ onNavigate }: { onNavigate?: (view: string) =>
   );
 }
 
-// Keep named export + default for backward compat
-export default PolicyDashboard;

@@ -1,41 +1,43 @@
-import uuid
+from pydantic import BaseModel, Field
+from datetime import datetime
+from typing import Optional
 
-from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, Text
-from sqlalchemy.sql import func
+class UserSchema(BaseModel):
+    id: str
+    location_id: Optional[str] = None
+    age_bracket: Optional[str] = None
+    is_verified_resident: bool = False
+    role: str = "Citizen"
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
-from spin_agents.db import Base
+class LocationSchema(BaseModel):
+    id: str
+    name: str
+    parent_location_id: Optional[str] = None
 
+class CategorySchema(BaseModel):
+    id: str
+    name: str
 
-class User(Base):
-    __tablename__ = "users"
+class DemandSchema(BaseModel):
+    id: Optional[str] = None
+    author_user_id: str
+    category: str
+    domain: str
+    latitude: float
+    longitude: float
+    original_text: str
+    english_translation: str
+    district: Optional[str] = None
+    state: Optional[str] = None
+    status: str = 'gathering_support'
+    vote_count: int = 1
+    vote_threshold: int = 100
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    status_updated_at: datetime = Field(default_factory=datetime.utcnow)
 
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    phone_number = Column(String(20), unique=True, index=True, nullable=True)
-    email = Column(String(255), unique=True, index=True, nullable=True)
-    password_hash = Column(String(255), nullable=True)
-    name = Column(String(255), nullable=True)
-    is_verified = Column(Boolean, default=False)
-    role = Column(String(50), default="citizen") # citizen, staff, admin, etc.
-    department = Column(String(255), nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-class Grievance(Base):
-    __tablename__ = "grievances"
-
-    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    grievance_id = Column(String(50), unique=True, index=True, nullable=False)
-    user_id = Column(String(255), nullable=True)
-    domain = Column(String(255), nullable=True)
-    category = Column(String(255), nullable=True)
-    severity = Column(Integer, default=5)
-    priority = Column(String(50), default="Medium")
-    latitude = Column(Float, nullable=True)
-    longitude = Column(Float, nullable=True)
-    landmark = Column(String(255), nullable=True)
-    original_text = Column(Text, nullable=True)
-    english_translation = Column(Text, nullable=True)
-    district = Column(String(100), nullable=True)
-    state = Column(String(100), nullable=True)
-    status = Column(String(50), default="Submitted")
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
+class DemandVoteSchema(BaseModel):
+    id: Optional[str] = None
+    demand_id: str
+    user_id: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)

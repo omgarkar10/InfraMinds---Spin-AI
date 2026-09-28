@@ -1,45 +1,202 @@
-import { apiClient } from "./apiClient";
+import { auth } from "../config/firebase";
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  updateProfile,
+  signInWithCredential,
+  GoogleAuthProvider,
+  signInWithPopup
+} from "firebase/auth";
+import { googleProvider } from "../config/firebase";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 
 export async function getCountriesConfig() {
-  return apiClient.get<any>("/config/countries");
+  const response = await fetch(`${API_URL}/config/countries`);
+  if (!response.ok) {
+    throw new Error("Failed to load country configuration");
+  }
+  return response.json();
 }
 
 export async function getAuthConfig() {
-  return apiClient.get<any>("/config/auth");
+  const response = await fetch(`${API_URL}/config/auth`);
+  if (!response.ok) {
+    throw new Error("Failed to load authentication configuration");
+  }
+  return response.json();
 }
 
-export async function citizenSignup(payload: { name: string; countryCode: string; phone: string; password: string; }) {
-  const data = await apiClient.post<any>("/auth/citizen/signup", payload);
-  if (data.access_token) {
-    localStorage.setItem("citizen_token", data.access_token);
+export async function getCaptchaChallenge() {
+  const response = await fetch(`${API_URL}/auth/captcha`);
+  if (!response.ok) {
+    throw new Error("Failed to load CAPTCHA challenge");
   }
-  return data;
+  return response.json();
+}
+
+function getFriendlyAuthErrorMessage(error: any): string {
+  const code = error?.code || "";
+  switch (code) {
+    case "auth/unauthorized-domain":
+      return "This domain is not authorized. Please add localhost to Firebase Console -> Authentication -> Authorized Domains.";
+    case "auth/operation-not-allowed":
+      return "This login method is disabled. Please enable Google Sign-In in Firebase Console -> Authentication -> Sign-in method.";
+    case "auth/email-already-in-use":
+      return "An account with this phone number already exists.";
+    case "auth/wrong-password":
+    case "auth/invalid-credential":
+    case "auth/user-not-found":
+      return "Incorrect phone number or password.";
+    case "auth/popup-closed-by-user":
+      return "Google Sign-in was cancelled.";
+    case "auth/network-request-failed":
+      return "Network error. Please check your internet connection or adblocker.";
+    case "auth/too-many-requests":
+      return "Too many failed login attempts. Please try again later.";
+    default:
+      return error?.message || "Authentication failed. Please try again.";
+  }
+}
+
+// Convert phone number to a synthetic email for Firebase Email/Password provider
+const getSyntheticEmail = (phone: string) => `${phone}@citizen.spin.local`;
+
+export async function citizenSignup(payload: {
+  name: string;
+  countryCode: string;
+  phone: string;
+  password: string;
+  captcha_token?: string;
+  captcha_answer?: string;
+}) {
+  try {
+    const syntheticEmail = getSyntheticEmail(payload.phone);
+    const userCredential = await createUserWithEmailAndPassword(auth, syntheticEmail, payload.password);
+    
+    await updateProfile(userCredential.user, {
+      displayName: payload.name,
+    });
+    
+    const token = await userCredential.user.getIdToken();
+    localStorage.setItem("citizen_token", token);
+    
+    return {
+      user: {
+        id: userCredential.user.uid,
+        name: payload.name,
+        phone: payload.phone,
+        email: syntheticEmail
+      },
+      access_token: token
+    };
+  } catch (error: any) {
+    throw new Error(getFriendlyAuthErrorMessage(error));
+  }
+}
+
+export async function citizenGoogleLogin(idToken: string) {
+  // If using Google Identity Services (GIS) credential token directly
+  try {
+    const credential = GoogleAuthProvider.credential(idToken);
+    const userCredential = await signInWithCredential(auth, credential);
+    const token = await userCredential.user.getIdToken();
+    localStorage.setItem("citizen_token", token);
+    
+    return {
+      user: {
+        id: userCredential.user.uid,
+        name: userCredential.user.displayName || "Citizen",
+        phone: userCredential.user.phoneNumber || "",
+        email: userCredential.user.email
+      },
+      access_token: token
+    };
+  } catch (error: any) {
+    throw new Error(getFriendlyAuthErrorMessage(error));
+  }
 }
 
 export async function citizenLogin(payload: { countryCode: string; phone: string; password: string; }) {
-  const data = await apiClient.post<any>("/auth/citizen/login", payload);
-  if (data.access_token) {
-    localStorage.setItem("citizen_token", data.access_token);
+  try {
+    const syntheticEmail = getSyntheticEmail(payload.phone);
+    const userCredential = await signInWithEmailAndPassword(auth, syntheticEmail, payload.password);
+    const token = await userCredential.user.getIdToken();
+    
+    localStorage.setItem("citizen_token", token);
+    
+    return {
+      user: {
+        id: userCredential.user.uid,
+        name: userCredential.user.displayName || "Citizen",
+        phone: payload.phone,
+        email: syntheticEmail
+      },
+      access_token: token
+    };
+  } catch (error: any) {
+    throw new Error(getFriendlyAuthErrorMessage(error));
   }
-  return data;
+}
+
+export async function citizenFirebaseGoogleLogin() {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    const token = await result.user.getIdToken();
+    localStorage.setItem("citizen_token", token);
+    
+    return {
+      user: {
+        id: result.user.uid,
+        name: result.user.displayName || "Citizen",
+        phone: result.user.phoneNumber || "",
+        email: result.user.email || ""
+      },
+      access_token: token
+    };
+  } catch (error: any) {
+    throw new Error(getFriendlyAuthErrorMessage(error));
+  }
 }
 
 export async function citizenForgotPassword(payload: { countryCode: string; phone: string; }) {
-  return apiClient.post<any>("/auth/citizen/forgot-password", payload);
+  // Phone password reset usually requires SMS OTP in Firebase.
+  // We mock this or link to a backend endpoint if using synthetic email
+  throw new Error("Password reset flow needs SMS OTP integration.");
 }
 
 export async function citizenResetPassword(payload: { phone: string; password: string; }) {
-  return apiClient.post<any>("/auth/citizen/reset-password", payload);
+  throw new Error("Password reset flow needs SMS OTP integration.");
 }
 
 export function citizenLogout() {
   localStorage.removeItem("citizen_token");
+  auth.signOut();
 }
 
 export async function staffLogin(identifier: string, password: string) {
-  const data = await apiClient.post<any>("/auth/staff-login", { identifier, password });
-  if (data.access_token) {
-    localStorage.setItem("staff_token", data.access_token);
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, identifier, password);
+    const tokenResult = await userCredential.user.getIdTokenResult(true);
+    const token = tokenResult.token;
+    let role = (tokenResult.claims.role as string) || "Department Officer";
+    let department = (tokenResult.claims.department as string) || "General Administration";
+    let name = userCredential.user.displayName || `${department} ${role}`;
+    
+    localStorage.setItem("staff_token", token);
+    
+    return {
+      user: {
+        id: userCredential.user.uid,
+        name: name,
+        email: userCredential.user.email,
+        employeeId: "EMP-" + userCredential.user.uid.substring(0,5).toUpperCase(),
+        department: department,
+        role: role
+      },
+      access_token: token
+    };
+  } catch (error: any) {
+    throw new Error(error.message || "Invalid credentials.");
   }
-  return data;
 }

@@ -5,6 +5,16 @@ from __future__ import annotations
 import os
 import secrets
 from dataclasses import dataclass, field
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from backend/.env or root .env
+_env_path = Path(__file__).resolve().parent.parent / ".env"
+if _env_path.exists():
+    load_dotenv(dotenv_path=_env_path)
+else:
+    load_dotenv()
+
 
 
 def _require_env(name: str) -> str:

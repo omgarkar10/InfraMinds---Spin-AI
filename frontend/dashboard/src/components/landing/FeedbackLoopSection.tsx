@@ -13,7 +13,7 @@ const LOOP_STEPS: LoopStep[] = [
   {
     num: "01",
     actor: "CITIZEN",
-    title: "Reports Grievance in Local Dialect",
+    title: "Reports Proposal in Local Dialect",
     description: "Citizen submits a voice note or WhatsApp message describing local water scarcity.",
     badgeClass: "badge-blue",
   },
@@ -28,7 +28,7 @@ const LOOP_STEPS: LoopStep[] = [
     num: "03",
     actor: "SPIN SYSTEM",
     title: "Identifies Red Zone Pattern",
-    description: "System identifies 37 overlapping grievances on main pipeline Segment W-402.",
+    description: "System identifies 37 overlapping proposals on main pipeline Segment W-402.",
     badgeClass: "badge-red",
   },
   {
@@ -42,7 +42,7 @@ const LOOP_STEPS: LoopStep[] = [
     num: "05",
     actor: "PUBLIC WORKS",
     title: "Executes Infrastructure Project",
-    description: "Contractor assigned to repair main line and restore municipal water supply.",
+    description: "Contractor assigned to upgrade main line and restore municipal water supply.",
     badgeClass: "badge-amber",
   },
   {
@@ -63,7 +63,7 @@ export function FeedbackLoopSection() {
           <span className="problem-h2-highlight">— and back to the citizen.</span>
         </h2>
         <p className="body-lg loop-subtitle">
-          SPIN is not merely a grievance chatbot. It is a complete, closed-loop infrastructure feedback engine.
+          SPIN is not merely a proposal chatbot. It is a complete, closed-loop infrastructure feedback engine.
         </p>
       </div>
 

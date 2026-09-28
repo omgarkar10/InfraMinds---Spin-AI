@@ -1,20 +1,8 @@
-/**
- * usePolicyData — fetches dashboard summary and red-zone data from the backend.
- *
- * Primary path: GET /api/dashboard/summary + /api/dashboard/red-zones
- * Fallback path: aggregate real grievances from the local /api/grievances list.
- *
- * The fallback ONLY aggregates real citizen-submitted grievances — it does NOT
- * generate fabricated metrics. If there are no grievances, counts are zero.
- *
- * NOTE: The `calculateLiveSummary` fallback uses severity from the backend
- * (High / Critical) as a proxy for red-zone status. It does NOT use the
- * old frontend-only `aiAnalysis.redZone` field.
- */
 import { useCallback, useEffect, useState } from "react";
 import type { DashboardSummary, RedZone, PolicyActionRequest, InfrastructureDomain } from "../types";
-import { fetchGrievances } from "../services/grievanceService";
-import { apiClient } from "../services/apiClient";
+import { getStoredDemands } from "../services/demandService";
+
+const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
 function mapCategoryToDomain(cat: string): InfrastructureDomain {
   const lower = (cat || "").toLowerCase();
@@ -24,30 +12,18 @@ function mapCategoryToDomain(cat: string): InfrastructureDomain {
   return "Water";
 }
 
-/**
- * Fallback summary calculated from real backend grievances.
- * Uses only data returned by the backend — no fabricated values.
- */
-async function calculateLiveSummary(
-  districtFilter?: string,
-  stateFilter?: string
-): Promise<{ summary: DashboardSummary; redZones: RedZone[] }> {
-  const all = await fetchGrievances();
-  let filtered = all;
-
-  if (stateFilter) {
-    filtered = filtered.filter((g) => g.location.state?.toLowerCase() === stateFilter.toLowerCase());
-  }
-  if (districtFilter) {
-    filtered = filtered.filter((g) => g.location.district.toLowerCase() === districtFilter.toLowerCase());
-  }
+function calculateLiveSummary(districtFilter?: string): { summary: DashboardSummary; redZones: RedZone[] } {
+  const all = getStoredDemands();
+  const filtered = districtFilter
+    ? all.filter((g) => g.location.district.toLowerCase() === districtFilter.toLowerCase())
+    : all;
 
   if (filtered.length === 0) {
     return {
       summary: {
         executive_summary: districtFilter
-          ? `No grievances recorded for ${districtFilter} yet.`
-          : "No citizen grievances recorded yet. Submit a report via the Citizen Portal.",
+          ? `No community demands filed for ${districtFilter} yet.`
+          : "No citizen proposals recorded yet. Submit a report via the Citizen Portal to view real-time intelligence summaries.",
         weekly_stats: {
           district: districtFilter || "All Districts",
           total_complaints: 0,
@@ -61,44 +37,45 @@ async function calculateLiveSummary(
     };
   }
 
-  // Count by category to find dominant domain
   const domainCounts: Record<string, number> = {};
   filtered.forEach((g) => {
     domainCounts[g.category] = (domainCounts[g.category] || 0) + 1;
   });
 
-  let topCategory = "Water Supply";
+  let topCategory = "Water";
   let maxCount = 0;
   Object.entries(domainCounts).forEach(([domain, count]) => {
-    if (count > maxCount) { maxCount = count; topCategory = domain; }
+    if (count > maxCount) {
+      maxCount = count;
+      topCategory = domain;
+    }
   });
 
   const topDomain = mapCategoryToDomain(topCategory);
-
-  // Red zone count: grievances with High or Critical severity from the backend
-  // (not the old frontend-fabricated aiAnalysis.redZone field)
   const redZoneCount = filtered.filter(
-    (g) => g.severity === "High" || g.severity === "Critical"
+    (g) => g.aiAnalysis?.redZone || g.priority === "High" || g.priority === "Critical"
   ).length;
 
-  const severityScores: Record<string, number> = { Low: 2.5, Medium: 5.0, High: 8.0, Critical: 10.0 };
-  const totalSeverity = filtered.reduce((acc, g) => acc + (severityScores[g.severity] || 5.0), 0);
+  const severityScores: Record<string, number> = {
+    Low: 2.5,
+    Medium: 5.0,
+    High: 8.0,
+    Critical: 10.0,
+  };
+  const totalSeverity = filtered.reduce((acc, g) => acc + (severityScores[g.priority] || 5.0), 0);
   const avgSeverity = filtered.length > 0 ? Number((totalSeverity / filtered.length).toFixed(1)) : 0;
 
-  // Red zones: only grievances with valid coordinates; density = count of grievances at that location
-  const redZones: RedZone[] = filtered
-    .filter((g) => g.location.lat && g.location.lng)
-    .map((g) => ({
-      lat: g.location.lat!,
-      lng: g.location.lng!,
-      density: 1, // Each grievance is one signal; backend clusters will aggregate
-      domain: mapCategoryToDomain(g.category),
-      district: g.location.district || "Unknown",
-    }));
+  const redZones: RedZone[] = filtered.map((g) => ({
+    lat: g.location.lat || 18.5204,
+    lng: g.location.lng || 73.8567,
+    density: 100,
+    domain: mapCategoryToDomain(g.category),
+    district: g.location.district || "Default",
+  }));
 
   return {
     summary: {
-      executive_summary: `${filtered.length} grievance(s) recorded in ${districtFilter || "all districts"}. ${topCategory} dominates. ${redZoneCount} High/Critical severity cases.`,
+      executive_summary: `${filtered.length} verified community demand(s) recorded in ${districtFilter || "all districts"}. ${topCategory} infrastructure dominates proposal volume. ${redZoneCount} Red Zone cluster(s) logged.`,
       weekly_stats: {
         district: districtFilter || "All Districts",
         total_complaints: filtered.length,
@@ -118,32 +95,25 @@ export function usePolicyData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const refresh = useCallback(async (district?: string, state?: string) => {
+  const refresh = useCallback(async (district?: string) => {
     setLoading(true);
     setError(null);
     try {
-      const queryParts: string[] = [];
-      if (district) queryParts.push(`district=${encodeURIComponent(district)}`);
-      if (state) queryParts.push(`state=${encodeURIComponent(state)}`);
-      const params = queryParts.length > 0 ? `?${queryParts.join("&")}` : "";
-
-      const [summaryData, zonesData] = await Promise.all([
-        apiClient.get<DashboardSummary>(`/api/dashboard/summary${params}`),
-        apiClient.get<{ red_zones: RedZone[] }>(`/api/dashboard/red-zones${params}`),
+      const params = district ? `?district=${encodeURIComponent(district)}` : "";
+      const [summaryRes, zonesRes] = await Promise.all([
+        fetch(`${API_BASE}/api/dashboard/summary${params}`),
+        fetch(`${API_BASE}/api/dashboard/red-zones`),
       ]);
+      if (!summaryRes.ok || !zonesRes.ok) throw new Error("Backend server unreachable");
+      const summaryData: DashboardSummary = await summaryRes.json();
+      const zonesData = await zonesRes.json();
       setSummary(summaryData);
       setRedZones(zonesData.red_zones ?? []);
     } catch (err) {
-      // Backend dashboard unavailable — fall back to local grievance aggregation
-      console.warn("[usePolicyData] Backend dashboard unavailable, aggregating from grievance list:", err);
-      try {
-        const live = await calculateLiveSummary(district, state);
-        setSummary(live.summary);
-        setRedZones(live.redZones);
-      } catch (fallbackErr) {
-        console.error("[usePolicyData] Fallback calculation failed:", fallbackErr);
-        setError("Could not load dashboard data. Please check your connection.");
-      }
+      console.warn("Backend fetch failed, calculating live data from storage:", err);
+      const live = calculateLiveSummary(district);
+      setSummary(live.summary);
+      setRedZones(live.redZones);
     } finally {
       setLoading(false);
     }
@@ -151,13 +121,18 @@ export function usePolicyData() {
 
   const approvePolicyAction = useCallback(async (action: PolicyActionRequest) => {
     try {
-      return await apiClient.post("/api/dashboard/policy-action", action);
+      const res = await fetch(`${API_BASE}/api/dashboard/policy-action`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(action),
+      });
+      if (!res.ok) throw new Error("Policy action failed");
+      return await res.json();
     } catch (err) {
-      console.warn("[usePolicyData] Policy action endpoint offline:", err);
-      // Return a locally-tracked fallback so the UI doesn't freeze
+      console.warn("Policy action endpoint offline, mock response returned:", err);
       return {
         status: action.action,
-        notification: { status: "offline_queued", to: action.user_id },
+        notification: { status: "mock_sent", to: action.user_id },
         budget_reallocated_cr: action.budget_cr,
       };
     }

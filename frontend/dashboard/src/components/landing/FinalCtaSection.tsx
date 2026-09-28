@@ -11,10 +11,10 @@ export function FinalCtaSection({ onViewChange }: FinalCtaSectionProps) {
         <div className="final-cta-card text-center">
           <span className="label-eyebrow tag-orange">TAKE ACTION TODAY</span>
           <h2 className="editorial-h2 final-cta-title">
-            Have a problem in your area?
+            Have a vision for your community's future?
           </h2>
           <p className="body-lg final-cta-subtitle">
-            Report it to your local administration.
+            Rally your neighbors and propose a public demand.
           </p>
 
           <div className="final-cta-buttons">
@@ -22,13 +22,7 @@ export function FinalCtaSection({ onViewChange }: FinalCtaSectionProps) {
               className="btn-cta-primary"
               onClick={() => onViewChange("citizen-raise")}
             >
-              Report a Problem →
-            </button>
-            <button
-              className="btn-cta-secondary"
-              onClick={() => onViewChange("citizen-track")}
-            >
-              Track My Grievance →
+              Start a Public Demand
             </button>
           </div>
         </div>

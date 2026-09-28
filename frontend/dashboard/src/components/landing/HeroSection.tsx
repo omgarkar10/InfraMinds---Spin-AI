@@ -33,13 +33,13 @@ export function HeroSection({ onViewChange }: HeroSectionProps) {
 
     // Citizen signal points
     const DOTS = [
-      { x: 0.52, y: 0.60, label: "PUNE WARD 14", domain: "WATER", active: false, t: 0, cluster: true },
-      { x: 0.50, y: 0.52, label: "MUMBAI CENTRAL", domain: "ROAD", active: false, t: 0, cluster: false },
-      { x: 0.62, y: 0.20, label: "DELHI NCR", domain: "POWER", active: false, t: 0, cluster: false },
-      { x: 0.58, y: 0.42, label: "HYDERABAD GRID", domain: "WATER", active: false, t: 0, cluster: false },
-      { x: 0.45, y: 0.38, label: "AHMEDABAD LINK", domain: "ROAD", active: false, t: 0, cluster: false },
-      { x: 0.68, y: 0.65, label: "BENGALURU EAST", domain: "WATER", active: false, t: 0, cluster: false },
-      { x: 0.55, y: 0.78, label: "CHENNAI METRO", domain: "POWER", active: false, t: 0, cluster: false },
+      { x: 0.52, y: 0.60, label: "PUNE WARD 14", domain: "GATHERING_SUPPORT", active: false, t: 0, cluster: true },
+      { x: 0.50, y: 0.52, label: "MUMBAI CENTRAL", domain: "FEASIBILITY_STUDY", active: false, t: 0, cluster: false },
+      { x: 0.62, y: 0.20, label: "DELHI NCR", domain: "APPROVED_FOR_BUDGET", active: false, t: 0, cluster: false },
+      { x: 0.58, y: 0.42, label: "HYDERABAD GRID", domain: "GATHERING_SUPPORT", active: false, t: 0, cluster: false },
+      { x: 0.45, y: 0.38, label: "AHMEDABAD LINK", domain: "FEASIBILITY_STUDY", active: false, t: 0, cluster: false },
+      { x: 0.68, y: 0.65, label: "BENGALURU EAST", domain: "GATHERING_SUPPORT", active: false, t: 0, cluster: false },
+      { x: 0.55, y: 0.78, label: "CHENNAI METRO", domain: "APPROVED_FOR_BUDGET", active: false, t: 0, cluster: false },
     ];
 
     let frame = 0;
@@ -97,7 +97,7 @@ export function HeroSection({ onViewChange }: HeroSectionProps) {
 
         const isCluster = dot.cluster && frame > 400;
         const r = isCluster ? 7 : 4;
-        const col = dot.domain === "WATER" ? "2, 132, 199" : dot.domain === "ROAD" ? "15, 23, 42" : "22, 163, 74";
+        const col = dot.domain === "GATHERING_SUPPORT" ? "2, 132, 199" : dot.domain === "FEASIBILITY_STUDY" ? "15, 23, 42" : "22, 163, 74";
 
         ctx.beginPath();
         ctx.arc(px, py, r, 0, Math.PI * 2);
@@ -136,20 +136,20 @@ export function HeroSection({ onViewChange }: HeroSectionProps) {
           </div>
 
           <h1 className="editorial-h1 hero-headline">
-            Turning Citizen Voices into <span className="text-highlight">Better Public Infrastructure</span>
+            Shape your city's future through <span className="text-highlight">Public Demand</span>
           </h1>
 
           <p className="body-lg hero-supporting-text">
-            SPIN helps citizens report problems affecting their community and helps authorities understand where attention is needed.
+            Propose public infrastructure projects, rally community votes, and help authorities measure the demand for civic improvements.
           </p>
 
           {/* Primary Action Buttons for Citizens */}
           <div className="hero-actions">
             <button className="hero-btn-primary" onClick={() => onViewChange?.("citizen-raise")}>
-              Report a Problem →
+              Start a Public Demand →
             </button>
             <button className="hero-btn-secondary" onClick={() => onViewChange?.("citizen-track")}>
-              Track My Grievance
+              Vote on Local Demands
             </button>
 
           </div>
@@ -184,10 +184,10 @@ export function HeroSection({ onViewChange }: HeroSectionProps) {
             <div className="map-legend">
               <span className="legend-title">SIGNAL LEGEND:</span>
               <div className="legend-items">
-                <span className="legend-item"><span className="dot blue" /> Water Issues</span>
-                <span className="legend-item"><span className="dot navy" /> Road & Transit</span>
-                <span className="legend-item"><span className="dot green" /> Power & Lighting</span>
-                <span className="legend-item"><span className="dot red" /> Priority Attention</span>
+                <span className="legend-item"><span className="dot blue" /> Gathering Support</span>
+                <span className="legend-item"><span className="dot navy" /> Feasibility Study</span>
+                <span className="legend-item"><span className="dot green" /> Approved for Budget</span>
+                <span className="legend-item"><span className="dot red" /> Trending Demands</span>
               </div>
             </div>
           </div>

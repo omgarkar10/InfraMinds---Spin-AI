@@ -41,6 +41,8 @@ venv.bak/
 *.pem
 service-account*.json
 **/service-account*.json
+secrets/
+**/secrets/
 *.key
 
 # Databases

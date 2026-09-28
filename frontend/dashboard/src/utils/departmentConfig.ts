@@ -79,7 +79,7 @@ export function getNormalizedDepartment(dept: string | undefined | null): Depart
 }
 
 /**
- * Returns the canonical department assigned to a given grievance category or issue string.
+ * Returns the canonical department assigned to a given proposal category or issue string.
  */
 export function getDepartmentForCategory(category: string): DepartmentName {
   if (CATEGORY_TO_DEPARTMENT_MAP[category]) {

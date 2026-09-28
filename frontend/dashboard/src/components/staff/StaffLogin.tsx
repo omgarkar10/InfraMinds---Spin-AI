@@ -1,20 +1,22 @@
 import React, { useState } from "react";
 import "../../styles/citizen.css";
-import { setStoredStaffUser } from "../../services/grievanceService";
+import { setStoredStaffUser } from "../../services/demandService";
 import { staffLogin } from "../../services/authService";
 import { DEPARTMENTS } from "../../utils/departmentConfig";
 import type { StaffUser } from "../../types";
+import { PasswordField } from "../citizen/PasswordField";
 
 interface StaffLoginProps {
   onLoginSuccess: (user: StaffUser) => void;
   onCancel: () => void;
+  onSwitchToCitizen?: () => void;
 }
 
-export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel }) => {
+export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel, onSwitchToCitizen }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [department, setDepartment] = useState<string>(DEPARTMENTS[0]);
-  const [role, setRole] = useState<StaffUser["role"]>("Department Officer");
+  const [department] = useState<string>(DEPARTMENTS[0]);
+  const [role] = useState<StaffUser["role"]>("Department Officer");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -29,105 +31,64 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel
     setError("");
 
     try {
-      const result = await staffLogin(email, password);
-
-      const user: StaffUser = {
-        id: result.user.id,
-        name: result.user.name || "Department Officer",
-        employeeId: result.user.id ? `EMP-${result.user.id.slice(0, 5).toUpperCase()}` : "EMP-90812",
-        email: result.user.email || email,
-        department: result.user.department || department,
-        role: (result.user.role as StaffUser["role"]) || role,
-        isLoggedIn: true,
-      };
-      performLoginWithUser(user);
+      const { user } = await staffLogin(email, password);
+      const staffUserToStore = { ...user, isLoggedIn: true } as StaffUser;
+      performLoginWithUser(staffUserToStore);
     } catch (err: any) {
-      const empId = `EMP-${Math.floor(10000 + Math.random() * 90000)}`;
-      const fallbackUser: StaffUser = {
-        id: `staff-${Date.now()}`,
-        name: email ? email.split("@")[0].replace(".", " ").toUpperCase() : "OFFICER",
-        employeeId: empId,
-        email: email || "officer@gov.in",
-        department: department,
-        role: role,
-        isLoggedIn: true,
-      };
-      performLoginWithUser(fallbackUser);
+      setError(err.message || "Invalid credentials.");
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="citizen-portal-container">
-      <div className="container">
-        <div style={{ marginBottom: "14px", maxWidth: "520px", margin: "0 auto 14px auto" }}>
-          <button className="btn-outline" style={{ fontSize: "12px", fontWeight: "700" }} onClick={onCancel}>
-            ← Back to Home
-          </button>
-        </div>
-        <div className="login-card" style={{ borderTop: "4px solid var(--col-navy)", maxWidth: "520px" }}>
 
+
+  return (
+    <div className="admin-login-wrapper" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--col-bg)" }}>
+      <div className="container">
+        <div className="login-card" style={{ borderTop: "4px solid var(--col-navy)", maxWidth: "460px", background: "var(--col-surface)", margin: "0 auto", padding: "32px", borderRadius: "8px", boxShadow: "0 8px 32px rgba(0,0,0,0.1)" }}>
           <div>
             <span className="label-eyebrow" style={{ color: "var(--col-navy)" }}>AUTHORIZED GOVERNMENT INTERFACE</span>
           </div>
 
-          <div>
-            <h2 className="portal-heading" style={{ fontSize: "22px" }}>SPIN Staff Portal</h2>
-            <p className="portal-subtext" style={{ fontSize: "13px" }}>
-              Restricted interface for municipal department officers. Grievance access is strictly routed based on your assigned department.
+          <div style={{ marginBottom: "24px" }}>
+            <h2 className="portal-heading" style={{ fontSize: "22px", color: "var(--col-navy)" }}>SPIN Staff Portal</h2>
+            <p className="portal-subtext" style={{ fontSize: "13px", color: "var(--col-text-muted)" }}>
+              Restricted interface for municipal department officers & policymakers. Secure routing based on assigned department.
             </p>
           </div>
 
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             {error && (
-              <div style={{ color: "red", fontSize: "13px", padding: "8px", background: "#ffe6e6", borderRadius: "4px" }}>
+              <div className="error-banner" style={{ background: "rgba(220, 38, 38, 0.1)", color: "#ef4444", border: "1px solid #ef4444", padding: "12px", borderRadius: "6px", fontSize: "13px" }}>
                 {error}
               </div>
             )}
             <div className="form-group">
-              <label className="form-label">Official Email / Employee ID *</label>
+              <label className="form-label">Official Email *</label>
               <input
-                type="text"
+                type="email"
                 className="form-input"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="e.g. water.officer@gov.in or EMP-90812"
+                placeholder="e.g. water.supply.officer@gov.in"
                 required
               />
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Password *</label>
-              <input
-                type="password"
-                className="form-input"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password"
-                required
-              />
-            </div>
+            <PasswordField
+              id="staff-password"
+              label="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter password"
+            />
 
-            <div className="form-group">
-              <label className="form-label">Assigned Department *</label>
-              <select className="form-select" value={department} onChange={(e) => setDepartment(e.target.value)}>
-                {DEPARTMENTS.map((dept) => (
-                  <option key={dept} value={dept}>
-                    {dept}
-                  </option>
-                ))}
-              </select>
-            </div>
 
-            <div className="form-group">
-              <label className="form-label">Government Role *</label>
-              <select className="form-select" value={role} onChange={(e) => setRole(e.target.value as any)}>
-                <option value="Department Officer">Department Officer</option>
-                <option value="Staff">Field Staff / Inspector</option>
-                <option value="Policymaker">Policymaker / District Official</option>
-                <option value="Administrator">System Administrator</option>
-              </select>
+
+            <div className="form-group" style={{ background: "var(--col-bg)", border: "1px solid var(--col-border)", padding: "12px", borderRadius: "4px", display: "flex", alignItems: "center", gap: "10px", color: "var(--col-navy)" }}>
+              <input type="checkbox" required id="captcha" />
+              <label htmlFor="captcha" style={{ fontSize: "14px", cursor: "pointer" }}>I am not a robot (Captcha Verification)</label>
             </div>
 
             <button type="submit" className="service-card-btn" style={{ background: "var(--col-navy)", width: "100%", justifyContent: "center" }} disabled={loading}>
@@ -135,11 +96,13 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel
             </button>
           </form>
 
-          <div style={{ borderTop: "1px solid var(--col-border)", paddingTop: "14px", marginTop: "14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span className="disclaimer" style={{ fontSize: "10px" }}>
+
+
+          <div style={{ borderTop: "1px solid var(--col-border)", paddingTop: "16px", marginTop: "24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span className="disclaimer" style={{ fontSize: "10px", color: "var(--col-text-muted)" }}>
               RESTRICTED SYSTEM · GOVT PROTOCOL 2026
             </span>
-            <button type="button" className="btn-outline" style={{ border: "none", fontSize: "12px" }} onClick={onCancel}>
+            <button type="button" className="btn-outline" style={{ border: "none", fontSize: "12px", color: "var(--col-text-mid)" }} onClick={onCancel}>
               ← Return to Main Site
             </button>
           </div>

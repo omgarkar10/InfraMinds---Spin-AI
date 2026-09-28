@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { CitizenChat } from "./CitizenChat";
 
-
 export function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false);
 
   const toggleChat = () => setIsOpen((prev) => !prev);
 
+  // You can set the API URL based on your env vars
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
   return (
     <div className="chatbot-widget-container">
@@ -17,7 +18,7 @@ export function ChatbotWidget() {
             <button className="close-chat-btn" onClick={toggleChat} title="Close chat">
               &times;
             </button>
-            <CitizenChat />
+            <CitizenChat apiUrl={apiUrl} />
           </div>
         </div>
       )}

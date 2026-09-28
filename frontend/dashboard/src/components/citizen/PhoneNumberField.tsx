@@ -41,7 +41,7 @@ export const PhoneNumberField: React.FC<PhoneNumberFieldProps> = ({
           >
             {configs.map((c) => (
               <option key={c.code} value={c.code}>
-                {c.flag} {c.code} ({c.dialCode})
+                {c.code} ({c.dialCode})
               </option>
             ))}
           </select>

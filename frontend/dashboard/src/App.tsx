@@ -2,14 +2,17 @@ import { useState } from "react";
 import { APIProvider } from "@vis.gl/react-google-maps";
 import { LanguageProvider } from "./hooks/useLanguage";
 import { Navbar } from "./components/navigation/Navbar";
+import { StaffNavbar } from "./components/navigation/StaffNavbar";
 import { HeroSection } from "./components/landing/HeroSection";
 import { WhySpinSection } from "./components/landing/WhySpinSection";
 import { HowItHelpsSection } from "./components/landing/HowItHelpsSection";
-import { WhatYouCanReportSection } from "./components/landing/WhatYouCanReportSection";
+import { WhatYouCanDemandSection } from "./components/landing/WhatYouCanDemandSection";
 import { FinalCtaSection } from "./components/landing/FinalCtaSection";
 import { Footer } from "./components/landing/Footer";
+import { DemoModal } from "./components/landing/DemoModal";
 import { PolicyDashboard } from "./components/PolicyDashboard";
 import { ChatbotWidget } from "./components/ChatbotWidget";
+import { BackButton } from "./components/navigation/BackButton";
 
 /* Citizen & Staff Portal Imports */
 import { CitizenPortalHome } from "./components/citizen/CitizenPortalHome";
@@ -17,15 +20,12 @@ import { CitizenLogin } from "./components/citizen/CitizenLogin";
 import { CitizenSignup } from "./components/citizen/CitizenSignup";
 import { CitizenForgotPassword } from "./components/citizen/CitizenForgotPassword";
 import { CitizenResetPassword } from "./components/citizen/CitizenResetPassword";
-import { RaiseGrievanceForm } from "./components/citizen/RaiseGrievanceForm";
-import { TrackGrievances } from "./components/citizen/TrackGrievances";
-import { GrievanceDetail } from "./components/citizen/GrievanceDetail";
+import { CreateDemandForm } from "./components/citizen/CreateDemandForm";
+import { TrackDemands } from "./components/citizen/TrackDemands";
+import { DemandDetail } from "./components/citizen/DemandDetail";
 import { StaffLogin } from "./components/staff/StaffLogin";
 import { StaffDashboard } from "./components/staff/StaffDashboard";
-import { ApprovalPortal } from "./components/approval/ApprovalPortal";
-import { MinistryLogin } from "./components/ministry/MinistryLogin";
-import { MinistryReviewPortal } from "./components/ministry/MinistryReviewPortal";
-import { getStoredCitizenUser, getStoredStaffUser, clearStoredCitizenUser } from "./services/grievanceService";
+import { getStoredCitizenUser, getStoredStaffUser, clearStoredCitizenUser } from "./services/demandService";
 import type { CitizenUser, StaffUser } from "./types";
 
 export type ViewState =
@@ -40,38 +40,40 @@ export type ViewState =
   | "citizen-track"
   | "citizen-detail"
   | "staff-login"
-  | "staff-dashboard"
-  | "approval-portal"
-  | "ministry-login"
-  | "ministry-portal";
+  | "staff-dashboard";
 
 function AppInner() {
   const [view, setView] = useState<ViewState>("landing");
-  const [targetViewAfterLogin, setTargetViewAfterLogin] = useState<string>("citizen-raise");
-  const [selectedGrievanceId, setSelectedGrievanceId] = useState<string>("");
-  
+  const [historyStack, setHistoryStack] = useState<ViewState[]>([]);
+  const [targetViewAfterLogin, setTargetViewAfterLogin] = useState<string>("citizen");
+  const [selectedDemandId, setSelectedDemandId] = useState<string>("");
+
   // For Reset Password flow
   const [resetPhone, setResetPhone] = useState<string>("");
 
-  const [citizenUser, setCitizenUser] = useState<CitizenUser>(getStoredCitizenUser() as CitizenUser);
-  const [staffUser, setStaffUser] = useState<StaffUser>(getStoredStaffUser() as StaffUser);
-  const [ministryUser, setMinistryUser] = useState<StaffUser>(getStoredStaffUser() as StaffUser);
+  const [citizenUser, setCitizenUser] = useState<CitizenUser>(
+    (getStoredCitizenUser() as CitizenUser) || { id: "", name: "", phone: "", isLoggedIn: false }
+  );
+  const [staffUser, setStaffUser] = useState<StaffUser>(
+    (getStoredStaffUser() as StaffUser) || { id: "", name: "", employeeId: "", email: "", department: "", role: "Department Officer", isLoggedIn: false }
+  );
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
 
-  /* Navigation handler with Auth Protection */
+  /* Navigation handler with Citizen Auth Protection */
   const handleNavigate = (newView: string, extraId?: string) => {
     if (extraId) {
-      setSelectedGrievanceId(extraId);
+      setSelectedDemandId(extraId);
     }
 
     if (newView === "citizen-logout") {
       clearStoredCitizenUser();
-      setCitizenUser({ id: "cit-001", name: "", phone: "", isLoggedIn: false });
+      setCitizenUser({ id: "", name: "", phone: "", isLoggedIn: false });
       setView("citizen-login");
       return;
     }
 
-    // Require Citizen Login BEFORE "Raise Grievance" or "Track Grievances"
-    if ((newView === "citizen-raise" || newView === "citizen-track") && !citizenUser.isLoggedIn) {
+    // Require Citizen Login BEFORE "Propose Initiative" or "Track Proposals"
+    if ((newView === "citizen-raise" || newView === "citizen-track" || newView === "citizen") && !citizenUser.isLoggedIn) {
       setTargetViewAfterLogin(newView);
       setView("citizen-login");
       return;
@@ -79,67 +81,81 @@ function AppInner() {
 
     // Require Staff Login BEFORE Staff Dashboard
     if (newView === "staff-dashboard" && !staffUser.isLoggedIn) {
+      setHistoryStack((prev) => [...prev, view]);
       setView("staff-login");
       return;
     }
 
-    // Require Ministry Login BEFORE Ministry Portal
-    if (newView === "ministry-portal" && !ministryUser.isLoggedIn) {
-      setView("ministry-login");
-      return;
-    }
-
+    setHistoryStack((prev) => [...prev, view]);
     setView(newView as ViewState);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleNavigateBack = () => {
+    if (historyStack.length > 0) {
+      const newStack = [...historyStack];
+      const previousView = newStack.pop();
+      setHistoryStack(newStack);
+      setView(previousView as ViewState);
+    } else {
+      setView("landing");
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   /* Citizen Login Success Callback */
   const handleCitizenLoginSuccess = (user: CitizenUser) => {
     setCitizenUser(user);
-    handleNavigate(targetViewAfterLogin);
+    const destination = targetViewAfterLogin || "citizen";
+    setTargetViewAfterLogin("citizen");
+    handleNavigate(destination);
   };
 
   /* Staff Login Success Callback */
   const handleStaffLoginSuccess = (user: StaffUser) => {
     setStaffUser(user);
-    setView("staff-dashboard");
+    if (user.role === "Policymaker") {
+      setView("dashboard");
+    } else {
+      setView("staff-dashboard");
+    }
   };
 
-  /* Ministry Login Success Callback */
-  const handleMinistryLoginSuccess = (user: StaffUser) => {
-    setMinistryUser(user);
-    setView("ministry-portal");
+  const handleStaffLogout = () => {
+    import("./services/demandService").then(({ clearStoredStaffUser }) => clearStoredStaffUser());
+    localStorage.removeItem("staff_token");
+    setStaffUser({ id: "", email: "", isLoggedIn: false, name: "", employeeId: "", department: "", role: "Department Officer" } as StaffUser);
+    setView("landing");
   };
 
   return (
     <>
-      <Navbar
-        view={view}
-        onViewChange={(v) => handleNavigate(v)}
+      {view !== "landing" && (
+        <BackButton onClick={handleNavigateBack} label="Back" />
+      )}
+      
+      {(view === "staff-dashboard" || view === "dashboard") && staffUser.id ? (
+        <StaffNavbar
+          user={staffUser as StaffUser}
+          onViewChange={(v) => handleNavigate(v)}
+          onLogout={handleStaffLogout}
+        />
+      ) : (
+        <Navbar
+          view={view}
+          user={citizenUser.isLoggedIn ? citizenUser : undefined}
+          onViewChange={(v) => handleNavigate(v)}
+        />
+      )}
+
+      <DemoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+        onOpenDashboard={() => handleNavigate("dashboard")}
       />
 
       {/* VIEW ROUTING */}
-      {view === "dashboard" && <PolicyDashboard onNavigate={(v) => handleNavigate(v)} />}
-
-      {/* APPROVAL STATUS PORTAL */}
-      {view === "approval-portal" && (
-        <ApprovalPortal onNavigate={(v) => handleNavigate(v)} />
-      )}
-
-      {/* MINISTRY PORTAL VIEWS */}
-      {view === "ministry-login" && (
-        <MinistryLogin
-          onLoginSuccess={handleMinistryLoginSuccess}
-          onCancel={() => setView("landing")}
-        />
-      )}
-
-      {view === "ministry-portal" && (
-        <MinistryReviewPortal
-          user={ministryUser}
-          onNavigate={(v) => handleNavigate(v)}
-        />
-      )}
+      {view === "dashboard" && <PolicyDashboard />}
 
       {/* CITIZEN PORTAL VIEWS */}
       {view === "citizen" && (
@@ -153,19 +169,20 @@ function AppInner() {
         <CitizenLogin
           onLoginSuccess={handleCitizenLoginSuccess}
           targetViewAfterLogin={targetViewAfterLogin}
-          onCancel={() => setView("citizen")}
+          onCancel={() => setView("landing")}
           onSignupClick={() => setView("citizen-signup")}
           onForgotPasswordClick={() => setView("citizen-forgot-password")}
+          onSwitchToStaff={() => setView("staff-login")}
         />
       )}
-      
+
       {view === "citizen-signup" && (
         <CitizenSignup
           onLoginClick={() => setView("citizen-login")}
           onSignupSuccess={handleCitizenLoginSuccess}
         />
       )}
-      
+
       {view === "citizen-forgot-password" && (
         <CitizenForgotPassword
           onBackToLogin={() => setView("citizen-login")}
@@ -175,7 +192,7 @@ function AppInner() {
           }}
         />
       )}
-      
+
       {view === "citizen-reset-password" && (
         <CitizenResetPassword
           phone={resetPhone}
@@ -185,32 +202,32 @@ function AppInner() {
       )}
 
       {view === "citizen-raise" && (
-        <RaiseGrievanceForm
+        <CreateDemandForm
           user={citizenUser}
           onNavigate={(v, id) => handleNavigate(v, id)}
         />
       )}
 
       {view === "citizen-track" && (
-        <TrackGrievances
+        <TrackDemands
           user={citizenUser}
           onNavigate={(v, id) => handleNavigate(v, id)}
         />
       )}
 
       {view === "citizen-detail" && (
-        <GrievanceDetail
+        <DemandDetail
           user={citizenUser}
-          grievanceId={selectedGrievanceId}
+          DemandId={selectedDemandId}
           onNavigate={(v) => handleNavigate(v)}
         />
       )}
 
-      {/* STAFF PORTAL VIEWS */}
       {view === "staff-login" && (
         <StaffLogin
           onLoginSuccess={handleStaffLoginSuccess}
           onCancel={() => setView("landing")}
+          onSwitchToCitizen={() => setView("citizen-login")}
         />
       )}
 
@@ -229,7 +246,7 @@ function AppInner() {
           />
           <WhySpinSection />
           <HowItHelpsSection />
-          <WhatYouCanReportSection />
+          <WhatYouCanDemandSection />
           <FinalCtaSection onViewChange={(v) => handleNavigate(v)} />
           <Footer onViewChange={(v) => handleNavigate(v)} />
         </main>
@@ -244,7 +261,7 @@ function AppInner() {
 
 export function App() {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? "";
-  
+
   return (
     <APIProvider apiKey={apiKey}>
       <LanguageProvider>
