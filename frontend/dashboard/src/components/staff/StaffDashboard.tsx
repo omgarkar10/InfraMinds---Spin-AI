@@ -9,6 +9,7 @@ import {
 import type { StaffUser, Proposal, DemandStatus } from "../../types";
 
 import { DemandKPIBar } from "./DemandKPIBar";
+import { FieldOfficerDashboard } from "./FieldOfficerDashboard";
 
 interface StaffDashboardProps {
   user: StaffUser;
@@ -16,6 +17,10 @@ interface StaffDashboardProps {
 }
 
 export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate }) => {
+  if (user.role === "Field Officer") {
+    return <FieldOfficerDashboard user={user} />;
+  }
+
   const [proposals, setDemands] = useState<Proposal[]>(getStaffDemands(user));
   const [selectedDemand, setSelectedDemand] = useState<Proposal | null>(null);
   const [staffNote, setStaffNote] = useState<string>("");

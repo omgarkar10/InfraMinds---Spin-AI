@@ -17,6 +17,10 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
 from contextlib import asynccontextmanager
 
 from schemas.data_models import (
@@ -33,6 +37,7 @@ from spin_agents.config import CONFIG
 from spin_agents.config_routes import router as config_router
 from spin_agents.routers.demand_router import router as demand_router
 from spin_agents.routers.dashboard_router import router as dashboard_router
+from spin_agents.routers.staff_router import router as staff_router
 from spin_agents.schemas import CitizenMessage, PipelineRequest, TranslateRequest
 from spin_agents.services.demand_service import process_citizen_webhook
 from spin_agents.tools.mcp_bindings import cloud_translate_text
@@ -53,6 +58,10 @@ app = FastAPI(
     version="2.0.0",
     lifespan=lifespan,
 )
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # ── Global error handler ──────────────────────────────────────────────────────
 
@@ -87,6 +96,7 @@ app.include_router(auth_router)
 app.include_router(config_router)
 app.include_router(demand_router)
 app.include_router(dashboard_router)
+app.include_router(staff_router)
 
 # ── Standalone & Backward-Compatible Endpoints ────────────────────────────────
 

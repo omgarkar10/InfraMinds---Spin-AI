@@ -35,12 +35,12 @@ export function WhySpinSection() {
           {/* LEFT COLUMN - NARRATIVE */}
           <div className="workflow-left">
             <div className="workflow-sticky">
-              <span className="label-eyebrow tag-navy">HOW YOUR REQUEST IS HANDLED</span>
+              <span className="label-eyebrow tag-navy">HOW YOUR DEMAND IS HANDLED</span>
               <h2 className="editorial-h2 workflow-h2">
                 From submission<br />to government action.
               </h2>
               <p className="body-lg workflow-lead">
-                Once a request is submitted, SPIN organizes the information, identifies the relevant authority and keeps the citizen informed as the request moves through review and action.
+                Once a demand is submitted, SPIN organizes the information, identifies the relevant authority and keeps the citizen informed as the demand moves through review and action.
               </p>
               
 
@@ -57,16 +57,16 @@ export function WhySpinSection() {
               <div className="timeline-step">
                 <div className="timeline-marker">01</div>
                 <div className="timeline-content">
-                  <h3 className="timeline-title">REQUEST RECEIVED</h3>
-                  <p className="timeline-desc">Your request is recorded with the information you provide.</p>
+                  <h3 className="timeline-title">DEMAND RECEIVED</h3>
+                  <p className="timeline-desc">Your demand is recorded with the information you provide.</p>
                 </div>
               </div>
               
               <div className="timeline-step">
                 <div className="timeline-marker">02</div>
                 <div className="timeline-content">
-                  <h3 className="timeline-title">REQUEST CLASSIFIED</h3>
-                  <p className="timeline-desc">SPIN classifies the request and identifies the appropriate department.</p>
+                  <h3 className="timeline-title">DEMAND CLASSIFIED</h3>
+                  <p className="timeline-desc">SPIN classifies the demand and identifies the appropriate department.</p>
                   <span className="ai-assisted-tag">AI-assisted processing</span>
                 </div>
               </div>
@@ -75,7 +75,7 @@ export function WhySpinSection() {
                 <div className="timeline-marker">03</div>
                 <div className="timeline-content">
                   <h3 className="timeline-title">ROUTED FOR REVIEW</h3>
-                  <p className="timeline-desc">The request is matched to the appropriate department and geographic jurisdiction.</p>
+                  <p className="timeline-desc">The demand is matched to the appropriate department and geographic jurisdiction.</p>
                 </div>
               </div>
               
@@ -83,7 +83,7 @@ export function WhySpinSection() {
                 <div className="timeline-marker">04</div>
                 <div className="timeline-content">
                   <h3 className="timeline-title">ACTION / REVIEW</h3>
-                  <p className="timeline-desc">The concerned authority reviews the request and records the appropriate action.</p>
+                  <p className="timeline-desc">The concerned authority reviews the demand and records the appropriate action.</p>
                 </div>
               </div>
               

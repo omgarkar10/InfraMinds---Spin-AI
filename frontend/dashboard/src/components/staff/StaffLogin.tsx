@@ -40,32 +40,7 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel
     }
   };
 
-  const handleQuickDemoLogin = async (targetEmail: string, dept: string, roleName: StaffUser["role"], officerName: string) => {
-    setLoading(true);
-    setError("");
-    const demoPassword = "securespin26";
 
-    setEmail(targetEmail);
-    setPassword(demoPassword);
-    
-    try {
-      const { user } = await staffLogin(targetEmail, demoPassword);
-      performLoginWithUser(user as StaffUser);
-    } catch (err: any) {
-      // Fallback for seamless local demo testing if Firebase is not seeded
-      const fallbackUser: StaffUser = {
-        id: "staff-" + targetEmail.split("@")[0].replace(/[^a-z0-9]/gi, ""),
-        name: officerName,
-        email: targetEmail,
-        employeeId: "EMP-GOV-2026",
-        department: dept,
-        role: roleName
-      };
-      performLoginWithUser(fallbackUser);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="citizen-portal-container">
@@ -124,77 +99,7 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel
             </button>
           </form>
 
-          <div style={{ marginTop: "16px", paddingTop: "12px", borderTop: "1px dashed var(--col-border)" }}>
-            <span className="label-eyebrow" style={{ fontSize: "10px", marginBottom: "8px", display: "block" }}>
-              DEMO PRESET ACCOUNTS (ONE-CLICK DEPARTMENT SWITCH)
-            </span>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-              <button
-                type="button"
-                className="btn-outline"
-                style={{ padding: "4px 8px", fontSize: "11px", borderColor: "var(--col-navy)", color: "var(--col-navy)", fontWeight: "bold" }}
-                onClick={() => handleQuickDemoLogin("admin@gov.in", "General Administration", "Administrator", "System Administrator")}
-              >
-                👑 Super Admin
-              </button>
-              <button
-                type="button"
-                className="btn-outline"
-                style={{ padding: "4px 8px", fontSize: "11px", borderColor: "#6b21a8", color: "#6b21a8", fontWeight: "bold" }}
-                onClick={() => handleQuickDemoLogin("ministry@nic.in", "Ministry of Housing & Urban Affairs (MoHUA)", "Policymaker", "Dr. R. K. Sharma (Joint Secretary)")}
-              >
-                🏛️ Ministry Policymaker
-              </button>
-              <button
-                type="button"
-                className="btn-outline"
-                style={{ padding: "4px 8px", fontSize: "11px" }}
-                onClick={() => handleQuickDemoLogin("water.supply.officer@gov.in", "Water Supply", "Department Officer", "Water Supply Officer")}
-              >
-                💧 Water Supply
-              </button>
-              <button
-                type="button"
-                className="btn-outline"
-                style={{ padding: "4px 8px", fontSize: "11px" }}
-                onClick={() => handleQuickDemoLogin("electricity.officer@gov.in", "Electricity", "Department Officer", "Electricity Officer")}
-              >
-                ⚡ Electricity
-              </button>
-              <button
-                type="button"
-                className="btn-outline"
-                style={{ padding: "4px 8px", fontSize: "11px" }}
-                onClick={() => handleQuickDemoLogin("roads.transport.officer@gov.in", "Roads & Transport", "Department Officer", "Roads & Transport Officer")}
-              >
-                🛣️ Roads & Transport
-              </button>
-              <button
-                type="button"
-                className="btn-outline"
-                style={{ padding: "4px 8px", fontSize: "11px" }}
-                onClick={() => handleQuickDemoLogin("sanitation.officer@gov.in", "Sanitation", "Department Officer", "Sanitation Officer")}
-              >
-                🧹 Sanitation
-              </button>
-              <button
-                type="button"
-                className="btn-outline"
-                style={{ padding: "4px 8px", fontSize: "11px" }}
-                onClick={() => handleQuickDemoLogin("public.health.officer@gov.in", "Public Health", "Department Officer", "Public Health Officer")}
-              >
-                🏥 Public Health
-              </button>
-              <button
-                type="button"
-                className="btn-outline"
-                style={{ padding: "4px 8px", fontSize: "11px" }}
-                onClick={() => handleQuickDemoLogin("police.law.officer@gov.in", "Police / Law & Order", "Department Officer", "Police Officer")}
-              >
-                👮 Police / Law
-              </button>
-            </div>
-          </div>
+
 
           <div style={{ borderTop: "1px solid var(--col-border)", paddingTop: "14px", marginTop: "14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span className="disclaimer" style={{ fontSize: "10px" }}>

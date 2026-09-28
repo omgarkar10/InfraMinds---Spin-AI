@@ -97,37 +97,37 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
 
         {/* Primary Service Cards */}
         <div className="service-cards-grid" style={{ marginBottom: "24px" }}>
-          {/* CARD 1: SUBMIT DEVELOPMENT NEED */}
+          {/* CARD 1: START A PUBLIC DEMAND */}
           <div className="service-card">
             <span className="service-card-tag">SERVICE 01 · CITIZEN INTAKE</span>
-            <h2 className="service-card-title">SUBMIT DEVELOPMENT NEED</h2>
+            <h2 className="service-card-title">START A PUBLIC DEMAND</h2>
             <p className="service-card-desc">
-              Report an existing service gap or propose a new infrastructure facility for your neighborhood.
+              Propose a new infrastructure facility for your neighborhood and rally community votes.
             </p>
             <ul className="service-card-examples">
-              <li>• Existing problem (Potholes, pipeline burst, power cuts, flood drains)</li>
               <li>• New development request (New clinic, school room, paved road, water line)</li>
+              <li>• Community spaces and educational facilities</li>
               <li>• Multilingual speech recognition &amp; audio intake</li>
-              <li>• Optional GPS geolocation with explicit confirmation</li>
-              <li>• Real-time photo &amp; document evidence attachments</li>
+              <li>• Strict GPS geolocation verification</li>
+              <li>• Real-time photo evidence attachments</li>
             </ul>
             <button
               className="service-card-btn service-card-btn-orange"
               onClick={() => onNavigate("citizen-raise")}
             >
-              + Submit Proposal →
+              + Start a Demand →
             </button>
           </div>
 
-          {/* CARD 2: MY REQUESTS & TRACKING */}
+          {/* CARD 2: MY DEMANDS & TRACKING */}
           <div className="service-card">
             <span className="service-card-tag">SERVICE 02 · TRACKING</span>
-            <h2 className="service-card-title">MY SUBMITTED PROPOSALS</h2>
+            <h2 className="service-card-title">MY PUBLIC DEMANDS</h2>
             <p className="service-card-desc">
-              Check the official government review status, department routing, and resolution timeline.
+              Check community vote thresholds, feasibility study outcomes, and government review status.
             </p>
             <ul className="service-card-examples">
-              <li>• Genuine request ID retrieval and real status tracking</li>
+              <li>• Genuine demand ID retrieval and real status tracking</li>
               <li>• Review official department assignments</li>
               <li>• Spatial cluster correlation updates</li>
               <li>• Transparent government policy timeline</li>

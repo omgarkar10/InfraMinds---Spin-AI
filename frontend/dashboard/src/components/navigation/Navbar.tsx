@@ -57,7 +57,7 @@ export function Navbar({ view, user, onViewChange }: NavbarProps) {
     { id: "home", label: "Home" },
     { id: "why-spin", label: "Why SPIN" },
     { id: "how-it-helps", label: "How It Helps You" },
-    { id: "categories", label: "What You Can Report" },
+    { id: "categories", label: "What You Can Demand" },
   ];
 
   const scrollTo = (id: string) => {

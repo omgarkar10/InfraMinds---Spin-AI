@@ -140,5 +140,30 @@ otranslate class to the SPIN branding logo to prevent AI translation distortion.
   - `frontend/dashboard/src/services/authService.ts`: Added `getFriendlyAuthErrorMessage` and applied it to all citizen authentication catch blocks (`citizenSignup`, `citizenGoogleLogin`, `citizenLogin`, `citizenFirebaseGoogleLogin`).
 - **Rationale**: Previously, native Firebase SDK errors like `Firebase: Error (auth/unauthorized-domain).` were being dumped directly into the UI. The mapping now gracefully translates them (e.g., advising the user to add `localhost` to authorized domains).
 
+## 2026-09-28: Staff Portal RBAC & PWA Overhaul
+- **Description**: Implemented the Role-Based Access Control (RBAC) and PWA architectural plan for the Staff Portal.
+- **Files Modified/Created**:
+  - `backend/requirements.txt`: Added `slowapi`, `Pillow`, and `exifread`.
+  - `backend/spin_agents/api.py`: Integrated `slowapi` rate limiting and registered the staff router.
+  - `backend/spin_agents/routers/staff_router.py` (New): Implemented RBAC-protected endpoints for Staff, including `/demands/queue`, `/investigation/{demand_id}/assign`, and `/investigation/{demand_id}/report`.
+  - `backend/spin_agents/services/exif_validator.py` (New): Added native EXIF extraction and Haversine distance verification to enforce Field Officer GPS legitimacy.
+  - `frontend/dashboard/vite.config.ts` & `package.json`: Configured `vite-plugin-pwa` for offline caching and background sync.
+  - `frontend/dashboard/src/components/staff/StaffLogin.tsx`: Stripped out local demo preset accounts to enforce strict Email/Password flows.
+  - `frontend/dashboard/src/components/staff/StaffDashboard.tsx`: Refactored to act as a router conditionally rendering sub-dashboards based on role.
+  - `frontend/dashboard/src/components/staff/FieldOfficerDashboard.tsx` (New): Built the mobile-first feasibility study view with geotagged photo uploads.
+- **Rationale**: Based on user confirmation of the `staff-portal-change.md` plan, this overhaul allows Field Officers to securely submit feasibility studies (with EXIF-validated GPS) even in poor reception areas using PWA background sync, while securing backend endpoints under strict RBAC constraints.
+
+## 2026-09-28: Landing Page Pivot to Public Demand Measurement
+- **Description**: Refactored the landing page copy, components, and visual identity to pivot from a "grievance reporting" paradigm to an aspirational "public demand measurement" platform.
+- **Files Modified/Created**:
+  - `frontend/dashboard/src/App.tsx`: Replaced `WhatYouCanReportSection` with `WhatYouCanDemandSection`.
+  - `frontend/dashboard/src/components/landing/HeroSection.tsx`: Rewrote headlines and CTAs. Updated the Canvas Map animation logic to pulse dots based on states (`GATHERING_SUPPORT`, `FEASIBILITY_STUDY`, `APPROVED_FOR_BUDGET`) rather than categories.
+  - `frontend/dashboard/src/components/landing/WhatYouCanDemandSection.tsx` (New): Created a new grid showcasing aspirational categories (Public Transit, Community Spaces, Educational Facilities).
+  - `frontend/dashboard/src/components/landing/WhatYouCanReportSection.tsx` (Deleted): Removed the old damage-reporting categories.
+  - `frontend/dashboard/src/components/landing/HowItHelpsSection.tsx`: Updated the 4-step workflow to explain the Vote Threshold mechanic and the Feasibility Study phase to the public.
+- **Rationale**: Aligns the platform's public-facing identity with the new schema, emphasizing community infrastructure requests and local vote rallying.
+
 
 - **Updated `.agents/GEMINI.md`**: Appended the SLASH COMMAND SYSTEM INSTRUCTIONS to strictly enforce predefined command behaviors (`/ask`, `/plan`, `/schema`, `/api`, `/spec`, `/review`) for tailored formatting and automated structurings without fluff.
+
+- **Added `landing-page-changes.md`**: Saved the Landing Page implementation plan (shifting focus from tracking grievances to measuring public demand) to the workspace as requested by the user.

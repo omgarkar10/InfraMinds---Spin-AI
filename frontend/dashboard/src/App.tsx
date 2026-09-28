@@ -5,7 +5,7 @@ import { Navbar } from "./components/navigation/Navbar";
 import { HeroSection } from "./components/landing/HeroSection";
 import { WhySpinSection } from "./components/landing/WhySpinSection";
 import { HowItHelpsSection } from "./components/landing/HowItHelpsSection";
-import { WhatYouCanReportSection } from "./components/landing/WhatYouCanReportSection";
+import { WhatYouCanDemandSection } from "./components/landing/WhatYouCanDemandSection";
 import { FinalCtaSection } from "./components/landing/FinalCtaSection";
 import { Footer } from "./components/landing/Footer";
 import { DemoModal } from "./components/landing/DemoModal";
@@ -225,7 +225,7 @@ function AppInner() {
           />
           <WhySpinSection />
           <HowItHelpsSection />
-          <WhatYouCanReportSection />
+          <WhatYouCanDemandSection />
           <FinalCtaSection onViewChange={(v) => handleNavigate(v)} />
           <Footer onViewChange={(v) => handleNavigate(v)} />
         </main>

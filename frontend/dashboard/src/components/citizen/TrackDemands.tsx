@@ -189,12 +189,12 @@ export const TrackDemands: React.FC<TrackDemandsProps> = ({ user, onNavigate }) 
             <div className="form-card" style={{ textAlign: "center", padding: "48px 16px" }}>
               <div style={{ fontSize: "36px", marginBottom: "8px" }}>📋</div>
               <h3 style={{ color: "var(--col-navy)", fontSize: "18px", margin: "0 0 8px 0" }}>
-                {proposals.length === 0 ? "No Requests Submitted Yet" : "No Matching Requests Found"}
+                {proposals.length === 0 ? "No Demands Submitted Yet" : "No Matching Demands Found"}
               </h3>
               <p className="portal-subtext" style={{ maxWidth: "460px", margin: "0 auto 16px auto" }}>
                 {proposals.length === 0
                   ? "You have not submitted any infrastructure demands yet. Once registered, your official tracking status will appear here."
-                  : "Try clearing your search query or filter selection to see all requests."}
+                  : "Try clearing your search query or filter selection to see all demands."}
               </p>
               {proposals.length === 0 && (
                 <button

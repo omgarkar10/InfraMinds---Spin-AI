@@ -7,6 +7,8 @@ For every change, append an entry to `niketan-changes.md` that includes:
 - The exact details of files updated, added, or removed.
 - The rationale behind the logic change (if applicable).
 
+For every propt, if some info is missing from the instructions given by user, ask for them, do not autofill anything, do not make any assumptions.
+
 # SLASH COMMAND SYSTEM INSTRUCTIONS
 
 When a user query starts with a slash command, override default formatting and strictly enforce the following command behaviors:

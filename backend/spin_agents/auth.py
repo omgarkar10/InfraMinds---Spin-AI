@@ -27,7 +27,8 @@ async def get_current_user(
         
         user = UserSchema(
             id=user_id,
-            is_verified_resident=True
+            is_verified_resident=True,
+            role=role
         )
         return user
     except Exception as e:
