@@ -1,10 +1,13 @@
 import uuid
-from sqlalchemy.future import select
-from spin_agents.db import AsyncSessionLocal
-from spin_agents.models import Grievance
+import logging
+from typing import Optional
+from google.cloud import firestore
+
+from spin_agents.db import get_firestore_db
 from spin_agents.runner import run_pipeline
 from spin_agents.tools.bhashini import bhashini_asr, bhashini_translate
 
+logger = logging.getLogger(__name__)
 HITL_PROMPT = "Where is the issue located? Share GPS pin or nearest landmark."
 
 async def translate_text(text: str, source_language: str) -> dict[str, str]:
@@ -16,7 +19,7 @@ async def translate_text(text: str, source_language: str) -> dict[str, str]:
         "source_language": "en",
     }
 
-def build_intake(translation: dict[str, str], user_id: str, media_url: str | None, location: dict | None, source_language: str) -> dict:
+def build_intake(translation: dict[str, str], user_id: str, media_url: Optional[str], location: Optional[dict], source_language: str) -> dict:
     return {
         "original_text": translation["original_text"],
         "english_translation": translation["english_translation"],
@@ -75,56 +78,68 @@ async def process_pipeline_run(payload: dict) -> dict:
     )
     return {"status": "completed", **result}
 
-async def get_grievances_list(limit: int = 50) -> dict:
-    async with AsyncSessionLocal() as session:
-        result = await session.execute(
-            select(Grievance).order_by(Grievance.created_at.desc()).limit(limit)
-        )
-        grievances = result.scalars().all()
-        return {
-            "count": len(grievances),
-            "grievances": [
-                {
-                    "id": g.id,
-                    "grievance_id": g.grievance_id,
-                    "user_id": g.user_id,
-                    "domain": g.domain,
-                    "category": g.category,
-                    "severity": g.severity,
-                    "priority": g.priority,
-                    "latitude": g.latitude,
-                    "longitude": g.longitude,
-                    "landmark": g.landmark,
-                    "original_text": g.original_text,
-                    "district": g.district,
-                    "status": g.status,
-                }
-                for g in grievances
-            ],
-        }
+def get_demands_list(limit: int = 50) -> dict:
+    db = get_firestore_db()
+    demands_ref = db.collection("demands").order_by("created_at", direction=firestore.Query.DESCENDING).limit(limit)
+    docs = demands_ref.stream()
+    
+    demands = []
+    for doc in docs:
+        data = doc.to_dict()
+        data["id"] = doc.id
+        demands.append(data)
+        
+    return {
+        "count": len(demands),
+        "demands": demands,
+    }
 
-async def persist_grievance_to_db(
-    grievance_id: str, payload: dict, lat: float, lng: float
-) -> None:
-    """Attempt SQLite persistence; log and continue on failure — never raises."""
-    try:
-        async with AsyncSessionLocal() as session:
-            new_g = Grievance(
-                grievance_id=grievance_id,
-                user_id=payload["user_id"],
-                domain=payload["domain"],
-                category=payload["category"],
-                severity=payload["severity"],
-                priority=payload["priority"],
-                latitude=lat,
-                longitude=lng,
-                original_text=payload["original_text"],
-                english_translation=payload["english_translation"],
-                district=payload["district"],
-                state=payload["state"],
-            )
-            session.add(new_g)
-            await session.commit()
-    except Exception as e:
-        import logging
-        logging.getLogger(__name__).warning("SQLite persistence failed (non-fatal): %s", e)
+def persist_demand_to_db(demand_id: str, payload: dict, lat: float, lng: float) -> str:
+    db = get_firestore_db()
+    doc_ref = db.collection("demands").document(demand_id)
+    
+    demand_data = {
+        "author_user_id": payload.get("user_id", "anonymous"),
+        "domain": payload.get("domain", "General"),
+        "category": payload.get("category", "General"),
+        "latitude": lat,
+        "longitude": lng,
+        "original_text": payload.get("original_text", ""),
+        "english_translation": payload.get("english_translation", ""),
+        "district": payload.get("district"),
+        "state": payload.get("state"),
+        "status": "gathering_support",
+        "vote_count": 1,
+        "vote_threshold": 100,
+        "created_at": firestore.SERVER_TIMESTAMP,
+        "status_updated_at": firestore.SERVER_TIMESTAMP,
+    }
+    
+    doc_ref.set(demand_data)
+    
+    # Cast initial vote for the author
+    cast_vote(demand_id, demand_data["author_user_id"])
+    
+    return doc_ref.id
+
+def cast_vote(demand_id: str, user_id: str) -> bool:
+    db = get_firestore_db()
+    vote_id = f"{demand_id}_{user_id}"
+    vote_ref = db.collection("demand_votes").document(vote_id)
+    
+    if vote_ref.get().exists:
+        return False
+        
+    vote_ref.set({
+        "demand_id": demand_id,
+        "user_id": user_id,
+        "created_at": firestore.SERVER_TIMESTAMP
+    })
+    
+    # Increment vote count on demand
+    demand_ref = db.collection("demands").document(demand_id)
+    demand_ref.update({
+        "vote_count": firestore.Increment(1)
+    })
+    
+    return True

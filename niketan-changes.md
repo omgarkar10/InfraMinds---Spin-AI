@@ -68,4 +68,65 @@ Removed several unused directories, tests, and redundant package configuration f
 - **Automatic `.env` Resolution in Backend**: Updated `backend/spin_agents/config.py` to import `dotenv.load_dotenv` and automatically resolve `.env` files from `backend/.env` or the workspace root upon import.
 - **Standardized Developer Quick Start Guide**: Updated `README.md` with explicit, reproducible steps for setting up the Python virtual environment (`venv`), installing dependencies, copying environment templates, environment location mapping table, and running dev servers across both backend and frontend.
 
+## 10. UI Enhancements & Firebase Google Authentication
+- **Fixed Floating Back Button**: Created `BackButton.tsx` component and integrated it into `App.tsx`. Implemented a `historyStack` navigation state in `App.tsx` so users have a persistent, glassmorphism `← Back` button on the top-left corner of every view (except the root landing page) allowing smooth sequential backward navigation.
+- **Firebase Google Sign-In**: Exported `GoogleAuthProvider` from `src/config/firebase.ts` and created `citizenFirebaseGoogleLogin()` in `authService.ts`. Replaced the previous `window.google` script dependency with native Firebase popup auth. Added the Google Sign-In button to both `CitizenLogin.tsx` and `CitizenSignup.tsx`.
+- **View Password Toggle**: Replaced the standard password `<input>` in `StaffLogin.tsx` with the reusable `PasswordField` component, standardizing the eye toggle (`👁️` / `🙈`) button across both Staff and Citizen authentication portals.
 
+
+
+- **Added `firebase-database.md`**: Saved the Firebase implementation plan (shifting from grievance tracking to public demand measurement schema) to the workspace as requested by the user.
+
+- **Added `staff-portal-change.md`**: Saved the Staff Portal overhaul implementation plan (RBAC, PWA, automation) to the workspace as requested by the user.
+
+## 2026-09-28: Database Migration to Firestore and AI Integration for Demands
+- **Description**: Replaced legacy SQLAlchemy/SQLite stack with Firebase Firestore, converting grievance models and logic to the new Demand concept. Also integrated Bhashini's 23 Scheduled Indian Languages dropdown and protected UI branding from translations.
+- **Files Modified**:
+  - ackend/spin_agents/models.py: Replaced SQLAlchemy models with Pydantic schemas (DemandSchema, DemandVoteSchema).
+  - ackend/spin_agents/services/demand_service.py (New): Ported AI / Bhashini pipeline logic from old service to run with Firestore.
+  - ackend/spin_agents/services/grievance_service.py (Deleted).
+  - ackend/spin_agents/routers/demand_router.py (New): Created router for demand endpoints.
+  - ackend/spin_agents/routers/grievance_router.py (Deleted).
+  - ackend/spin_agents/api.py: Removed SQLAlchemy lifespan init, added demand_router.
+  - ackend/spin_agents/auth.py: Rewrote get_current_user to use Firebase Admin SDK erify_id_token instead of SQLite lookup.
+  - rontend/dashboard/src/services/demandService.ts (New): Created to fetch and vote on demands.
+  - rontend/dashboard/src/services/grievanceService.ts (Deleted).
+  - rontend/dashboard/src/components/citizen/*: Renamed Grievance files to Demand files (TrackDemands.tsx, CreateDemandForm.tsx, DemandDetail.tsx) and mass-replaced internal strings.
+  - rontend/dashboard/src/components/citizen/CreateDemandForm.tsx: Added a dedicated select dropdown for Bhashini's 23 Indian Languages.
+  - rontend/dashboard/src/components/navigation/Navbar.tsx: Added 
+otranslate class to the SPIN branding logo to prevent AI translation distortion.
+- **Rationale**: Migrates the core entity from 'grievances' to 'demands' using a NoSQL structure suitable for a public demand measurement platform, while maintaining accessibility and AI intelligence pipelines.
+
+## 2026-09-28: Safe Firebase & GCP Credential Initialization in db.py
+- **Description**: Added path checking for `GOOGLE_APPLICATION_CREDENTIALS` and fallback handling during Firebase Admin SDK initialization in `backend/spin_agents/db.py`.
+- **Files Modified**:
+  - `backend/spin_agents/db.py`: Added `os.path.exists()` verification before attempting to load service account credentials, and added graceful fallback/error catching when credentials file is absent.
+- **Rationale**: Prevents Uvicorn from crashing with `DefaultCredentialsError: File ./secrets/service-account.json was not found` when running in local development environments where the service account JSON file is missing.
+
+## 2026-09-28: UI Component Import Fix
+- **Description**: Fixed a broken import and rendering call in `frontend/dashboard/src/App.tsx` where `RaiseDemandForm` was mistakenly referenced instead of the correct `CreateDemandForm` filename.
+- **Files Modified**:
+  - `frontend/dashboard/src/App.tsx`: Updated `RaiseDemandForm` to `CreateDemandForm`.
+- **Rationale**: Fixes Vite compilation error caused during the Grievance to Demand UI migration.
+
+## 2026-09-28: Staff Dashboard Component Rename Fix
+- **Description**: Renamed legacy `GrievanceKPIBar` files to `DemandKPIBar` to resolve a Vite compilation error where `StaffDashboard.tsx` was looking for the renamed file that hadn't been updated on disk yet. Also updated the internal component texts from "Grievances" to "Demands".
+- **Files Modified**:
+  - `frontend/dashboard/src/components/staff/DemandKPIBar.tsx`: Renamed from GrievanceKPIBar.tsx, updated UI strings and component name to `DemandKPIBar`.
+  - `frontend/dashboard/src/components/staff/DemandKPIBar.css`: Renamed from GrievanceKPIBar.css.
+- **Rationale**: Completes the migration from Grievance to Demand terminology across the Staff Portal UI, fixing Vite module resolution errors.
+
+## 2026-09-28: React Runtime Crash Fix (Missing Exports)
+- **Description**: Added necessary function stubs (`getStoredDemands`, `getStaffDemands`, etc.) to `frontend/dashboard/src/services/demandService.ts`. 
+- **Files Modified**:
+  - `frontend/dashboard/src/services/demandService.ts`: Appended missing mock functions and TypeScript payload interfaces.
+- **Rationale**: During the legacy UI migration, `grievanceService.ts` was deleted and replaced by a thinner `demandService.ts` intended for live API use. However, multiple UI components (`StaffDashboard`, `CitizenPortalHome`, `usePolicyData`) still relied on synchronous local storage methods. Injecting these stubs resolves the `Uncaught SyntaxError: does not provide an export named` crash and allows the React app to render again without rewriting all legacy UI logic immediately.
+
+## 2026-09-28: UI Component Export Rename Fix
+- **Description**: Fixed the internal component export name inside `CreateDemandForm.tsx` from `RaiseDemandForm` to `CreateDemandForm`.
+- **Files Modified**:
+  - `frontend/dashboard/src/components/citizen/CreateDemandForm.tsx`: Renamed `RaiseDemandFormProps` and `export const RaiseDemandForm` to `CreateDemandForm`.
+- **Rationale**: Solves the Vite `Uncaught SyntaxError: does not provide an export named 'CreateDemandForm'` error that caused a blank screen after we updated `App.tsx` to import the correct file name.
+
+
+- **Updated `.agents/GEMINI.md`**: Appended the SLASH COMMAND SYSTEM INSTRUCTIONS to strictly enforce predefined command behaviors (`/ask`, `/plan`, `/schema`, `/api`, `/spec`, `/review`) for tailored formatting and automated structurings without fluff.

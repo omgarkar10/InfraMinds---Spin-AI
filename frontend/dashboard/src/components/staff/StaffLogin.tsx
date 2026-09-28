@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import "../../styles/citizen.css";
-import { setStoredStaffUser } from "../../services/grievanceService";
+import { setStoredStaffUser } from "../../services/demandService";
 import { staffLogin } from "../../services/authService";
 import { DEPARTMENTS } from "../../utils/departmentConfig";
 import type { StaffUser } from "../../types";
+import { PasswordField } from "../citizen/PasswordField";
 
 interface StaffLoginProps {
   onLoginSuccess: (user: StaffUser) => void;
@@ -103,17 +104,13 @@ export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel
               />
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Password *</label>
-              <input
-                type="password"
-                className="form-input"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password (Default: securespin26)"
-                required
-              />
-            </div>
+            <PasswordField
+              id="staff-password"
+              label="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter password (Default: securespin26)"
+            />
 
 
 

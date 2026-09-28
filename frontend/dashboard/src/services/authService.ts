@@ -4,8 +4,10 @@ import {
   signInWithEmailAndPassword, 
   updateProfile,
   signInWithCredential,
-  GoogleAuthProvider
+  GoogleAuthProvider,
+  signInWithPopup
 } from "firebase/auth";
+import { googleProvider } from "../config/firebase";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 
@@ -110,6 +112,26 @@ export async function citizenLogin(payload: { countryCode: string; phone: string
     };
   } catch (error: any) {
     throw new Error("Invalid phone number or password.");
+  }
+}
+
+export async function citizenFirebaseGoogleLogin() {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    const token = await result.user.getIdToken();
+    localStorage.setItem("citizen_token", token);
+    
+    return {
+      user: {
+        id: result.user.uid,
+        name: result.user.displayName || "Citizen",
+        phone: result.user.phoneNumber || "",
+        email: result.user.email || ""
+      },
+      access_token: token
+    };
+  } catch (error: any) {
+    throw new Error(error.message || "Google authentication failed.");
   }
 }
 

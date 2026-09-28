@@ -190,7 +190,7 @@ export function Navbar({ view, user, onViewChange }: NavbarProps) {
       <nav className="navbar">
         <div className="navbar-inner container">
           {/* Logo */}
-          <button className="navbar-logo" onClick={() => { onViewChange("landing"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+          <button className="navbar-logo notranslate" onClick={() => { onViewChange("landing"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
             <span className="navbar-wordmark">SPIN</span>
             <div className="navbar-title-group">
               <span className="navbar-descriptor">SYMBIOTIC PUBLIC INFRASTRUCTURE NETWORK</span>

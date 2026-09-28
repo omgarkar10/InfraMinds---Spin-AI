@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "../../styles/citizen.css";
-import { setStoredCitizenUser } from "../../services/grievanceService";
-import { getCountriesConfig, citizenLogin, citizenGoogleLogin } from "../../services/authService";
+import { setStoredCitizenUser } from "../../services/demandService";
+import { getCountriesConfig, citizenLogin, citizenFirebaseGoogleLogin } from "../../services/authService";
 import type { CitizenUser } from "../../types";
 import { validatePhoneNumber, CountryPhoneConfig } from "../../utils/phoneValidation";
 import { PhoneNumberField } from "./PhoneNumberField";
@@ -193,36 +193,22 @@ export const CitizenLogin: React.FC<CitizenLoginProps> = ({
             <button
               type="button"
               onClick={async () => {
-                const googleClientId = (import.meta as any).env?.VITE_GOOGLE_CLIENT_ID;
-                if (!googleClientId) {
-                  setError("Google OAuth is not configured. Please set VITE_GOOGLE_CLIENT_ID in your environment.");
-                  return;
-                }
-                if (typeof window !== "undefined" && (window as any).google?.accounts?.id) {
-                  (window as any).google.accounts.id.initialize({
-                    client_id: googleClientId,
-                    callback: async (response: any) => {
-                      try {
-                        setLoading(true);
-                        const res = await citizenGoogleLogin(response.credential);
-                        const user: CitizenUser = {
-                          id: res.user.id,
-                          name: res.user.name,
-                          phone: res.user.phone || res.user.email,
-                          isLoggedIn: true,
-                        };
-                        setStoredCitizenUser(user);
-                        onLoginSuccess(user);
-                      } catch (err: any) {
-                        setError(err.message || "Google authentication failed.");
-                      } finally {
-                        setLoading(false);
-                      }
-                    },
-                  });
-                  (window as any).google.accounts.id.prompt();
-                } else {
-                  setError("Google Identity Services script not loaded. Check internet connection.");
+                try {
+                  setLoading(true);
+                  setError(null);
+                  const res = await citizenFirebaseGoogleLogin();
+                  const user: CitizenUser = {
+                    id: res.user.id,
+                    name: res.user.name,
+                    phone: res.user.phone || res.user.email,
+                    isLoggedIn: true,
+                  };
+                  setStoredCitizenUser(user);
+                  onLoginSuccess(user);
+                } catch (err: any) {
+                  setError(err.message || "Google authentication failed.");
+                } finally {
+                  setLoading(false);
                 }
               }}
               style={{

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "../../styles/citizen.css";
 import type { CitizenUser } from "../../types";
-import { getMyRequestsFromBackend } from "../../services/grievanceService";
+import { getMyRequestsFromBackend } from "../../services/demandService";
 
 interface CitizenPortalHomeProps {
   user: CitizenUser;
@@ -191,7 +191,7 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 {requests.slice(0, 5).map((req) => (
                   <div
-                    key={req.grievance_id}
+                    key={req.Demand_id}
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
@@ -206,7 +206,7 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
                   >
                     <div>
                       <div style={{ fontWeight: 700, color: "var(--col-navy)", fontSize: "14px" }}>
-                        {req.grievance_id}{" "}
+                        {req.Demand_id}{" "}
                         <span style={{ fontSize: "11px", fontWeight: 400, color: "var(--col-text-muted)" }}>
                           ({req.request_type === "new_development" ? "New Development" : "Current Need"})
                         </span>
@@ -222,7 +222,7 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
                         type="button"
                         className="btn-outline"
                         style={{ fontSize: "12px", padding: "4px 10px" }}
-                        onClick={() => onNavigate("citizen-detail", req.grievance_id)}
+                        onClick={() => onNavigate("citizen-detail", req.Demand_id)}
                       >
                         Details →
                       </button>

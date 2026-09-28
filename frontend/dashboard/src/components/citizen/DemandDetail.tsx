@@ -1,38 +1,38 @@
 import React, { useState, useEffect } from "react";
 import "../../styles/citizen.css";
-import { getRequestDetailFromBackend, getGrievanceById } from "../../services/grievanceService";
+import { getRequestDetailFromBackend, getDemandById } from "../../services/demandService";
 import type { CitizenUser } from "../../types";
 
-interface GrievanceDetailProps {
+interface DemandDetailProps {
   user: CitizenUser;
-  grievanceId: string;
+  DemandId: string;
   onNavigate: (view: string) => void;
 }
 
-export const GrievanceDetail: React.FC<GrievanceDetailProps> = ({
-  grievanceId,
+export const DemandDetail: React.FC<DemandDetailProps> = ({
+  DemandId,
   onNavigate,
 }) => {
-  const [proposal, setGrievance] = useState<any | null>(null);
+  const [proposal, setDemand] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadDetail() {
-      if (!grievanceId) {
+      if (!DemandId) {
         setLoading(false);
         return;
       }
       try {
         setLoading(true);
         // Try authoritative backend first
-        const data = await getRequestDetailFromBackend(grievanceId);
-        setGrievance(data);
+        const data = await getRequestDetailFromBackend(DemandId);
+        setDemand(data);
       } catch (err: any) {
         // Fallback to local storage (e.g. For seed or offline preview)
-        const local = getGrievanceById(grievanceId);
+        const local = getDemandById(DemandId);
         if (local) {
-          setGrievance(local);
+          setDemand(local);
         } else {
           setError(err.message || "Request not found in authoritative registry.");
         }
@@ -41,7 +41,7 @@ export const GrievanceDetail: React.FC<GrievanceDetailProps> = ({
       }
     }
     loadDetail();
-  }, [grievanceId]);
+  }, [DemandId]);
 
   if (loading) {
     return (
@@ -62,7 +62,7 @@ export const GrievanceDetail: React.FC<GrievanceDetailProps> = ({
           <div className="form-card">
             <h2 className="editorial-h3" style={{ fontSize: "20px" }}>Request Not Found</h2>
             <p className="portal-subtext" style={{ margin: "12px 0 20px 0" }}>
-              {error || `No verified request found matching ID: ${grievanceId}`}
+              {error || `No verified request found matching ID: ${DemandId}`}
             </p>
             <button className="service-card-btn" onClick={() => onNavigate("citizen-track")}>
               ← Back to My Requests
@@ -73,7 +73,7 @@ export const GrievanceDetail: React.FC<GrievanceDetailProps> = ({
     );
   }
 
-  const reqId = proposal.grievance_id || proposal.id;
+  const reqId = proposal.Demand_id || proposal.id;
   const isNewDev = proposal.request_type === "new_development";
   const evidenceList = proposal.evidence_urls || (proposal.evidence?.photos || []);
 

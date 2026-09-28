@@ -153,3 +153,5 @@ export interface StaffUser {
   isLoggedIn: boolean;
 }
 
+export type DemandStatus = GrievanceStatus;
+export type DemandCategory = GrievanceCategory;

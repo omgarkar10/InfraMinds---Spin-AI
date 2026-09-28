@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { DashboardSummary, RedZone, PolicyActionRequest, InfrastructureDomain } from "../types";
-import { getStoredGrievances } from "../services/grievanceService";
+import { getStoredDemands } from "../services/demandService";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
@@ -13,7 +13,7 @@ function mapCategoryToDomain(cat: string): InfrastructureDomain {
 }
 
 function calculateLiveSummary(districtFilter?: string): { summary: DashboardSummary; redZones: RedZone[] } {
-  const all = getStoredGrievances();
+  const all = getStoredDemands();
   const filtered = districtFilter
     ? all.filter((g) => g.location.district.toLowerCase() === districtFilter.toLowerCase())
     : all;

@@ -11,6 +11,7 @@ import { Footer } from "./components/landing/Footer";
 import { DemoModal } from "./components/landing/DemoModal";
 import { PolicyDashboard } from "./components/PolicyDashboard";
 import { ChatbotWidget } from "./components/ChatbotWidget";
+import { BackButton } from "./components/navigation/BackButton";
 
 /* Citizen & Staff Portal Imports */
 import { CitizenPortalHome } from "./components/citizen/CitizenPortalHome";
@@ -18,12 +19,12 @@ import { CitizenLogin } from "./components/citizen/CitizenLogin";
 import { CitizenSignup } from "./components/citizen/CitizenSignup";
 import { CitizenForgotPassword } from "./components/citizen/CitizenForgotPassword";
 import { CitizenResetPassword } from "./components/citizen/CitizenResetPassword";
-import { RaiseGrievanceForm } from "./components/citizen/RaiseGrievanceForm";
-import { TrackGrievances } from "./components/citizen/TrackGrievances";
-import { GrievanceDetail } from "./components/citizen/GrievanceDetail";
+import { CreateDemandForm } from "./components/citizen/CreateDemandForm";
+import { TrackDemands } from "./components/citizen/TrackDemands";
+import { DemandDetail } from "./components/citizen/DemandDetail";
 import { StaffLogin } from "./components/staff/StaffLogin";
 import { StaffDashboard } from "./components/staff/StaffDashboard";
-import { getStoredCitizenUser, getStoredStaffUser, clearStoredCitizenUser } from "./services/grievanceService";
+import { getStoredCitizenUser, getStoredStaffUser, clearStoredCitizenUser } from "./services/demandService";
 import type { CitizenUser, StaffUser } from "./types";
 
 export type ViewState =
@@ -42,8 +43,9 @@ export type ViewState =
 
 function AppInner() {
   const [view, setView] = useState<ViewState>("landing");
+  const [historyStack, setHistoryStack] = useState<ViewState[]>([]);
   const [targetViewAfterLogin, setTargetViewAfterLogin] = useState<string>("citizen");
-  const [selectedGrievanceId, setSelectedGrievanceId] = useState<string>("");
+  const [selectedDemandId, setSelectedDemandId] = useState<string>("");
 
   // For Reset Password flow
   const [resetPhone, setResetPhone] = useState<string>("");
@@ -59,7 +61,7 @@ function AppInner() {
   /* Navigation handler with Citizen Auth Protection */
   const handleNavigate = (newView: string, extraId?: string) => {
     if (extraId) {
-      setSelectedGrievanceId(extraId);
+      setSelectedDemandId(extraId);
     }
 
     if (newView === "citizen-logout") {
@@ -78,11 +80,25 @@ function AppInner() {
 
     // Require Staff Login BEFORE Staff Dashboard
     if (newView === "staff-dashboard" && !staffUser.isLoggedIn) {
+      setHistoryStack((prev) => [...prev, view]);
       setView("staff-login");
       return;
     }
 
+    setHistoryStack((prev) => [...prev, view]);
     setView(newView as ViewState);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleNavigateBack = () => {
+    if (historyStack.length > 0) {
+      const newStack = [...historyStack];
+      const previousView = newStack.pop();
+      setHistoryStack(newStack);
+      setView(previousView as ViewState);
+    } else {
+      setView("landing");
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -102,6 +118,9 @@ function AppInner() {
 
   return (
     <>
+      {view !== "landing" && (
+        <BackButton onClick={handleNavigateBack} label="Back" />
+      )}
       <Navbar
         view={view}
         user={citizenUser.isLoggedIn ? citizenUser : undefined}
@@ -162,23 +181,23 @@ function AppInner() {
       )}
 
       {view === "citizen-raise" && (
-        <RaiseGrievanceForm
+        <CreateDemandForm
           user={citizenUser}
           onNavigate={(v, id) => handleNavigate(v, id)}
         />
       )}
 
       {view === "citizen-track" && (
-        <TrackGrievances
+        <TrackDemands
           user={citizenUser}
           onNavigate={(v, id) => handleNavigate(v, id)}
         />
       )}
 
       {view === "citizen-detail" && (
-        <GrievanceDetail
+        <DemandDetail
           user={citizenUser}
-          grievanceId={selectedGrievanceId}
+          DemandId={selectedDemandId}
           onNavigate={(v) => handleNavigate(v)}
         />
       )}

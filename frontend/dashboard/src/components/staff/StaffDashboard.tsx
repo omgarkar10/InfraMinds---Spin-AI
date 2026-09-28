@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import "../../styles/citizen.css";
 import {
-  getStaffGrievances,
-  getStaffGrievanceById,
+  getStaffDemands,
+  getStaffDemandById,
   updateStaffDecision,
-  updateGrievanceStatus,
-} from "../../services/grievanceService";
-import type { StaffUser, Proposal, GrievanceStatus } from "../../types";
+  updateDemandStatus,
+} from "../../services/demandService";
+import type { StaffUser, Proposal, DemandStatus } from "../../types";
 
-import { GrievanceKPIBar } from "./GrievanceKPIBar";
+import { DemandKPIBar } from "./DemandKPIBar";
 
 interface StaffDashboardProps {
   user: StaffUser;
@@ -16,8 +16,8 @@ interface StaffDashboardProps {
 }
 
 export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate }) => {
-  const [proposals, setGrievances] = useState<Proposal[]>(getStaffGrievances(user));
-  const [selectedGrievance, setSelectedGrievance] = useState<Proposal | null>(null);
+  const [proposals, setDemands] = useState<Proposal[]>(getStaffDemands(user));
+  const [selectedDemand, setSelectedDemand] = useState<Proposal | null>(null);
   const [staffNote, setStaffNote] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
@@ -30,22 +30,22 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
   }, [user.id, user.department, user.role]);
 
   const refreshData = () => {
-    const list = getStaffGrievances(user);
-    setGrievances(list);
-    if (selectedGrievance) {
-      const authorized = getStaffGrievanceById(selectedGrievance.id, user);
+    const list = getStaffDemands(user);
+    setDemands(list);
+    if (selectedDemand) {
+      const authorized = getStaffDemandById(selectedDemand.id, user);
       if (authorized) {
-        setSelectedGrievance(authorized);
+        setSelectedDemand(authorized);
       } else {
-        setSelectedGrievance(null);
+        setSelectedDemand(null);
       }
     }
   };
 
   const handleOpenDossier = (g: Proposal) => {
-    const authorized = getStaffGrievanceById(g.id, user);
+    const authorized = getStaffDemandById(g.id, user);
     if (authorized) {
-      setSelectedGrievance(authorized);
+      setSelectedDemand(authorized);
       setAuthError("");
     } else {
       setAuthError(`Access Denied: Proposal ${g.id} belongs to a different department.`);
@@ -53,32 +53,32 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
   };
 
   const handleDecision = (decision: "ACCEPTED" | "MODIFIED" | "REJECTED") => {
-    if (!selectedGrievance) return;
-    const authorized = getStaffGrievanceById(selectedGrievance.id, user);
+    if (!selectedDemand) return;
+    const authorized = getStaffDemandById(selectedDemand.id, user);
     if (!authorized) {
       setAuthError("Access Denied: Unauthorized modification attempt.");
-      setSelectedGrievance(null);
+      setSelectedDemand(null);
       return;
     }
-    updateStaffDecision(selectedGrievance.id, decision, staffNote || `Officer ${decision.toLowerCase()} recommendation.`);
+    updateStaffDecision(selectedDemand.id, decision, staffNote || `Officer ${decision.toLowerCase()} recommendation.`);
     setStaffNote("");
     refreshData();
   };
 
-  const handleStatusChange = (newStatus: GrievanceStatus) => {
-    if (!selectedGrievance) return;
-    const authorized = getStaffGrievanceById(selectedGrievance.id, user);
+  const handleStatusChange = (newStatus: DemandStatus) => {
+    if (!selectedDemand) return;
+    const authorized = getStaffDemandById(selectedDemand.id, user);
     if (!authorized) {
       setAuthError("Access Denied: Unauthorized status change attempt.");
-      setSelectedGrievance(null);
+      setSelectedDemand(null);
       return;
     }
-    updateGrievanceStatus(selectedGrievance.id, newStatus, staffNote || `Officer changed status to ${newStatus}.`);
+    updateDemandStatus(selectedDemand.id, newStatus, staffNote || `Officer changed status to ${newStatus}.`);
     setStaffNote("");
     refreshData();
   };
 
-  const filteredGrievances = proposals.filter((g) => {
+  const filteredDemands = proposals.filter((g) => {
     if (statusFilter && g.status !== statusFilter) return false;
     if (categoryFilter && g.category !== categoryFilter) return false;
     if (searchQuery) {
@@ -137,12 +137,12 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
         )}
 
         {/* DEPARTMENT-SCOPED KPI BAR */}
-        <GrievanceKPIBar proposals={proposals} />
+        <DemandKPIBar proposals={proposals} />
 
         {/* KPI Overview Cards (Strictly Department Scoped) */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "12px", marginBottom: "24px" }}>
           <div className="stat-card">
-            <span className="stat-label">ACTIVE GRIEVANCES</span>
+            <span className="stat-label">ACTIVE DemandS</span>
             <span className="stat-value">{activeCount}</span>
           </div>
           <div className="stat-card">
@@ -169,7 +169,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
             <div>
               <span className="label-eyebrow">DEPARTMENT QUEUE</span>
               <h2 className="portal-heading" style={{ fontSize: "18px" }}>
-                {user.department} Queue ({filteredGrievances.length})
+                {user.department} Queue ({filteredDemands.length})
               </h2>
             </div>
 
@@ -207,7 +207,7 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
           <table className="staff-table">
             <thead>
               <tr>
-                <th>GRIEVANCE ID</th>
+                <th>Demand ID</th>
                 <th>CATEGORY</th>
                 <th>LOCATION</th>
                 <th>SEVERITY</th>
@@ -218,8 +218,8 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
               </tr>
             </thead>
             <tbody>
-              {filteredGrievances.length > 0 ? (
-                filteredGrievances.map((g) => (
+              {filteredDemands.length > 0 ? (
+                filteredDemands.map((g) => (
                   <tr key={g.id}>
                     <td className="mono" style={{ fontWeight: "700" }}>{g.id}</td>
                     <td>{g.category}</td>
@@ -261,19 +261,19 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
       </div>
 
       {/* STAFF DETAIL MODAL / DRAWER */}
-      {selectedGrievance && (
+      {selectedDemand && (
         <div style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(15,30,54,0.6)", display: "flex", justifyContent: "center", alignItems: "center", padding: "20px" }}>
           <div className="form-card" style={{ width: "100%", maxWidth: "800px", maxHeight: "90vh", overflowY: "auto", borderTop: "4px solid var(--col-navy)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
                 <span className="label-eyebrow">STAFF REVIEW DOSSIER</span>
-                <h2 className="portal-heading" style={{ fontSize: "22px" }}>{selectedGrievance.id}</h2>
+                <h2 className="portal-heading" style={{ fontSize: "22px" }}>{selectedDemand.id}</h2>
                 <p className="portal-subtext" style={{ fontSize: "14px", color: "var(--col-navy)" }}>
-                  {selectedGrievance.category} — {selectedGrievance.issueType} ({selectedGrievance.location.district}) · Dept: <strong>{selectedGrievance.department}</strong>
+                  {selectedDemand.category} — {selectedDemand.issueType} ({selectedDemand.location.district}) · Dept: <strong>{selectedDemand.department}</strong>
                 </p>
               </div>
 
-              <button className="btn-outline" style={{ padding: "4px 10px" }} onClick={() => setSelectedGrievance(null)}>
+              <button className="btn-outline" style={{ padding: "4px 10px" }} onClick={() => setSelectedDemand(null)}>
                 ✕ Close
               </button>
             </div>
@@ -281,11 +281,11 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
             {/* Citizen Community Demand & Evidence Breakdown */}
             <div className="ai-review-card">
               <span className="label-eyebrow">CITIZEN COMPLAINT & EVIDENCE</span>
-              <p className="body-md" style={{ color: "var(--col-navy)" }}>"{selectedGrievance.description}"</p>
+              <p className="body-md" style={{ color: "var(--col-navy)" }}>"{selectedDemand.description}"</p>
               <div style={{ fontSize: "12px", color: "var(--col-text-mid)" }}>
-                <strong>Citizen Contributor:</strong> {selectedGrievance.citizenName || "Citizen"} ({selectedGrievance.citizenPhone || "Identity Protected"})
+                <strong>Citizen Contributor:</strong> {selectedDemand.citizenName || "Citizen"} ({selectedDemand.citizenPhone || "Identity Protected"})
                 <br />
-                <strong>Address:</strong> {selectedGrievance.location.address || selectedGrievance.location.district}
+                <strong>Address:</strong> {selectedDemand.location.address || selectedDemand.location.district}
               </div>
             </div>
 
@@ -293,27 +293,27 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
             <div className="process-flow-box" style={{ background: "var(--col-orange-dim)", border: "1px solid var(--col-orange-line)", padding: "16px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span className="label-orange">SPIN AI RECOMMENDATION</span>
-                <span className="location-status-badge verified">CONFIDENCE {selectedGrievance.aiAnalysis?.confidence || 94}%</span>
+                <span className="location-status-badge verified">CONFIDENCE {selectedDemand.aiAnalysis?.confidence || 94}%</span>
               </div>
 
               <h4 style={{ fontSize: "16px", color: "var(--col-navy)", margin: "6px 0" }}>
-                "{selectedGrievance.aiAnalysis?.reasoning || "Prioritize field inspection and departmental action."}"
+                "{selectedDemand.aiAnalysis?.reasoning || "Prioritize field inspection and departmental action."}"
               </h4>
 
               <div style={{ background: "var(--col-surface)", padding: "12px", borderRadius: "6px", fontSize: "12px", margin: "8px 0" }}>
                 <strong>EMPIRICAL EVIDENCE BACKBONE (WHY?):</strong>
                 <ul style={{ listStyle: "none", paddingLeft: "4px", marginTop: "4px", display: "flex", flexDirection: "column", gap: "2px" }}>
-                  <li>• {selectedGrievance.aiAnalysis?.nearbyGrievances || 24} related proposals in cluster</li>
-                  <li>• Department: {selectedGrievance.department}</li>
-                  <li>• Priority Level: {selectedGrievance.priority}</li>
-                  <li>• Location: {selectedGrievance.location.address || selectedGrievance.location.district}</li>
+                  <li>• {selectedDemand.aiAnalysis?.nearbyDemands || 24} related proposals in cluster</li>
+                  <li>• Department: {selectedDemand.department}</li>
+                  <li>• Priority Level: {selectedDemand.priority}</li>
+                  <li>• Location: {selectedDemand.location.address || selectedDemand.location.district}</li>
                 </ul>
               </div>
 
               {/* HUMAN APPROVAL REQUIRED BANNER */}
               <div style={{ background: "var(--col-navy)", color: "#fff", padding: "10px 14px", borderRadius: "6px", marginTop: "12px", fontSize: "11px", fontWeight: "700", letterSpacing: "0.08em", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span>🛡️ AI RECOMMENDATION — HUMAN APPROVAL REQUIRED</span>
-                <span style={{ color: "var(--col-orange)" }}>STATUS: {selectedGrievance.decisionStatus || "PENDING"}</span>
+                <span style={{ color: "var(--col-orange)" }}>STATUS: {selectedDemand.decisionStatus || "PENDING"}</span>
               </div>
             </div>
 
@@ -347,8 +347,8 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
                 <select
                   className="form-select"
                   style={{ width: "160px", padding: "6px" }}
-                  value={selectedGrievance.status}
-                  onChange={(e) => handleStatusChange(e.target.value as GrievanceStatus)}
+                  value={selectedDemand.status}
+                  onChange={(e) => handleStatusChange(e.target.value as DemandStatus)}
                 >
                   <option value="SUBMITTED">Submitted</option>
                   <option value="UNDER_REVIEW">Under Review</option>

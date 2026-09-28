@@ -6,12 +6,12 @@ import {
   uploadEvidenceToBackend,
   analyzeRequestWithGemini,
   SubmitRequestPayload,
-} from "../../services/grievanceService";
+} from "../../services/demandService";
 import type { CitizenUser } from "../../types";
 
-interface RaiseGrievanceFormProps {
+interface CreateDemandFormProps {
   user: CitizenUser;
-  onNavigate: (view: string, grievanceId?: string) => void;
+  onNavigate: (view: string, DemandId?: string) => void;
 }
 
 // ── Canonical Categories & Issues ──────────────────────────────────────────
@@ -153,7 +153,7 @@ export const STATE_DISTRICT_MAP: Record<string, string[]> = {
   "West Bengal": ["Asansol (Paschim Bardhaman)", "Darjeeling", "Durgapur", "Howrah", "Kolkata", "Malda", "North 24 Parganas", "Siliguri (Jalpaiguri)", "South 24 Parganas", "Other / Not Listed"],
 };
 
-export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, onNavigate }) => {
+export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavigate }) => {
   const [step, setStep] = useState<number>(1);
 
   // ── Pre-Step / Intake Choice State ───────────────────────────────────────
@@ -270,7 +270,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submissionResult, setSubmissionResult] = useState<{
-    grievance_id: string;
+    Demand_id: string;
     created_at: string;
     bigquery_synced: boolean;
   } | null>(null);
@@ -576,7 +576,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
     try {
       const res = await submitRequestToBackend(payload);
       setSubmissionResult({
-        grievance_id: res.grievance_id,
+        Demand_id: res.Demand_id,
         created_at: res.created_at,
         bigquery_synced: res.bigquery_synced,
       });
@@ -605,7 +605,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
             <div style={{ background: "var(--col-panel)", padding: "20px", borderRadius: "8px", margin: "16px 0", border: "1px solid var(--col-border)" }}>
               <span className="label-eyebrow">OFFICIAL REQUEST ID</span>
               <div style={{ fontSize: "30px", fontWeight: "900", color: "var(--col-navy)", letterSpacing: "0.05em", margin: "8px 0" }}>
-                {submissionResult.grievance_id}
+                {submissionResult.Demand_id}
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "16px", textAlign: "left", fontSize: "13px" }}>
@@ -635,7 +635,7 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
               <button
                 type="button"
                 className="service-card-btn service-card-btn-orange"
-                onClick={() => onNavigate("citizen-track", submissionResult.grievance_id)}
+                onClick={() => onNavigate("citizen-track", submissionResult.Demand_id)}
               >
                 Track This Request →
               </button>
@@ -826,6 +826,39 @@ export const RaiseGrievanceForm: React.FC<RaiseGrievanceFormProps> = ({ user, on
 
                 {/* Voice Recording Control */}
                 <div style={{ background: "var(--col-panel)", padding: "20px", borderRadius: "10px", marginBottom: "20px", border: "1px solid var(--col-border)", textAlign: "center" }}>
+                  <div style={{ marginBottom: "16px", textAlign: "left" }}>
+                    <label className="form-label" style={{ fontSize: "12px", display: "block" }}>Select Speaking Language:</label>
+                    <select 
+                      className="form-input" 
+                      style={{ fontSize: "13px", padding: "8px", width: "100%", maxWidth: "300px", margin: "0 auto", display: "block" }}
+                      value={speechLanguage}
+                      onChange={(e) => handleLanguageChange(e.target.value)}
+                    >
+                      <option value="en-US">English</option>
+                      <option value="hi-IN">Hindi</option>
+                      <option value="as-IN">Assamese</option>
+                      <option value="bn-IN">Bengali</option>
+                      <option value="brx-IN">Bodo</option>
+                      <option value="doi-IN">Dogri</option>
+                      <option value="gu-IN">Gujarati</option>
+                      <option value="kn-IN">Kannada</option>
+                      <option value="ks-IN">Kashmiri</option>
+                      <option value="kok-IN">Konkani</option>
+                      <option value="mai-IN">Maithili</option>
+                      <option value="ml-IN">Malayalam</option>
+                      <option value="mni-IN">Manipuri</option>
+                      <option value="mr-IN">Marathi</option>
+                      <option value="ne-IN">Nepali</option>
+                      <option value="or-IN">Odia</option>
+                      <option value="pa-IN">Punjabi</option>
+                      <option value="sa-IN">Sanskrit</option>
+                      <option value="sat-IN">Santali</option>
+                      <option value="sd-IN">Sindhi</option>
+                      <option value="ta-IN">Tamil</option>
+                      <option value="te-IN">Telugu</option>
+                      <option value="ur-IN">Urdu</option>
+                    </select>
+                  </div>
                   <button
                     type="button"
                     onClick={toggleListening}

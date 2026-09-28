@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
 import "../../styles/citizen.css";
-import { getMyRequestsFromBackend } from "../../services/grievanceService";
+import { getMyRequestsFromBackend } from "../../services/demandService";
 import type { CitizenUser } from "../../types";
 
-interface TrackGrievancesProps {
+interface TrackDemandsProps {
   user: CitizenUser;
-  onNavigate: (view: string, grievanceId?: string) => void;
+  onNavigate: (view: string, DemandId?: string) => void;
 }
 
-export const TrackGrievances: React.FC<TrackGrievancesProps> = ({ user, onNavigate }) => {
-  const [proposals, setGrievances] = useState<any[]>([]);
+export const TrackDemands: React.FC<TrackDemandsProps> = ({ user, onNavigate }) => {
+  const [proposals, setDemands] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,7 +27,7 @@ export const TrackGrievances: React.FC<TrackGrievancesProps> = ({ user, onNaviga
       try {
         setLoading(true);
         const data = await getMyRequestsFromBackend();
-        setGrievances(Array.isArray(data) ? data : []);
+        setDemands(Array.isArray(data) ? data : []);
       } catch (err: any) {
         setError(err.message || "Failed to load requests from authoritative registry.");
       } finally {
@@ -39,7 +39,7 @@ export const TrackGrievances: React.FC<TrackGrievancesProps> = ({ user, onNaviga
 
   /* Filter Logic */
   const filtered = proposals.filter((g) => {
-    const id = g.grievance_id || g.id || "";
+    const id = g.Demand_id || g.id || "";
     if (searchId && !id.toLowerCase().includes(searchId.toLowerCase())) return false;
     if (selectedCategory && g.category !== selectedCategory) return false;
     if (selectedStatus && g.status !== selectedStatus) return false;
@@ -209,7 +209,7 @@ export const TrackGrievances: React.FC<TrackGrievancesProps> = ({ user, onNaviga
             </div>
           ) : (
             filtered.map((g) => {
-              const reqId = g.grievance_id || g.id;
+              const reqId = g.Demand_id || g.id;
               const isNewDev = g.request_type === "new_development";
               return (
                 <div key={reqId} className="form-card" style={{ padding: "20px" }}>

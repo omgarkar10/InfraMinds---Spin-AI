@@ -1,36 +1,36 @@
 import React from "react";
 import type { Proposal } from "../../types";
-import "./GrievanceKPIBar.css";
+import "./DemandKPIBar.css";
 
-interface GrievanceKPIBarProps {
+interface DemandKPIBarProps {
   proposals?: Proposal[];
   isLiveApi?: boolean;
 }
 
-export const GrievanceKPIBar: React.FC<GrievanceKPIBarProps> = ({
+export const DemandKPIBar: React.FC<DemandKPIBarProps> = ({
   proposals = [],
   isLiveApi = false,
 }) => {
   // Calculate statistics strictly from the department proposals provided
-  const totalGrievances = proposals.length;
-  const pendingGrievances = proposals.filter((g) => g.status !== "RESOLVED").length;
+  const totalDemands = proposals.length;
+  const pendingDemands = proposals.filter((g) => g.status !== "RESOLVED").length;
   const avgResolutionDays = proposals.length > 0 ? "2.4 days" : "0 days";
   const highPriorityCount = proposals.filter((g) => g.priority === "High" || g.priority === "Critical").length;
 
   return (
     <section className="proposal-kpi-bar-wrapper" aria-label="Proposal Statistics Overview">
       <div className="kpi-header-strip">
-        <span className="label-eyebrow">MUNICIPAL INFRASTRUCTURE INTELLIGENCE · GRIEVANCE STATISTICS</span>
+        <span className="label-eyebrow">MUNICIPAL INFRASTRUCTURE INTELLIGENCE · DEMAND STATISTICS</span>
         <span className={`kpi-provenance-tag ${isLiveApi ? "live" : "demo"}`}>
           {isLiveApi ? "LIVE API" : "DEMO DATA"}
         </span>
       </div>
 
       <div className="proposal-kpi-grid">
-        {/* METRIC 01: TOTAL GRIEVANCES */}
+        {/* METRIC 01: TOTAL DEMANDS */}
         <div className="kpi-metric-card">
           <div className="kpi-card-top">
-            <span className="kpi-label">TOTAL GRIEVANCES</span>
+            <span className="kpi-label">TOTAL DEMANDS</span>
             {/* Sparkline SVG */}
             <svg className="kpi-sparkline" viewBox="0 0 100 30" aria-hidden="true" role="img">
               <path
@@ -50,7 +50,7 @@ export const GrievanceKPIBar: React.FC<GrievanceKPIBarProps> = ({
           </div>
 
           <div className="kpi-card-middle">
-            <span className="kpi-value">{totalGrievances.toLocaleString()}</span>
+            <span className="kpi-value">{totalDemands.toLocaleString()}</span>
             <span className="kpi-trend trend-neutral" title="Increased 12% vs previous 7 days">
               ↑ 12%
             </span>
@@ -61,10 +61,10 @@ export const GrievanceKPIBar: React.FC<GrievanceKPIBarProps> = ({
           </span>
         </div>
 
-        {/* METRIC 02: PENDING GRIEVANCES */}
+        {/* METRIC 02: PENDING DEMANDS */}
         <div className="kpi-metric-card">
           <div className="kpi-card-top">
-            <span className="kpi-label">PENDING GRIEVANCES</span>
+            <span className="kpi-label">PENDING DEMANDS</span>
             {/* Sparkline SVG */}
             <svg className="kpi-sparkline" viewBox="0 0 100 30" aria-hidden="true" role="img">
               <path
@@ -84,7 +84,7 @@ export const GrievanceKPIBar: React.FC<GrievanceKPIBarProps> = ({
           </div>
 
           <div className="kpi-card-middle">
-            <span className="kpi-value">{pendingGrievances.toLocaleString()}</span>
+            <span className="kpi-value">{pendingDemands.toLocaleString()}</span>
             <span className="kpi-trend trend-positive" title="Decreased 8% vs previous 7 days (Positive)">
               ↓ 8%
             </span>
