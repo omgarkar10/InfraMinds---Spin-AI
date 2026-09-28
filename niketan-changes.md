@@ -215,3 +215,32 @@ otranslate class to the SPIN branding logo to prevent AI translation distortion.
 - Frontend now uses MediaRecorder API to capture mic audio and sends it to Bhashini backend instead of relying on Chrome browser.
 - Added speechToText function to bhashiniService.ts.
 - Removed Bhashini API quota limit (now shows Unlimited).
+
+## Fix: Bhashini ASR 500 / Voice Not Working (2026-09-28)
+
+### Root Cause
+Backend was sending `serviceId: ''` (empty string) in every Bhashini pipeline request. Bhashini Dhruva treats empty serviceId as invalid -> HTTP 500 -> frontend shows 'Could not understand speech'.
+
+### Files Updated
+- **backend/spin_agents/routers/bhashini_router.py**: Added BHASHINI_ASR_SERVICE_IDS and BHASHINI_NMT_SERVICE_IDS dicts with per-language service IDs. Fixed ASR/NMT/TTS payloads to omit serviceId key entirely when empty (Bhashini auto-routes). Previously sending empty string caused 500.
+
+### Rationale
+Bhashini Dhruva API requires valid serviceId or key must be absent. Empty string causes 500.
+
+## Fix: Bhashini ASR 400 Bad Request — Complete Rewrite (2026-09-28)
+
+### Root Cause
+Previous fix added fake hardcoded serviceIds (ai4i-conformer-mr-gpu etc.) that caused HTTP 400 Bad Request from Bhashini. Also, inference headers incorrectly included userID and ulcaApiKey which are only for ULCA config endpoint.
+
+### Fix Applied
+- **backend/spin_agents/routers/bhashini_router.py** — Full rewrite:
+  - Removed all hardcoded serviceId maps
+  - Split headers: _inference_headers() uses only Authorization; _ulca_headers() uses userID + ulcaApiKey
+  - Implemented correct 2-step Bhashini flow: call ULCA pipeline config endpoint first to get real serviceIds, then call Dhruva inference
+  - Added _get_pipeline_config() helper calling meity-auth.ulcacontrib.org/ulca/apis/v0/model/getModelsPipeline
+  - Added _extract_service_id() helper to parse config response
+  - All endpoints (ASR, NMT, TTS) now dynamically fetch correct serviceId before inference
+  - Added detailed error logging with response body for debugging
+
+### Rationale
+Bhashini requires correct serviceIds from its own catalog. The meity-auth endpoint returns the right serviceId for each language+task combination. This is the official recommended Bhashini integration pattern.
