@@ -53,8 +53,10 @@ class SpinConfig:
     bhashini_api_url: str = field(default_factory=lambda: os.getenv(
         "BHASHINI_API_URL", "https://dhruva-api.bhashini.gov.in/services/inference/pipeline"
     ))
-    bhashini_api_key: str = field(default_factory=lambda: os.getenv("BHASHINI_API_KEY", ""))
+    bhashini_api_key: str = field(default_factory=lambda: os.getenv("BHASHINI_INFERENCE_API_KEY", os.getenv("BHASHINI_API_KEY", "")))
     bhashini_user_id: str = field(default_factory=lambda: os.getenv("BHASHINI_USER_ID", ""))
+    bhashini_ulca_api_key: str = field(default_factory=lambda: os.getenv("BHASHINI_ULCA_API_KEY", ""))
+    bhashini_daily_call_limit: int = field(default_factory=lambda: int(os.getenv("BHASHINI_DAILY_CALL_LIMIT", "450")))
     gati_shakti_api_url: str = field(default_factory=lambda: os.getenv(
         "GATI_SHAKTI_API_URL", "https://api.gati.gov.in/v1/layers/query"
     ))
@@ -69,6 +71,8 @@ class SpinConfig:
     cors_origins: str = field(default_factory=lambda: os.getenv("CORS_ORIGINS", "http://localhost:5173"))
     bhashini_translation_service_id: str = field(default_factory=lambda: os.getenv("BHASHINI_TRANSLATION_SERVICE_ID", ""))
     bhashini_asr_service_id: str = field(default_factory=lambda: os.getenv("BHASHINI_ASR_SERVICE_ID", ""))
+    bhashini_tts_service_id: str = field(default_factory=lambda: os.getenv("BHASHINI_TTS_SERVICE_ID", ""))
+    bhashini_cache_ttl_seconds: int = field(default_factory=lambda: int(os.getenv("BHASHINI_CACHE_TTL_SECONDS", "86400")))
     google_application_credentials: str = field(default_factory=lambda: os.getenv("GOOGLE_APPLICATION_CREDENTIALS", ""))
     google_maps_api_key: str = field(default_factory=lambda: os.getenv("GOOGLE_MAPS_API_KEY", ""))
 
@@ -87,5 +91,9 @@ class SpinConfig:
     ))
     use_remote_agents: bool = field(default_factory=lambda: os.getenv("SPIN_USE_REMOTE_AGENTS", "false").lower() == "true")
 
+
+    @property
+    def bhashini_configured(self) -> bool:
+        return bool(self.bhashini_api_key and self.bhashini_user_id and self.bhashini_ulca_api_key)
 
 CONFIG = SpinConfig()
