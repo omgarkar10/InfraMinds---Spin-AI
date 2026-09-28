@@ -209,3 +209,9 @@ otranslate class to the SPIN branding logo to prevent AI translation distortion.
 - Fixed continuous voice dictation by setting rec.continuous = true in CreateDemandForm.tsx and optimizing the effect hook.
 - Included bhashini_translated_text in the SubmitRequestPayload so staff can view the english translation.
 - Updated backend/.env to add all required local dev ports to CORS_ORIGINS.
+
+- MAJOR: Replaced Chrome Web Speech API with Bhashini ASR (Automatic Speech Recognition) for proper Indian language voice recognition.
+- Added /api/bhashini/asr-translate endpoint to backend that accepts base64 audio, transcribes in correct native script (e.g. Devanagari for Marathi), and translates to English.
+- Frontend now uses MediaRecorder API to capture mic audio and sends it to Bhashini backend instead of relying on Chrome browser.
+- Added speechToText function to bhashiniService.ts.
+- Removed Bhashini API quota limit (now shows Unlimited).

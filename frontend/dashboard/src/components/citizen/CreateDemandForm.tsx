@@ -7,7 +7,7 @@ import {
   analyzeRequestWithGemini,
   SubmitRequestPayload,
 } from "../../services/demandService";
-import { detectAndTranslate } from "../../services/bhashiniService";
+import { translateText, speechToText } from "../../services/bhashiniService";
 import type { CitizenUser } from "../../types";
 
 interface CreateDemandFormProps {
@@ -235,14 +235,17 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
   const [reason, setReason] = useState<string>("");
   const [intendedBeneficiaries, setIntendedBeneficiaries] = useState<string>("");
 
-  // Speech Recognition & Voice Intake
-  const [isListening, setIsListening] = useState<boolean>(false);
+  // Voice Recording & Bhashini ASR
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [isTranscribing, setIsTranscribing] = useState<boolean>(false);
   const [speechTranscript, setSpeechTranscript] = useState<string>("");
   const [speechSupported, setSpeechSupported] = useState<boolean>(true);
-  const [recognitionInstance, setRecognitionInstance] = useState<any>(null);
+  const [spokenLanguage, setSpokenLanguage] = useState<string>("mr"); // Bhashini language code
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
-  // Bhashini auto-detection state
-  const [detectedLangCode, setDetectedLangCode] = useState<string>("auto");
+  // Bhashini translation state
+  const [detectedLangCode, setDetectedLangCode] = useState<string>("");
   const [detectedLangName, setDetectedLangName] = useState<string>("");
   const [bhashiniTranslatedText, setBhashiniTranslatedText] = useState<string>("");
   const [isBhashiniLoading, setIsBhashiniLoading] = useState<boolean>(false);
@@ -282,89 +285,113 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
     bigquery_synced: boolean;
   } | null>(null);
 
-  // Initialize SpeechRecognition on mount
+  // Check if microphone is available
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const SpeechRecognition =
-        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        const rec = new SpeechRecognition();
-        rec.continuous = true; // KEEP LISTENING continuously!
-        rec.interimResults = false;
-        // Let the browser use its best default (often system language)
-        // Note: For full Indian language support, Google Chrome supports many if we specify, but "hi-IN" is a good baseline
-        rec.lang = "hi-IN";
-
-        rec.onresult = (event: any) => {
-          let text = "";
-          for (let i = event.resultIndex; i < event.results.length; ++i) {
-            text += event.results[i][0].transcript;
-          }
-          setSpeechTranscript((prev) => (prev ? `${prev} ${text}` : text));
-          if (intakeMode === "manual") {
-            setDescription((prev) => (prev ? `${prev}\n${text}` : text));
-          }
-        };
-
-        rec.onerror = (e: any) => {
-          setIsListening(false);
-          setAiMessage(`Microphone note: ${e.error || "unavailable"}. You can type directly.`);
-        };
-
-        rec.onend = () => {
-          setIsListening(false);
-        };
-
-        setRecognitionInstance(rec);
-        setSpeechSupported(true);
-      } else {
-        setSpeechSupported(false);
-      }
+    if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
+      setSpeechSupported(true);
+    } else {
+      setSpeechSupported(false);
     }
-  }, []); // Remove intakeMode dependency so it is not re-created constantly
+  }, []);
 
-  // Auto-detect language + translate via Bhashini whenever transcript changes (debounced)
-  const runBhashiniDetect = useCallback(async (text: string) => {
+  // Re-translate when user manually edits the transcript text
+  const runBhashiniTranslate = useCallback(async (text: string, langCode: string) => {
     if (!text || text.trim().length < 3) return;
     setIsBhashiniLoading(true);
     setBhashiniError(null);
     try {
-      const result = await detectAndTranslate(text, "en");
-      setDetectedLangCode(result.detected_language_code);
-      setDetectedLangName(result.detected_language_name);
+      const result = await translateText(text, langCode, "en");
+      setDetectedLangCode(langCode);
+      const nameMap: Record<string, string> = { hi: "Hindi", bn: "Bengali", te: "Telugu", mr: "Marathi", ta: "Tamil", gu: "Gujarati", kn: "Kannada", ml: "Malayalam", pa: "Punjabi", or: "Odia", as: "Assamese", ur: "Urdu", en: "English", mai: "Maithili", mni: "Manipuri", sat: "Santali", kok: "Konkani", doi: "Dogri", sa: "Sanskrit", brx: "Bodo", ks: "Kashmiri", ne: "Nepali", sd: "Sindhi", raj: "Rajasthani", si: "Sinhala" };
+      setDetectedLangName(nameMap[langCode] || langCode);
       setBhashiniTranslatedText(result.translated_text);
     } catch (err: any) {
-      setBhashiniError("Auto-detection unavailable. Proceeding with raw text.");
+      setBhashiniError("Translation unavailable. Proceeding with raw text.");
     } finally {
       setIsBhashiniLoading(false);
     }
   }, []);
 
-  // Debounce — trigger Bhashini TLD 800ms after the user stops typing
+  // Debounce — re-translate when the user manually edits the transcript
   useEffect(() => {
     const timer = setTimeout(() => {
       if (speechTranscript.trim().length >= 3) {
-        runBhashiniDetect(speechTranscript);
+        runBhashiniTranslate(speechTranscript, spokenLanguage);
       }
-    }, 800);
+    }, 1000);
     return () => clearTimeout(timer);
-  }, [speechTranscript, runBhashiniDetect]);
+  }, [speechTranscript, runBhashiniTranslate, spokenLanguage]);
 
-  const toggleListening = () => {
-    if (!recognitionInstance) {
-      alert("Speech recognition is not supported in this browser. Please type your request.");
-      return;
-    }
-    if (isListening) {
-      recognitionInstance.stop();
-      setIsListening(false);
+  // ── Bhashini ASR: Record audio → send to server → get transcription ────
+  const toggleRecording = async () => {
+    if (isRecording) {
+      // ── STOP recording ────────────────────────────────────────────────
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        mediaRecorderRef.current.stop();
+      }
+      // The onstop handler below will process the audio
     } else {
+      // ── START recording ───────────────────────────────────────────────
       try {
-        recognitionInstance.start();
-        setIsListening(true);
+        setBhashiniError(null);
         setAiMessage(null);
-      } catch (err) {
-        setIsListening(false);
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" });
+        audioChunksRef.current = [];
+
+        recorder.ondataavailable = (event: BlobEvent) => {
+          if (event.data.size > 0) {
+            audioChunksRef.current.push(event.data);
+          }
+        };
+
+        recorder.onstop = async () => {
+          // Release microphone
+          stream.getTracks().forEach((track) => track.stop());
+          setIsRecording(false);
+
+          const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+          if (audioBlob.size < 1000) {
+            setBhashiniError("Recording too short. Please speak for at least 1-2 seconds.");
+            return;
+          }
+
+          // Convert to base64
+          setIsTranscribing(true);
+          const reader = new FileReader();
+          reader.onloadend = async () => {
+            const base64Audio = (reader.result as string).split(",")[1];
+            try {
+              const result = await speechToText(base64Audio, spokenLanguage, "en");
+              if (result.transcribed_text) {
+                // Show the native-script transcription
+                setSpeechTranscript((prev) =>
+                  prev ? `${prev} ${result.transcribed_text}` : result.transcribed_text
+                );
+                setDetectedLangCode(result.source_language);
+                setDetectedLangName(result.source_language_name);
+                // Show the English translation
+                if (result.translated_text && result.translated_text !== result.transcribed_text) {
+                  setBhashiniTranslatedText(result.translated_text);
+                }
+              } else {
+                setBhashiniError("Could not understand speech. Please speak louder or try again.");
+              }
+            } catch (err: any) {
+              setBhashiniError(err.message || "Speech recognition failed. Please try again.");
+            } finally {
+              setIsTranscribing(false);
+            }
+          };
+          reader.readAsDataURL(audioBlob);
+        };
+
+        mediaRecorderRef.current = recorder;
+        recorder.start();
+        setIsRecording(true);
+      } catch (err: any) {
+        setBhashiniError("Could not access microphone. Please allow microphone access and try again.");
+        setIsRecording(false);
       }
     }
   };
@@ -859,7 +886,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                 <div style={{ background: "var(--col-panel)", padding: "20px", borderRadius: "10px", marginBottom: "20px", border: "1px solid var(--col-border)", textAlign: "center" }}>
                   {/* Bhashini Auto-Detection Badge — replaces manual language dropdown */}
                   <div style={{ marginBottom: "16px", textAlign: "left", display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-                    <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--col-text-muted)" }}>🧠 Language:</span>
+                    <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--col-text-muted)" }}>🧠 Translation:</span>
                     {isBhashiniLoading ? (
                       <span style={{ fontSize: "12px", color: "var(--col-orange)", fontStyle: "italic" }}>Detecting language...</span>
                     ) : detectedLangName ? (
@@ -867,35 +894,81 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                         ✓ {detectedLangName} ({detectedLangCode})
                       </span>
                     ) : (
-                      <span style={{ fontSize: "12px", color: "var(--col-text-muted)", fontStyle: "italic" }}>Auto-detected via Bhashini · Speak in any Indian language</span>
+                      <span style={{ fontSize: "12px", color: "var(--col-text-muted)", fontStyle: "italic" }}>Auto-detected via Bhashini</span>
                     )}
                     {bhashiniError && (
                       <span style={{ fontSize: "11px", color: "#ef4444" }}>{bhashiniError}</span>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={toggleListening}
-                    className="btn-primary"
-                    style={{
-                      background: isListening ? "#dc2626" : "var(--col-orange)",
-                      padding: "12px 28px",
-                      fontSize: "15px",
-                      fontWeight: 700,
-                      margin: "0 auto 12px auto",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "10px",
-                    }}
-                  >
-                    <span>{isListening ? "⏹ Stop Recording" : "🎙️ Start Speaking"}</span>
-                  </button>
+                  
+                  <div style={{ display: "flex", justifyContent: "center", gap: "10px", marginBottom: "12px", alignItems: "center", flexWrap: "wrap" }}>
+                    <select
+                      className="form-input"
+                      value={spokenLanguage}
+                      onChange={(e) => setSpokenLanguage(e.target.value)}
+                      disabled={isRecording || isTranscribing}
+                      style={{ width: "auto", fontSize: "13px", padding: "8px 12px", borderRadius: "8px" }}
+                    >
+                      <option value="as">Assamese (অসমীয়া)</option>
+                      <option value="bn">Bengali (বাংলা)</option>
+                      <option value="brx">Bodo (बड़ो)</option>
+                      <option value="doi">Dogri (डोगरी)</option>
+                      <option value="en">English</option>
+                      <option value="gu">Gujarati (ગુજરાતી)</option>
+                      <option value="hi">Hindi (हिंदी)</option>
+                      <option value="kn">Kannada (ಕನ್ನಡ)</option>
+                      <option value="ks">Kashmiri (कॉशुर)</option>
+                      <option value="kok">Konkani (कोंकणी)</option>
+                      <option value="mai">Maithili (मैथिली)</option>
+                      <option value="ml">Malayalam (മലയാളം)</option>
+                      <option value="mni">Manipuri (মৈতৈলোন্)</option>
+                      <option value="mr">Marathi (मराठी)</option>
+                      <option value="ne">Nepali (नेपाली)</option>
+                      <option value="or">Odia (ଓଡ଼ିଆ)</option>
+                      <option value="pa">Punjabi (ਪੰਜਾਬੀ)</option>
+                      <option value="raj">Rajasthani (राजस्थानी)</option>
+                      <option value="sa">Sanskrit (संस्कृतम्)</option>
+                      <option value="sat">Santali (ᱥᱟᱱᱛᱟᱲᱤ)</option>
+                      <option value="sd">Sindhi (सिन्धी)</option>
+                      <option value="si">Sinhala (සිංහල)</option>
+                      <option value="ta">Tamil (தமிழ்)</option>
+                      <option value="te">Telugu (తెలుగు)</option>
+                      <option value="ur">Urdu (اردو)</option>
+                    </select>
+
+                    <button
+                      type="button"
+                      onClick={toggleRecording}
+                      disabled={isTranscribing}
+                      className="btn-primary"
+                      style={{
+                        background: isTranscribing ? "#9ca3af" : isRecording ? "#dc2626" : "var(--col-orange)",
+                        padding: "10px 24px",
+                        fontSize: "14px",
+                        fontWeight: 700,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        cursor: isTranscribing ? "wait" : "pointer",
+                      }}
+                    >
+                      <span>
+                        {isTranscribing
+                          ? "⏳ Transcribing..."
+                          : isRecording
+                          ? "⏹ Stop Recording"
+                          : "🎙️ Start Speaking"}
+                      </span>
+                    </button>
+                  </div>
                   <div style={{ fontSize: "12px", color: "var(--col-text-muted)" }}>
-                    {isListening
-                      ? "Listening... Speak clearly into your microphone in any Indian language."
+                    {isTranscribing
+                      ? "Processing your audio with Bhashini ASR... Please wait."
+                      : isRecording
+                      ? "🔴 Recording... Speak clearly, then click Stop when done."
                       : speechSupported
-                      ? "Click to start recording your voice description."
-                      : "Speech recognition unavailable in this browser; you can type in the transcript box below."}
+                      ? "Select your language, then click to record. Bhashini will transcribe in the correct script."
+                      : "Microphone unavailable in this browser; please type in the box below."}
                   </div>
 
                   <div style={{ marginTop: "16px", textAlign: "left" }}>

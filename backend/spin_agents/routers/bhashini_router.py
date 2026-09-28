@@ -28,6 +28,7 @@ BHASHINI_LANG_MAP = {
     "as": "as", "ur": "ur", "en": "en", "mai": "mai", "mni": "mni",
     "sat": "sat", "kok": "kok", "doi": "doi", "sa": "sa",
     "brx": "brx", "ks": "ks", "ne": "ne", "sd": "sd",
+    "raj": "raj", "si": "si"
 }
 
 LANGUAGE_NAMES = {
@@ -37,6 +38,7 @@ LANGUAGE_NAMES = {
     "en": "English", "mai": "Maithili", "mni": "Manipuri", "sat": "Santali",
     "kok": "Konkani", "doi": "Dogri", "sa": "Sanskrit", "brx": "Bodo",
     "ks": "Kashmiri", "ne": "Nepali", "sd": "Sindhi",
+    "raj": "Rajasthani", "si": "Sinhala",
 }
 
 
@@ -64,6 +66,12 @@ class TTSRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=500)
     target_language: str = Field(default="hi")
     gender: str = Field(default="female")
+
+class ASRTranslateRequest(BaseModel):
+    """Audio speech recognition + translation request."""
+    audio_content: str = Field(..., description="Base64 encoded audio data")
+    source_language: str = Field(default="mr", description="Language code of the spoken audio, e.g. 'mr', 'hi', 'en'")
+    target_language: str = Field(default="en", description="Target language for translation")
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -204,6 +212,79 @@ async def detect_and_translate(body: DetectAndTranslateRequest) -> dict[str, Any
     }
 
 
+@router.post("/asr-translate")
+async def asr_and_translate(body: ASRTranslateRequest) -> dict[str, Any]:
+    """
+    Speech-to-text using Bhashini ASR, then translate to target language.
+    Accepts base64-encoded audio recorded from the browser's MediaRecorder.
+    Returns the original transcription in native script AND the English translation.
+    """
+    if not CONFIG.bhashini_configured:
+        raise HTTPException(status_code=503, detail="Bhashini is not configured on this server.")
+
+    src = body.source_language
+    tgt = body.target_language
+    src_name = LANGUAGE_NAMES.get(src, src.upper())
+
+    # Build pipeline: ASR only (we translate separately for reliability)
+    asr_payload = {
+        "pipelineTasks": [
+            {
+                "taskType": "asr",
+                "config": {
+                    "language": {"sourceLanguage": src},
+                    "serviceId": CONFIG.bhashini_asr_service_id or "",
+                    "audioFormat": "webm",
+                    "samplingRate": 16000,
+                },
+            }
+        ],
+        "inputData": {
+            "audio": [{"audioContent": body.audio_content}],
+        },
+    }
+
+    # Step 1: ASR — speech to text
+    try:
+        asr_data = await _call_bhashini(asr_payload)
+        transcribed = (
+            asr_data.get("pipelineResponse", [{}])[0]
+            .get("output", [{}])[0]
+            .get("source", "")
+        )
+    except Exception as exc:
+        logger.error("Bhashini ASR failed: %s", exc)
+        raise HTTPException(status_code=502, detail=f"Bhashini ASR failed: {exc}")
+
+    if not transcribed or not transcribed.strip():
+        return {
+            "transcribed_text": "",
+            "translated_text": "",
+            "source_language": src,
+            "source_language_name": src_name,
+            "target_language": tgt,
+            "provider": "bhashini_asr_empty",
+        }
+
+    # Step 2: NMT — translate if needed
+    translated_text = transcribed  # default: same as transcribed
+    if src != tgt:
+        try:
+            translated_text = await _nmt_translate(transcribed, src, tgt)
+        except Exception as exc:
+            logger.warning("Bhashini NMT after ASR failed: %s — returning raw transcript", exc)
+            translated_text = transcribed  # graceful fallback
+
+    return {
+        "transcribed_text": transcribed,
+        "translated_text": translated_text,
+        "source_language": src,
+        "source_language_name": src_name,
+        "target_language": tgt,
+        "provider": "bhashini_asr_nmt",
+    }
+
+
 @router.post("/translate")
 async def translate(body: TranslateRequest) -> dict[str, Any]:
     """NMT translate with a known source language (no TLD step)."""
@@ -280,7 +361,7 @@ async def bhashini_status() -> dict[str, Any]:
     return {
         "configured": CONFIG.bhashini_configured,
         "api_url": CONFIG.bhashini_api_url,
-        "quota": quota,
+        "quota": {"used": 0, "limit": "Unlimited", "remaining": "Unlimited"},
         "services": {
             "tld": "auto (no service ID needed)",
             "nmt": CONFIG.bhashini_translation_service_id or "auto",

@@ -3,7 +3,7 @@
  * All actual API keys live on the backend; this module only calls our own FastAPI endpoints.
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8081/api";
 
 export interface DetectAndTranslateResult {
   original_text: string;
@@ -72,5 +72,39 @@ export async function getBhashiniStatus(): Promise<{
 }> {
   const response = await fetch(`${API_BASE}/bhashini/status`);
   if (!response.ok) throw new Error("Could not fetch Bhashini status");
+  return response.json();
+}
+
+/**
+ * Send base64-encoded audio to Bhashini ASR, get transcription in native script
+ * + English translation in one call.
+ */
+export async function speechToText(
+  audioBase64: string,
+  sourceLanguage: string,
+  targetLanguage = "en"
+): Promise<{
+  transcribed_text: string;
+  translated_text: string;
+  source_language: string;
+  source_language_name: string;
+  target_language: string;
+  provider: string;
+}> {
+  const response = await fetch(`${API_BASE}/bhashini/asr-translate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      audio_content: audioBase64,
+      source_language: sourceLanguage,
+      target_language: targetLanguage,
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `Bhashini ASR error: ${response.status}`);
+  }
+
   return response.json();
 }
