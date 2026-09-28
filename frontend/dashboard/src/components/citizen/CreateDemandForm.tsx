@@ -287,7 +287,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
 
   // Check if microphone is available
   useEffect(() => {
-    if (typeof navigator !== "undefined" && navigator.mediaDevices?.getUserMedia) {
+    if (typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia) {
       setSpeechSupported(true);
     } else {
       setSpeechSupported(false);
@@ -396,13 +396,6 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
     }
   };
 
-  const handleUseTranscriptAsDescription = () => {
-    if (speechTranscript.trim()) {
-      setDescription((prev) => (prev ? `${prev}\n${speechTranscript.trim()}` : speechTranscript.trim()));
-      setSpeechTranscript("");
-    }
-  };
-
   // Category change handler
   const handleCategoryChange = (newCat: string) => {
     setCategory(newCat);
@@ -427,7 +420,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
     setAiStatus(null);
 
     try {
-      const res = await analyzeRequestWithGemini(textToAnalyze, requestType);
+      const res = await analyzeRequestWithGemini(textToAnalyze, requestType) as any;
       setAiStatus(res.status);
       setAiMessage(res.message);
 
@@ -797,13 +790,8 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                       setSpeechTranscript("");
                       setAiMessage(null);
                       setIsVoiceConfirmCardVisible(false);
-                      if (recognitionInstance) {
-                        try {
-                          recognitionInstance.start();
-                          setIsListening(true);
-                        } catch {
-                          setIsListening(false);
-                        }
+                      if (!isRecording) {
+                        toggleRecording();
                       }
                     }}
                     style={{
@@ -1270,23 +1258,6 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                       <span style={{ color: "#e53e3e" }}>*</span>
                     </label>
                     <div style={{ display: "flex", gap: "8px" }}>
-                      <button
-                        type="button"
-                        className="btn-outline"
-                        onClick={toggleListening}
-                        style={{
-                          fontSize: "12px",
-                          padding: "4px 10px",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "4px",
-                          borderColor: isListening ? "#dc2626" : undefined,
-                          color: isListening ? "#dc2626" : undefined,
-                        }}
-                      >
-                        {isListening ? "⏹ Stop Dictation" : "🎙️ Dictate Text"}
-                      </button>
-
                       <button
                         type="button"
                         className="btn-outline"
