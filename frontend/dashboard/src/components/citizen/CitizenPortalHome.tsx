@@ -119,7 +119,7 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
           </select>
         </div>
         
-        <div className="feed-layout" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", height: "70vh" }}>
+        <div className="feed-layout citizen-feed-grid">
           
           {/* Feed List */}
           <div className="feed-list" style={{ overflowY: "auto", paddingRight: "8px" }}>
@@ -191,7 +191,7 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
           </div>
 
           {/* Feed Map */}
-          <div className="feed-map" style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid #eee", background: "#e5e3df", zIndex: 1 }}>
+          <div className="feed-map">
             <MapContainer center={userLocation || [22.5937, 78.9629]} zoom={userLocation ? 13 : 4} style={{ height: "100%", width: "100%" }}>
               <ChangeMapView center={userLocation || [22.5937, 78.9629]} zoom={userLocation ? 13 : 4} />
               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />

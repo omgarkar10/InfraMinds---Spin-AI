@@ -11,10 +11,10 @@ import type { CitizenUser } from "../../types";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
-function LocationMarker({ position, setPosition }: { position: any, setPosition: any }) {
+function LocationMarker({ position, onLocationChange }: { position: any, onLocationChange: (lat: number, lng: number) => void }) {
   useMapEvents({
     click(e) {
-      setPosition(e.latlng);
+      onLocationChange(e.latlng.lat, e.latlng.lng);
     },
   });
   return position === null ? null : (
@@ -175,52 +175,55 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
   const [isVoiceConfirmCardVisible, setIsVoiceConfirmCardVisible] = useState<boolean>(false);
 
   const placesLibrary = useMapsLibrary("places");
-  const containerRef = useRef<HTMLDivElement>(null);
+  const autocompleteService = useRef<any>(null);
+  const placesService = useRef<any>(null);
 
   useEffect(() => {
-    if (!placesLibrary || !containerRef.current) return;
-    
-    // Clear container to prevent duplicate elements in React StrictMode
-    containerRef.current.innerHTML = '';
-    
-    // Programmatically instantiate the custom web component
-    const autocompleteEl = new placesLibrary.PlaceAutocompleteElement();
-    autocompleteEl.id = "address";
-    autocompleteEl.setAttribute("style", "width: 100%; padding: 12px; border: 1px solid var(--col-border); border-radius: 6px; box-sizing: border-box; display: block;");
-    
-    const handlePlaceSelect = (e: any) => {
-      const place = e.place; // or autocompleteEl.place
-      if (place) {
-        place.fetchFields({ fields: ['formattedAddress', 'location'] }).then(() => {
-          const addr = place.formattedAddress || "";
-          setAddress(addr);
-          if (place.location) {
-            setLatitude(place.location.lat());
-            setLongitude(place.location.lng());
-            setGpsConfirmed(true);
-            setGpsMessage(`Location set to ${addr}.`);
-          }
-        });
+    if (!placesLibrary) return;
+    if (!autocompleteService.current) {
+      autocompleteService.current = new placesLibrary.AutocompleteService();
+    }
+  }, [placesLibrary]);
+
+  const handleAddressSearch = (input: string) => {
+    setAddress(input);
+    if (!input.trim() || !autocompleteService.current) {
+      setAddressPredictions([]);
+      return;
+    }
+
+    autocompleteService.current.getPlacePredictions(
+      { input, componentRestrictions: { country: "in" } },
+      (predictions: any, status: any) => {
+        if (status === "OK" && predictions) {
+          setAddressPredictions(predictions.slice(0, 5));
+        } else {
+          setAddressPredictions([]);
+        }
       }
-    };
+    );
+  };
 
-    const handleInput = () => {
-      // @ts-ignore
-      setAddress(autocompleteEl.inputValue || "");
-    };
+  const handlePlaceSelect = (placeId: string, description: string) => {
+    setAddress(description);
+    setAddressPredictions([]);
 
-    autocompleteEl.addEventListener('gmp-placeselect', handlePlaceSelect);
-    autocompleteEl.addEventListener('input', handleInput);
+    // We need to fetch details to get lat/lng
+    if (!placesLibrary) return;
     
-    containerRef.current.appendChild(autocompleteEl);
+    // Create a dummy map element for PlacesService, as it requires an HTML element
+    const dummyMap = document.createElement("div");
+    const service = new placesLibrary.PlacesService(dummyMap);
     
-    return () => {
-      autocompleteEl.removeEventListener('gmp-placeselect', handlePlaceSelect);
-      autocompleteEl.removeEventListener('input', handleInput);
-      autocompleteEl.remove();
-    };
-  }, [placesLibrary, step]);
-
+    service.getDetails({ placeId, fields: ["geometry", "formatted_address"] }, (place: any, status: any) => {
+      if (status === "OK" && place?.geometry?.location) {
+        setLatitude(place.geometry.location.lat());
+        setLongitude(place.geometry.location.lng());
+        setGpsConfirmed(true);
+        setGpsMessage(`Location set to ${place.formatted_address || description}.`);
+      }
+    });
+  };
 
   // Calculate today's LOCAL date in YYYY-MM-DD format (avoids UTC offset shift)
   const getTodayLocalDateStr = () => {
@@ -234,8 +237,9 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
 
   // ── Step 1 State ─────────────────────────────────────────────────────────
   const [requestType, setRequestType] = useState<"existing_problem" | "new_development">("existing_problem");
-  const [category, setCategory] = useState<string>("Water Supply");
-  const [specificIssue, setSpecificIssue] = useState<string>("Pipeline leakage / burst");
+  const [category, setCategory] = useState<string>("");
+  const [specificIssue, setSpecificIssue] = useState<string>("");
+  const [otherSpecificIssue, setOtherSpecificIssue] = useState<string>("");
   const [description, setDescription] = useState<string>("");
 
   // Type A specific (Current Need)
@@ -244,6 +248,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
 
   // Type B specific (New Development)
   const [proposedFacility, setProposedFacility] = useState<string>("");
+  const [otherProposedFacility, setOtherProposedFacility] = useState<string>("");
   const [reason, setReason] = useState<string>("");
   const [intendedBeneficiaries, setIntendedBeneficiaries] = useState<string>("");
 
@@ -263,6 +268,9 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
   const [state, setState] = useState<string>("");
   const [district, setDistrict] = useState<string>("");
   const [address, setAddress] = useState<string>("");
+  const [addressLine2, setAddressLine2] = useState<string>("");
+  const [addressPredictions, setAddressPredictions] = useState<any[]>([]);
+  const [isManualAddress, setIsManualAddress] = useState<boolean>(false);
   const [landmark, setLandmark] = useState<string>("");
   const [pincode, setPincode] = useState<string>("");
   const [latitude, setLatitude] = useState<number | null>(null);
@@ -363,6 +371,11 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
   // Category change handler
   const handleCategoryChange = (newCat: string) => {
     setCategory(newCat);
+    if (!newCat) {
+      setSpecificIssue("");
+      setProposedFacility("");
+      return;
+    }
     const issues = CATEGORY_ISSUE_MAP[newCat] || ["Other"];
     setSpecificIssue(issues[0]);
     if (requestType === "new_development") {
@@ -437,6 +450,50 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
     setDistrict(districts.length > 0 ? districts[0] : "");
   };
 
+  const reverseGeocodeAndUpdate = async (lat: number, lng: number) => {
+    setLatitude(lat);
+    setLongitude(lng);
+    setGpsConfirmed(true);
+    setGpsMessage(`Location set to coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}.`);
+    
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, {
+        headers: { "User-Agent": "SPIN-CitizenPortal/1.0" },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const addr = data.address || {};
+        const rawState = addr.state || "";
+        const rawDistrict = addr.city || addr.town || addr.county || addr.state_district || "";
+        const rawPin = addr.postcode || "";
+        
+        // Always try to set the address from reverse geocode
+        if (data.display_name) {
+          setAddress(data.display_name);
+        }
+
+        const matchedState = Object.keys(STATE_DISTRICT_MAP).find(
+          (s) => s.toLowerCase() === rawState.toLowerCase() || rawState.toLowerCase().includes(s.toLowerCase())
+        );
+        if (matchedState) {
+          setState(matchedState);
+          const validDistricts = STATE_DISTRICT_MAP[matchedState];
+          const matchedDistrict = validDistricts.find(
+            (d) => d.toLowerCase() === rawDistrict.toLowerCase() || rawDistrict.toLowerCase().includes(d.toLowerCase())
+          );
+          if (matchedDistrict) {
+            setDistrict(matchedDistrict);
+          }
+        }
+        if (rawPin && /^\d{6}$/.test(rawPin.trim())) {
+          setPincode(rawPin.trim());
+        }
+      }
+    } catch {
+      // Do nothing; preserve manual entry
+    }
+  };
+
   // Geolocation trigger (Optional, non-defaulting, requires explicit confirmation)
   const handleDetectCoordinates = () => {
     if (!navigator.geolocation) {
@@ -450,44 +507,9 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
       async (pos) => {
         const lat = Number(pos.coords.latitude.toFixed(5));
         const lng = Number(pos.coords.longitude.toFixed(5));
-        setLatitude(lat);
-        setLongitude(lng);
         setIsGpsLoading(false);
-        setGpsConfirmed(false);
+        await reverseGeocodeAndUpdate(lat, lng);
         setGpsMessage(`Detected Coordinates: ${lat}, ${lng}. Please confirm if this is the actual site of the infrastructure need.`);
-
-        // Reverse geocode via OpenStreetMap Nominatim
-        try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, {
-            headers: { "User-Agent": "SPIN-CitizenPortal/1.0" },
-          });
-          if (res.ok) {
-            const data = await res.json();
-            const addr = data.address || {};
-            const rawState = addr.state || "";
-            const rawDistrict = addr.city || addr.town || addr.county || addr.state_district || "";
-            const rawPin = addr.postcode || "";
-
-            const matchedState = Object.keys(STATE_DISTRICT_MAP).find(
-              (s) => s.toLowerCase() === rawState.toLowerCase() || rawState.toLowerCase().includes(s.toLowerCase())
-            );
-            if (matchedState && !state) {
-              setState(matchedState);
-              const validDistricts = STATE_DISTRICT_MAP[matchedState];
-              const matchedDistrict = validDistricts.find(
-                (d) => d.toLowerCase() === rawDistrict.toLowerCase() || rawDistrict.toLowerCase().includes(d.toLowerCase())
-              );
-              if (matchedDistrict) {
-                setDistrict(matchedDistrict);
-              }
-            }
-            if (rawPin && /^\d{6}$/.test(rawPin.trim()) && !pincode) {
-              setPincode(rawPin.trim());
-            }
-          }
-        } catch {
-          // Do nothing; preserve manual entry
-        }
       },
       (error) => {
         setIsGpsLoading(false);
@@ -533,6 +555,13 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
       case 1:
         if (description.trim().length < 5) return false;
         if (!category) return false;
+        if (requestType === "existing_problem") {
+          if (!specificIssue) return false;
+          if (specificIssue.startsWith("Other") && !otherSpecificIssue.trim()) return false;
+        } else {
+          if (!proposedFacility) return false;
+          if (proposedFacility.startsWith("Other") && !otherProposedFacility.trim()) return false;
+        }
         return true;
       case 2:
         if (!state.trim()) return false;
@@ -569,12 +598,14 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
     const payload: SubmitRequestPayload = {
       request_type: requestType,
       category,
-      specific_issue: requestType === "existing_problem" ? specificIssue : proposedFacility || specificIssue,
+      specific_issue: requestType === "existing_problem" 
+        ? (specificIssue.startsWith("Other") ? otherSpecificIssue.trim() : specificIssue) 
+        : (proposedFacility.startsWith("Other") ? otherProposedFacility.trim() : (proposedFacility || specificIssue)),
       description: description.trim(),
       state: state || undefined,
       district: district || undefined,
       landmark: landmark.trim() || undefined,
-      address: address.trim() || undefined,
+      address: (address.trim() + (addressLine2 ? `, ${addressLine2.trim()}` : "")) || undefined,
       pincode: pincode.trim() || undefined,
       latitude: gpsConfirmed && latitude !== null ? latitude : null,
       longitude: gpsConfirmed && longitude !== null ? longitude : null,
@@ -1274,6 +1305,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                       value={category}
                       onChange={(e) => handleCategoryChange(e.target.value)}
                     >
+                      <option value="" disabled>-- Select Infrastructure Category --</option>
                       {Object.keys(CATEGORY_ISSUE_MAP).map((cat) => (
                         <option key={cat} value={cat}>
                           {cat}
@@ -1287,27 +1319,47 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                       {requestType === "existing_problem" ? "Proposed Improvement" : "Proposed Facility"}{" "}
                       <span style={{ color: "#e53e3e" }}>*</span>
                     </label>
-                    {requestType === "existing_problem" ? (
-                      <select
-                        id="specificIssue"
-                        className="form-input"
-                        value={specificIssue}
-                        onChange={(e) => setSpecificIssue(e.target.value)}
-                      >
-                        {(CATEGORY_ISSUE_MAP[category] || ["Other"]).map((item) => (
-                          <option key={item} value={item}>
-                            {item}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
+                    <select
+                      id="specificIssue"
+                      className="form-input"
+                      value={requestType === "existing_problem" ? specificIssue : proposedFacility}
+                      onChange={(e) => {
+                        if (requestType === "existing_problem") {
+                          setSpecificIssue(e.target.value);
+                        } else {
+                          setProposedFacility(e.target.value);
+                        }
+                      }}
+                      disabled={!category}
+                    >
+                      <option value="" disabled>-- Select Specific Detail --</option>
+                      {(CATEGORY_ISSUE_MAP[category] || ["Other"]).map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+
+                    {/* Manual entry if "Other" is selected */}
+                    {requestType === "existing_problem" && specificIssue.startsWith("Other") && (
                       <input
-                        id="specificIssue"
                         type="text"
                         className="form-input"
-                        value={proposedFacility}
-                        onChange={(e) => setProposedFacility(e.target.value)}
-                        placeholder="e.g., Primary Health Sub-Centre or 2km All-Weather Road"
+                        style={{ marginTop: "8px" }}
+                        placeholder="Please specify your improvement..."
+                        value={otherSpecificIssue}
+                        onChange={(e) => setOtherSpecificIssue(e.target.value)}
+                        required
+                      />
+                    )}
+                    {requestType === "new_development" && proposedFacility.startsWith("Other") && (
+                      <input
+                        type="text"
+                        className="form-input"
+                        style={{ marginTop: "8px" }}
+                        placeholder="Please specify the proposed facility..."
+                        value={otherProposedFacility}
+                        onChange={(e) => setOtherProposedFacility(e.target.value)}
                         required
                       />
                     )}
@@ -1507,20 +1559,101 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
               <label className="form-label" htmlFor="address">
                 Street Address / Locality / Village <span style={{ color: "#e53e3e" }}>*</span>
               </label>
-              <div ref={containerRef} style={{ width: "100%" }}>
-                {!placesLibrary && (
-                  <input
-                    id="address"
-                    type="text"
-                    className="form-input"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Loading Google Maps Autocomplete..."
-                    required
-                  />
+              <div style={{ position: "relative", width: "100%" }}>
+                {isManualAddress ? (
+                  <>
+                    <input
+                      id="address"
+                      type="text"
+                      className="form-input"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      placeholder="Street Address, Area, Village"
+                      required
+                    />
+                    <input
+                      type="text"
+                      className="form-input"
+                      style={{ marginTop: "8px" }}
+                      value={addressLine2}
+                      onChange={(e) => setAddressLine2(e.target.value)}
+                      placeholder="Address Line 2 (Optional)"
+                    />
+                    <button
+                      type="button"
+                      className="btn-outline"
+                      style={{ marginTop: "8px", fontSize: "12px", padding: "4px 8px" }}
+                      onClick={() => setIsManualAddress(false)}
+                    >
+                      ← Back to Search
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <input
+                      id="address"
+                      type="text"
+                      className="form-input"
+                      value={address}
+                      onChange={(e) => handleAddressSearch(e.target.value)}
+                      placeholder="Search for an address..."
+                      required
+                    />
+                    {addressPredictions.length > 0 && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "100%",
+                          left: 0,
+                          right: 0,
+                          background: "#fff",
+                          border: "1px solid var(--col-border)",
+                          borderRadius: "4px",
+                          zIndex: 10,
+                          boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                          marginTop: "4px",
+                          maxHeight: "250px",
+                          overflowY: "auto",
+                        }}
+                      >
+                        {addressPredictions.map((pred) => (
+                          <div
+                            key={pred.place_id}
+                            onClick={() => handlePlaceSelect(pred.place_id, pred.description)}
+                            style={{
+                              padding: "10px 12px",
+                              cursor: "pointer",
+                              borderBottom: "1px solid var(--col-border)",
+                              fontSize: "13px",
+                            }}
+                            onMouseOver={(e) => (e.currentTarget.style.background = "#f1f5f9")}
+                            onMouseOut={(e) => (e.currentTarget.style.background = "#fff")}
+                          >
+                            {pred.description}
+                          </div>
+                        ))}
+                        <div
+                          onClick={() => {
+                            setIsManualAddress(true);
+                            setAddressPredictions([]);
+                          }}
+                          style={{
+                            padding: "10px 12px",
+                            cursor: "pointer",
+                            fontSize: "13px",
+                            fontWeight: "bold",
+                            color: "var(--col-orange)",
+                          }}
+                          onMouseOver={(e) => (e.currentTarget.style.background = "#f1f5f9")}
+                          onMouseOut={(e) => (e.currentTarget.style.background = "#fff")}
+                        >
+                          + Enter address manually
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
-
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "20px" }}>

@@ -84,7 +84,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=CONFIG.cors_origins.split(","),
+    allow_origin_regex=".*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

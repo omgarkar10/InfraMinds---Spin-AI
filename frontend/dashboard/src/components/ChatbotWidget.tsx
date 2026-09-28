@@ -7,7 +7,7 @@ export function ChatbotWidget() {
   const toggleChat = () => setIsOpen((prev) => !prev);
 
   // You can set the API URL based on your env vars
-  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
+  const apiUrl = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8080`;
 
   return (
     <div className="chatbot-widget-container">
