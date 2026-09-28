@@ -254,3 +254,10 @@ otranslate class to the SPIN branding logo to prevent AI translation distortion.
 - **Added Inline Vote Button**: Added a direct 'Vote ?' button on the demand cards in the citizen public feed (rontend/dashboard/src/components/citizen/CitizenPortalHome.tsx). Integrated castVote API call in rontend/dashboard/src/services/demandService.ts.
 - **Updated 'What You Can Demand' Grid**: Converted the basic text cards into a photographic 3x2 grid in rontend/dashboard/src/components/landing/WhatYouCanDemandSection.tsx. Generated 6 high-quality AI images and placed them in rontend/dashboard/public/images/categories/.
 - **Replaced Hero Canvas Map with Leaflet Heatmap**: Replaced the non-functional canvas animation in rontend/dashboard/src/components/landing/HeroSection.tsx with a fully locked eact-leaflet map and leaflet.heat heatmap layer. Added leaflet.heat to package.json and created typings in rontend/dashboard/src/leaflet-heat.d.ts.
+
+## 9. Frontend Dependency Fix
+- **Module Import Fix**: Installed leaflet.heat and its typescript typings (@types/leaflet.heat) in rontend/dashboard/ to fix the vite import resolution error in HeroSection.tsx.
+
+## 10. Bhashini Environment Variables Update
+- **Config Update**: Replaced placeholder Bhashini API keys with provided credentials, user ID, and ULCA API key in ackend/.env.
+- **Config Addition**: Added BHASHINI_DAILY_CALL_LIMIT and BHASHINI_CACHE_TTL_SECONDS to the ackend/.env file.
