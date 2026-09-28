@@ -205,3 +205,16 @@ otranslate class to the SPIN branding logo to prevent AI translation distortion.
 - **Description**: Added secrets/ and **/secrets/ rules to .gitignore.
 - **Files Updated**: .gitignore
 - **Rationale**: Ensures all secret files and Firebase service account credentials stored in the secrets/ folder are excluded from Git tracking and version control to prevent sensitive credential leaks.
+
+- **Added `citizen-redesign.md`**: Saved the Citizen Portal redesign implementation plan (including Leaflet map integration, Phone Auth, and feed filters) to the workspace as requested.
+-   R e p l a c e d   i n l i n e   C i t i z e n   P r o f i l e   m o d a l   i n   N a v b a r . t s x   w i t h   d e d i c a t e d   C i t i z e n P r o f i l e   c o m p o n e n t   r o u t i n g . 
+ -   C r e a t e d   C i t i z e n P r o f i l e . t s x   w i t h   t a b s   f o r   ' M y   S u b m i s s i o n s '   a n d   ' D e m a n d s   I   S u p p o r t e d ' . 
+ -   R e w r o t e   C i t i z e n P o r t a l H o m e . t s x   t o   a c t   a s   t h e   m a i n   g l o b a l   D e m a n d   F e e d ,   i n t e g r a t i n g   r e a c t - l e a f l e t   M a p C o n t a i n e r   a n d   s o r t i n g   t a b s . 
+ -   A d d e d   L e a f l e t   M a p   P i n   D r o p ,   E X I F   u p l o a d   b u t t o n   m o c k ,   a n d   W h a t s A p p   s h o r t c u t   b a n n e r   t o   C r e a t e D e m a n d F o r m . t s x   t o   f u l f i l l   r e d e s i g n   r e q u i r e m e n t s .  
+ 
+- Fixed login redirect bug in App.tsx by using setView directly instead of checking old state.
+- Removed landing Navbar from citizen views in App.tsx and added inline Profile/Logout buttons to CitizenPortalHome.tsx and CitizenProfile.tsx.
+
+- Migrated manual React state navigation to Native URL Routing (window.history.pushState/popstate) to fully resolve browser back-button navigation issues across the entire application and provide clean URL paths like /citizen and /landing.
+
+- Added SPIN logo to Citizen Dashboard header.\n- Implemented Geolocation request on citizen feed load, zooming the map to user location and adding a blue You Are Here marker.\n

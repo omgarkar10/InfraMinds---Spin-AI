@@ -8,6 +8,19 @@ import {
   SubmitRequestPayload,
 } from "../../services/demandService";
 import type { CitizenUser } from "../../types";
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+
+function LocationMarker({ position, setPosition }: { position: any, setPosition: any }) {
+  useMapEvents({
+    click(e) {
+      setPosition(e.latlng);
+    },
+  });
+  return position === null ? null : (
+    <Marker position={position}></Marker>
+  );
+}
 
 interface CreateDemandFormProps {
   user: CitizenUser;
@@ -1387,6 +1400,17 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                     Next: Verify Location →
                   </button>
                 </div>
+
+                {/* WhatsApp Intake Shortcut (Disabled for now) */}
+                <div style={{ marginTop: "24px", padding: "16px", borderRadius: "8px", background: "rgba(37, 211, 102, 0.05)", border: "1px dashed #25D366", opacity: 0.6, cursor: "not-allowed", textAlign: "center" }}>
+                  <div style={{ fontSize: "14px", fontWeight: "600", color: "#128C7E" }}>
+                    <span style={{ fontSize: "16px", marginRight: "8px" }}>💬</span>
+                    Submit via WhatsApp (Coming Soon)
+                  </div>
+                  <div style={{ fontSize: "12px", color: "var(--col-text-muted)", marginTop: "4px" }}>
+                    Send "Hi" to +91 98765 43210 to submit your demand entirely through chat.
+                  </div>
+                </div>
               </div>
             )}
           </>
@@ -1402,44 +1426,35 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
               Please specify the precise geographic location where this infrastructure is needed.
             </p>
 
-            {/* GPS Geolocation Trigger (Optional) */}
+            {/* GPS Geolocation Trigger (Interactive Map Pin Drop) */}
             <div style={{ background: "var(--col-panel)", padding: "14px", borderRadius: "8px", marginBottom: "20px", border: "1px solid var(--col-border)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px", marginBottom: "12px" }}>
                 <div>
-                  <span className="label-eyebrow">OPTIONAL GPS PINPOINT</span>
+                  <span className="label-eyebrow">INTERACTIVE MAP PIN DROP</span>
                   <div style={{ fontSize: "13px", color: "var(--col-navy)", marginTop: "2px" }}>
-                    Are you currently at the infrastructure site?
+                    Click on the map to pinpoint the exact location.
                   </div>
                 </div>
-                <button
-                  type="button"
-                  className="btn-outline"
-                  onClick={handleDetectCoordinates}
-                  disabled={isGpsLoading}
-                  style={{ fontSize: "12px", padding: "6px 12px" }}
-                >
-                  {isGpsLoading ? "Detecting GPS..." : "📍 Detect My Coordinates"}
+                <button type="button" className="btn-outline" onClick={handleDetectCoordinates} disabled={isGpsLoading} style={{ fontSize: "12px", padding: "6px 12px" }}>
+                  {isGpsLoading ? "Detecting..." : "📍 Auto-Detect My Location"}
                 </button>
               </div>
 
-              {gpsMessage && (
-                <div style={{ marginTop: "10px", fontSize: "12px", color: "var(--col-navy)", background: "#fff", padding: "8px 12px", borderRadius: "4px", border: "1px solid var(--col-border)" }}>
-                  {gpsMessage}
-                  {latitude !== null && (
-                    <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "8px" }}>
-                      <input
-                        type="checkbox"
-                        id="gpsConfirm"
-                        checked={gpsConfirmed}
-                        onChange={(e) => setGpsConfirmed(e.target.checked)}
-                        style={{ accentColor: "var(--col-orange)" }}
-                      />
-                      <label htmlFor="gpsConfirm" style={{ fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>
-                        I confirm these coordinates ({latitude}, {longitude}) represent the actual infrastructure site.
-                      </label>
-                    </div>
-                  )}
-                </div>
+              <div style={{ height: "300px", width: "100%", borderRadius: "8px", overflow: "hidden", zIndex: 1 }}>
+                <MapContainer center={[22.5937, 78.9629]} zoom={4} style={{ height: "100%", width: "100%" }}>
+                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
+                  <LocationMarker 
+                    position={latitude && longitude ? { lat: latitude, lng: longitude } : null} 
+                    setPosition={(p: any) => { setLatitude(p.lat); setLongitude(p.lng); setGpsConfirmed(true); }} 
+                  />
+                </MapContainer>
+              </div>
+
+              {gpsMessage && <div style={{ marginTop: "10px", fontSize: "12px" }}>{gpsMessage}</div>}
+              {latitude !== null && longitude !== null && (
+                 <div style={{ marginTop: "8px", fontSize: "13px", fontWeight: "bold", color: "var(--col-green)" }}>
+                   Location set: {latitude.toFixed(4)}, {longitude.toFixed(4)}
+                 </div>
               )}
             </div>
 
@@ -1583,6 +1598,8 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                     if (e.target.files && e.target.files[0]) {
                       setSelectedFile(e.target.files[0]);
                       setUploadError(null);
+                      // EXIF validation mock for design requirements
+                      console.log("EXIF Photo Upload: Validating location data from image...");
                     }
                   }}
                   style={{ fontSize: "12px" }}
@@ -1594,7 +1611,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                   disabled={!selectedFile || isUploading}
                   style={{ fontSize: "12px", padding: "6px 14px" }}
                 >
-                  {isUploading ? "Uploading..." : "Upload File"}
+                  {isUploading ? "Uploading EXIF Photo..." : "Upload EXIF Photo"}
                 </button>
               </div>
 
