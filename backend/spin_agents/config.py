@@ -57,6 +57,7 @@ class SpinConfig:
     bhashini_user_id: str = field(default_factory=lambda: os.getenv("BHASHINI_USER_ID", ""))
     bhashini_ulca_api_key: str = field(default_factory=lambda: os.getenv("BHASHINI_ULCA_API_KEY", ""))
     bhashini_daily_call_limit: int = field(default_factory=lambda: int(os.getenv("BHASHINI_DAILY_CALL_LIMIT", "450")))
+    bhashini_max_text_chars: int = field(default=5000)
     gati_shakti_api_url: str = field(default_factory=lambda: os.getenv(
         "GATI_SHAKTI_API_URL", "https://api.gati.gov.in/v1/layers/query"
     ))
