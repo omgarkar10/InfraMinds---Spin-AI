@@ -312,3 +312,8 @@ eact-leaflet map and leaflet.heat heatmap layer. Added leaflet.heat to package.j
  -   W i r e d   u p   s u b m i t R e q u e s t T o B a c k e n d   i n   d e m a n d S e r v i c e . t s   t o   h i t   P O S T   / a p i / p i p e l i n e / r u n   a n d   m o d i f i e d   t h e   b a c k e n d   p r o c e s s _ p i p e l i n e _ r u n   i n   d e m a n d _ s e r v i c e . p y   t o   s a v e   p r o c e s s e d   d e m a n d s   i n t o   t h e   ' d e m a n d s '   F i r e s t o r e   c o l l e c t i o n .   A l s o   w i r e d   u p   g e t M y R e q u e s t s F r o m B a c k e n d   t o   p r o p e r l y   r e a d   a c t u a l   d e m a n d s . 
  
  
+
+## 2026-09-29: Merged Branch
+- **Description**: Merged the `niketan` branch into the `main` branch.
+- **Files Modified**: Various files across frontend and backend.
+- **Rationale**: User requested to merge the `main` and the `niketan` branch. Direction chosen was `niketan` into `main`.
