@@ -107,7 +107,7 @@ export function HeroSection({ onViewChange }: HeroSectionProps) {
             <button className="hero-btn-primary" onClick={() => onViewChange?.("citizen-raise")}>
               Start a Public Demand →
             </button>
-            <button className="hero-btn-secondary" onClick={() => onViewChange?.("citizen-track")}>
+            <button className="hero-btn-secondary" onClick={() => onViewChange?.("citizen")}>
               Vote on Local Demands
             </button>
 
