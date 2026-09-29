@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-// `leaflet.heat` does not expose a package entry that Vite can resolve reliably.`r`n// Load its browser bundle explicitly so it can extend the Leaflet instance above.`r`nimport "leaflet.heat/dist/leaflet-heat.js";
 import { fetchDemands } from "../../services/demandService";
 import "./HeroSection.css";
 
@@ -13,16 +12,27 @@ function HeatmapLayer({ data }: { data: [number, number, number][] }) {
   useEffect(() => {
     if (!map || data.length === 0) return;
     
-    // @ts-ignore - leaflet.heat adds L.heatLayer
-    const heat = L.heatLayer(data, {
-      radius: 25,
-      blur: 15,
-      maxZoom: 15,
-      gradient: { 0.4: 'blue', 0.65: 'yellow', 1: 'red' }
-    }).addTo(map);
+    // Ensure L is on window for leaflet.heat
+    (window as any).L = L;
+    let heat: any;
+
+    import("leaflet.heat/dist/leaflet-heat.js").then(() => {
+      // @ts-ignore - leaflet.heat adds L.heatLayer
+      if (!L.heatLayer) return;
+      
+      // @ts-ignore
+      heat = L.heatLayer(data, {
+        radius: 25,
+        blur: 15,
+        maxZoom: 15,
+        gradient: { 0.4: 'blue', 0.65: 'yellow', 1: 'red' }
+      }).addTo(map);
+    }).catch(err => console.error("Failed to load leaflet.heat", err));
 
     return () => {
-      map.removeLayer(heat);
+      if (heat && map) {
+        map.removeLayer(heat);
+      }
     };
   }, [map, data]);
 
@@ -48,10 +58,10 @@ export function HeroSection({ onViewChange }: HeroSectionProps) {
     async function load() {
       try {
         const res = await fetchDemands();
-        const data = Array.isArray(res) ? res : [];
+        const data = res.demands || (Array.isArray(res) ? res : []);
         const heatPoints = data
-          .filter(d => d.lat && d.lng)
-          .map(d => [d.lat, d.lng, Math.min((d.votes || 1) / 10, 1)] as [number, number, number]);
+          .filter((d: any) => d.latitude && d.longitude)
+          .map((d: any) => [d.latitude, d.longitude, Math.min((d.vote_count || 1) / 10, 1)] as [number, number, number]);
         setHeatData(heatPoints);
       } catch (err) {
         console.error("Failed to fetch demands for heatmap", err);

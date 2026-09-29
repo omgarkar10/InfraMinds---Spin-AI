@@ -1,19 +1,24 @@
 # SPIN — Symbiotic Public Infrastructure Network
 
-Multilingual AI grievance platform for [Code for Communities 2](https://hack2skill.com/event/codeforcommunities2/) hackathon.
+Multilingual AI Public Demand & Community Needs platform for [Code for Communities 2](https://hack2skill.com/event/codeforcommunities2/) hackathon.
 
 ## Architecture
 
 ```
-Citizen Edge (WhatsApp/Telegram/Voice)
+Citizen Edge (WhatsApp/Telegram/Voice/PWA)
         │
         ▼
 ┌─────────────────────────────────────────────────────────┐
 │  Root SequentialAgent (ADK)                             │
-│  ┌──────────────┐  ┌──────────┐  ┌─────────┐  ┌─────┐ │
-│  │ Intake Agent │→ │ HITL Gate│→ │ Parsing │→ │ Geo │→│ Policy │
-│  │  + Bhashini  │  │  (GPS)   │  │ + Vision│  │ + BQ│  │ Agent  │
-│  └──────────────┘  └──────────┘  └─────────┘  └─────┘  └──────┘
+│  ┌────────────────────────┐  ┌───────────────────────┐  │
+│  │ Semantic_Parsing_Agent │→ │ Dynamic_Verification_ │  │
+│  │     + Bhashini         │  │       Agent           │  │
+│  └────────────────────────┘  └───────────────────────┘  │
+│                                           │             │
+│                                           ▼             │
+│                                ┌──────────────────────┐ │
+│                                │ Policy_Routing_Agent │ │
+│                                └──────────────────────┘ │
 └─────────────────────────────────────────────────────────┘
         │
         ▼

@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List, Dict, Any
 
 class UserSchema(BaseModel):
     id: str
@@ -31,6 +31,7 @@ class CategorySchema(BaseModel):
 class DemandSchema(BaseModel):
     id: Optional[str] = None
     author_user_id: str
+    author_name: Optional[str] = "Anonymous Citizen"
     category: str
     domain: str
     latitude: float
@@ -39,9 +40,17 @@ class DemandSchema(BaseModel):
     english_translation: str
     district: Optional[str] = None
     state: Optional[str] = None
+    address: Optional[str] = None
+    pincode: Optional[str] = None
+    landmark: Optional[str] = None
+    request_type: str = "maintenance"
+    reason: Optional[str] = None
+    intended_beneficiaries: Optional[str] = None
+    media_urls: List[str] = Field(default_factory=list)
     status: str = 'gathering_support'
-    vote_count: int = 1
+    vote_count: int = 0
     vote_threshold: int = 100
+    timeline: List[Dict[str, Any]] = Field(default_factory=list)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     status_updated_at: datetime = Field(default_factory=datetime.utcnow)
 

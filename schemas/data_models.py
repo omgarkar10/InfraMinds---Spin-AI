@@ -86,6 +86,14 @@ class LocationModel(BaseModel):
         default=None,
         description="Inferred or confirmed state",
     )
+    address: Optional[str] = Field(
+        default=None,
+        description="Full verified address"
+    )
+    pincode: Optional[str] = Field(
+        default=None,
+        description="Postal pin code"
+    )
 
 
 class ConfidenceScores(BaseModel):
@@ -215,6 +223,9 @@ class SemanticParsingOutput(BaseModel):
     media_url: Optional[str] = None
     language: str
     proxy_filed_for: Optional[str] = None
+    request_type: Optional[str] = "maintenance"
+    reason: Optional[str] = None
+    beneficiaries: Optional[str] = None
 
     confidence_scores: ConfidenceScores
     duplicate_match_id: Optional[str] = None

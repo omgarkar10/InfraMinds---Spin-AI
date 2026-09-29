@@ -72,8 +72,8 @@ async def run_pipeline(
             "category": sem.category.value,
             "severity": sem.severity or 5,
             "confidence": sem.confidence_scores.category,
-            "district": sem.location.district or "Unknown",
-            "state": sem.location.state or "Unknown",
+            "district": sem.location.district or None,
+            "state": sem.location.state or None,
             "needs_human_review": sem.needs_clarification,
             "image_verified": sem.vision_alignment_status == "aligned",
             "lat_long": {

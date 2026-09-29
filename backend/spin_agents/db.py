@@ -20,10 +20,12 @@ if not firebase_admin._apps:
             os.environ.pop('GOOGLE_APPLICATION_CREDENTIALS', None)
 
         project_id = os.getenv('FIREBASE_PROJECT_ID') or os.getenv('GOOGLE_CLOUD_PROJECT') or 'demo-project'
+        storage_bucket = os.getenv('FIREBASE_STORAGE_BUCKET') or f"{project_id}.appspot.com"
+        options = {'projectId': project_id, 'storageBucket': storage_bucket}
         try:
-            firebase_admin.initialize_app(options={'projectId': project_id})
+            firebase_admin.initialize_app(options=options)
         except Exception:
-            firebase_admin.initialize_app(credentials.AnonymousCredentials(), options={'projectId': project_id})
+            firebase_admin.initialize_app(credentials.AnonymousCredentials(), options=options)
 
 try:
     db = firestore.client()

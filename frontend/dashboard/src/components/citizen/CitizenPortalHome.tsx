@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "../../styles/citizen.css";
 import type { CitizenUser } from "../../types";
-import { fetchDemands, castVote } from "../../services/demandService";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { fetchDemands, castVote, fetchMyVotes } from "../../services/demandService";
+import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -21,6 +21,60 @@ function ChangeMapView({ center, zoom }: { center: [number, number]; zoom: numbe
   return null;
 }
 
+function timeAgo(dateString: string) {
+  if (!dateString) return "Recently";
+  const date = new Date(dateString);
+  const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+  let interval = seconds / 31536000;
+  if (interval > 1) return Math.floor(interval) + " years ago";
+  interval = seconds / 2592000;
+  if (interval > 1) return Math.floor(interval) + " months ago";
+  interval = seconds / 86400;
+  if (interval > 1) return Math.floor(interval) + " days ago";
+  interval = seconds / 3600;
+  if (interval > 1) return Math.floor(interval) + " hours ago";
+  interval = seconds / 60;
+  if (interval > 1) return Math.floor(interval) + " minutes ago";
+  return Math.floor(seconds) + " seconds ago";
+}
+
+function formatStatus(status: string) {
+  if (!status) return { label: "Gathering Support", color: "var(--col-orange)" };
+  switch (status.toLowerCase()) {
+    case "gathering_support": return { label: "Gathering Support", color: "var(--col-orange)" };
+    case "verification": return { label: "Verification", color: "#3b82f6" };
+    case "in_progress": return { label: "In Progress", color: "#3b82f6" };
+    case "resolved": return { label: "Resolved", color: "#22c55e" };
+    case "rejected": return { label: "Rejected", color: "#ef4444" };
+    default: return { label: status.replace("_", " "), color: "#6b7280" };
+  }
+}
+
+const ImageGrid = ({ images }: { images: string[] }) => {
+  if (!images || images.length === 0) return null;
+  
+  const displayImages = images.slice(0, 4);
+  const extraCount = images.length - 4;
+  
+  // Use grid depending on number of images
+  const gridTemplateColumns = images.length === 1 ? "1fr" : "1fr 1fr";
+  
+  return (
+    <div style={{ display: "grid", gridTemplateColumns, gap: "8px", marginTop: "12px", marginBottom: "12px" }}>
+      {displayImages.map((img, idx) => (
+        <div key={idx} style={{ position: "relative", height: images.length === 1 ? "200px" : "120px", borderRadius: "8px", overflow: "hidden", border: "1px solid #e2e8f0" }}>
+          <img src={img} alt="Attachment" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          {idx === 3 && extraCount > 0 && (
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "bold", fontSize: "20px" }}>
+              +{extraCount}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+
 interface CitizenPortalHomeProps {
   user: CitizenUser;
   onNavigate: (view: string, id?: string) => void;
@@ -33,21 +87,56 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
   const [contextLocation, setContextLocation] = useState("All");
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [votedIds, setVotedIds] = useState<Set<string>>(new Set());
+  
+  const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
+  const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   const handleVote = async (e: React.MouseEvent, demandId: string) => {
     e.stopPropagation();
     if (votedIds.has(demandId)) return;
+
+    if (!user.isLoggedIn) {
+      localStorage.setItem("pending_vote_demand_id", demandId);
+      onNavigate("citizen-login");
+      return;
+    }
+
     try {
-      await castVote(demandId);
+      const res = await castVote(demandId);
+      if (res.status === "already_voted") {
+        alert("You have already voted for this demand.");
+        setVotedIds(prev => new Set(prev).add(demandId)); // Ensure it's in local set
+        return;
+      }
       setVotedIds(prev => new Set(prev).add(demandId));
       setDemands(prev => prev.map(d => {
         if ((d.id || d.Demand_id) === demandId) {
-          return { ...d, votes: (d.votes || 0) + 1 };
+          return { ...d, vote_count: (d.vote_count || d.votes || 0) + 1 };
         }
         return d;
       }));
     } catch (err) {
       console.error("Vote failed", err);
+    }
+  };
+
+  const handleShare = (e: React.MouseEvent, demand: any) => {
+    e.stopPropagation();
+    const url = window.location.origin + "?demand=" + (demand.id || demand.Demand_id);
+    const text = `Please support this demand: ${demand.title || demand.category}\n\n${url}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+  };
+
+  const scrollToCard = (id: string) => {
+    const node = cardRefs.current.get(id);
+    if (node) {
+      node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Add a brief highlight flash
+      node.style.transition = "background-color 0.5s ease";
+      node.style.backgroundColor = "rgba(234, 88, 12, 0.1)";
+      setTimeout(() => {
+        node.style.backgroundColor = "white";
+      }, 1000);
     }
   };
 
@@ -57,6 +146,10 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
         setLoading(true);
         const res = await fetchDemands();
         setDemands(res.demands || (Array.isArray(res) ? res : []));
+        if (user.isLoggedIn) {
+          const myVotes = await fetchMyVotes();
+          setVotedIds(new Set(myVotes));
+        }
       } catch (err) {
         console.error("Failed to fetch demands for feed", err);
       } finally {
@@ -65,15 +158,10 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
     }
     load();
 
-    // Ask for location on load
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation([position.coords.latitude, position.coords.longitude]);
-        },
-        (error) => {
-          console.warn("Geolocation denied or error", error);
-        }
+        (position) => setUserLocation([position.coords.latitude, position.coords.longitude]),
+        (error) => console.warn("Geolocation denied or error", error)
       );
     }
   }, [user.isLoggedIn]);
@@ -83,20 +171,42 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
       <div className="portal-header-bar">
         <div className="container portal-header-inner" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
            <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
-             <button className="navbar-logo notranslate" onClick={() => onNavigate("landing")} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
-               <span className="navbar-wordmark" style={{ fontSize: "28px", color: "var(--col-brand-blue)", fontWeight: 900, letterSpacing: "-1px" }}>SPIN</span>
+             <button className="navbar-logo" onClick={() => onNavigate("landing")} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
+               <span className="navbar-wordmark notranslate" style={{ fontSize: "28px", color: "var(--col-brand-blue)", fontWeight: 900, letterSpacing: "-1px" }}>SPIN</span>
              </button>
              <div className="portal-title-group" style={{ borderLeft: "1px solid #ddd", paddingLeft: "24px" }}>
                 <h1 className="portal-heading" style={{ fontSize: "24px" }}>Public Demands Feed</h1>
                 <p className="portal-subtext" style={{ fontSize: "13px" }}>Discover and support infrastructure proposals in your community.</p>
              </div>
            </div>
+           
            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+             {/* Bhashini Language Dropdown placeholder */}
+             <select className="btn-outline" style={{ padding: "6px 12px", fontSize: "12px", background: "white", cursor: "pointer" }}>
+               <option value="en">🌐 English</option>
+               <option value="hi">हिंदी (Hindi)</option>
+               <option value="bn">বাংলা (Bengali)</option>
+               <option value="te">తెలుగు (Telugu)</option>
+               <option value="mr">मराठी (Marathi)</option>
+               <option value="ta">தமிழ் (Tamil)</option>
+               <option value="ur">اردو (Urdu)</option>
+               <option value="gu">ગુજરાતી (Gujarati)</option>
+               <option value="kn">ಕನ್ನಡ (Kannada)</option>
+               <option value="or">ଓଡ଼ିଆ (Odia)</option>
+               <option value="ml">മലയാളം (Malayalam)</option>
+               <option value="pa">ਪੰਜਾਬੀ (Punjabi)</option>
+               {/* Note: Full 23 languages omitted for brevity but UI is ready */}
+             </select>
+
              <button className="service-card-btn service-card-btn-orange" onClick={() => onNavigate("citizen-raise")}>
                + Propose New Demand
              </button>
+
              {user?.isLoggedIn && (
                <>
+                 <button className="btn-outline" onClick={() => onNavigate("citizen-track")} style={{ padding: "6px 12px", fontSize: "12px", background: "white" }}>
+                   📝 Track Demands
+                 </button>
                  <button className="btn-outline" onClick={() => onNavigate("citizen-profile")} style={{ padding: "6px 12px", fontSize: "12px", background: "white" }}>
                    👤 My Profile
                  </button>
@@ -123,17 +233,21 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
           
           {/* Feed List */}
           <div className="feed-list" style={{ overflowY: "auto", paddingRight: "8px" }}>
-            <div style={{ display: "flex", gap: "12px", marginBottom: "16px", borderBottom: "1px solid #eee", paddingBottom: "8px" }}>
+            <div style={{ display: "flex", gap: "12px", marginBottom: "16px", borderBottom: "1px solid #eee", paddingBottom: "12px" }}>
                {['Trending', 'Top Voted', 'Most Recent', 'Category'].map(tab => (
                  <button 
                    key={tab} 
                    onClick={() => setActiveTab(tab)}
                    style={{ 
-                     background: "none", 
+                     background: activeTab === tab ? "var(--col-navy)" : "transparent", 
                      border: "none", 
-                     fontWeight: activeTab === tab ? "bold" : "normal",
-                     color: activeTab === tab ? "var(--col-navy)" : "#666",
-                     cursor: "pointer"
+                     fontWeight: activeTab === tab ? "700" : "500",
+                     color: activeTab === tab ? "white" : "#666",
+                     cursor: "pointer",
+                     padding: "6px 16px",
+                     borderRadius: "16px",
+                     fontSize: "13px",
+                     transition: "all 0.2s"
                    }}
                  >
                    {tab}
@@ -149,49 +263,151 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
                  <button className="btn-outline" style={{ marginTop: "12px" }} onClick={() => onNavigate("citizen-raise")}>Submit the first one</button>
               </div>
             ) : (
-              demands.map(demand => (
-                <div key={demand.id || demand.Demand_id} className="form-card" style={{ padding: "16px", marginBottom: "16px", cursor: "pointer" }} onClick={() => onNavigate("citizen-detail", demand.id || demand.Demand_id)}>
-                   <div style={{ display: "flex", justifyContent: "space-between" }}>
-                     <h3 style={{ margin: "0 0 8px 0", fontSize: "16px", color: "var(--col-navy)" }}>{demand.title || demand.category}</h3>
-                     <span className={`status-pill ${demand.status || 'SUBMITTED'}`}>{demand.status || "Gathering Support"}</span>
-                   </div>
-                   <p style={{ fontSize: "13px", color: "#666", margin: "0 0 12px 0" }}>{demand.description || demand.specific_issue}</p>
-                   <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
-                     <div style={{ background: "#eee", height: "6px", borderRadius: "3px", flex: 1 }}>
-                       <div style={{ background: "var(--col-orange)", height: "100%", borderRadius: "3px", width: `${Math.min((demand.votes || 0) / (demand.vote_threshold || 100) * 100, 100)}%` }} />
+              [...demands].sort((a, b) => {
+                if (activeTab === "Trending" || activeTab === "Top Voted") {
+                  return (b.vote_count || b.votes || 0) - (a.vote_count || a.votes || 0);
+                } else if (activeTab === "Most Recent") {
+                  const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+                  const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+                  return dateB - dateA;
+                } else if (activeTab === "Category") {
+                  return (a.category || "").localeCompare(b.category || "");
+                }
+                return 0;
+              }).map(demand => {
+                const id = demand.id || demand.Demand_id;
+                const statusInfo = formatStatus(demand.status);
+                // Ensure media_urls is an array if the backend sent a comma string or it's missing
+                let mediaUrls = demand.media_urls || [];
+                if (typeof mediaUrls === 'string') mediaUrls = mediaUrls.split(',').map((u: string) => u.trim()).filter((u: string) => u);
+
+                // Firebase Storage URL converter
+                mediaUrls = mediaUrls.map((url: string) => {
+                   if (url.startsWith("gs://")) {
+                      const parts = url.replace("gs://", "").split("/");
+                      const bucket = parts[0];
+                      const path = encodeURIComponent(parts.slice(1).join("/"));
+                      return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${path}?alt=media`;
+                   }
+                   return url;
+                });
+
+                const voteCount = demand.vote_count || demand.votes || 0;
+                const voteThreshold = demand.vote_threshold || 100;
+                const votePercentage = Math.min((voteCount / voteThreshold) * 100, 100);
+
+                return (
+                  <div 
+                    key={id} 
+                    ref={(node) => { if (node) cardRefs.current.set(id, node); }}
+                    className="form-card feed-card" 
+                    style={{ 
+                      padding: "16px", 
+                      marginBottom: "16px", 
+                      cursor: "pointer",
+                      border: hoveredCardId === id ? "1px solid var(--col-orange)" : "1px solid transparent",
+                      transition: "all 0.2s",
+                      background: "white"
+                    }} 
+                    onClick={() => onNavigate("citizen-detail", id)}
+                    onMouseEnter={() => setHoveredCardId(id)}
+                    onMouseLeave={() => setHoveredCardId(null)}
+                  >
+                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
+                       <h3 style={{ margin: 0, fontSize: "16px", color: "var(--col-navy)", fontWeight: 700 }}>
+                         {demand.title || demand.specific_issue || (demand.original_text?.match(/Issue:\s*(.+)/)?.[1]?.trim()) || demand.category}
+                       </h3>
+                       <span style={{ 
+                         backgroundColor: `${statusInfo.color}15`, 
+                         color: statusInfo.color, 
+                         padding: "4px 10px", 
+                         borderRadius: "12px", 
+                         fontSize: "11px", 
+                         fontWeight: 700 
+                       }}>
+                         {statusInfo.label}
+                       </span>
                      </div>
-                     <button
-                       onClick={(e) => handleVote(e, demand.id || demand.Demand_id)}
-                       disabled={votedIds.has(demand.id || demand.Demand_id)}
-                       style={{
-                         padding: "4px 12px",
-                         borderRadius: "6px",
-                         border: votedIds.has(demand.id || demand.Demand_id) ? "1px solid #ccc" : "1px solid var(--col-orange)",
-                         background: votedIds.has(demand.id || demand.Demand_id) ? "#f0f0f0" : "rgba(234, 88, 12, 0.08)",
-                         color: votedIds.has(demand.id || demand.Demand_id) ? "#999" : "var(--col-orange)",
-                         fontWeight: 700,
-                         fontSize: "12px",
-                         cursor: votedIds.has(demand.id || demand.Demand_id) ? "default" : "pointer",
-                         whiteSpace: "nowrap" as const,
-                         display: "flex",
-                         alignItems: "center",
-                         gap: "4px",
-                         transition: "all 0.2s ease",
-                       }}
-                     >
-                       {votedIds.has(demand.id || demand.Demand_id) ? "✓ Voted" : "▲ Vote"}
-                     </button>
-                   </div>
-                   <div style={{ fontSize: "11px", color: "#666", fontWeight: "bold" }}>
-                     {demand.votes || 0} / {demand.vote_threshold || 100} votes needed
-                   </div>
-                </div>
-              ))
+                     
+                     <div style={{ display: "flex", gap: "12px", fontSize: "12px", color: "#64748b", marginBottom: "12px" }}>
+                       <span>📍 {demand.target_location_id || demand.district || "Local Ward"}</span>
+                       <span>🕒 {timeAgo(demand.created_at)}</span>
+                     </div>
+
+                     <p style={{ 
+                       fontSize: "13px", 
+                       color: "#475569", 
+                       margin: "0 0 12px 0",
+                       display: "-webkit-box",
+                       WebkitLineClamp: 2,
+                       WebkitBoxOrient: "vertical",
+                       overflow: "hidden"
+                     }}>
+                       {demand.description || demand.specific_issue || (demand.original_text?.match(/Description:\s*(.+)/)?.[1]?.trim()) || demand.original_text}
+                     </p>
+
+                     <ImageGrid images={mediaUrls} />
+
+                     <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px solid #f1f5f9" }}>
+                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                         <div style={{ fontSize: "12px", color: "var(--col-navy)", fontWeight: "600", display: "flex", alignItems: "center" }}>
+                           <span style={{ fontSize: "16px", marginRight: "4px" }}>{voteCount}</span> 
+                           <span style={{ color: "#64748b" }}>votes</span>
+                         </div>
+                         
+                         <div style={{ display: "flex", gap: "8px" }}>
+                         <button
+                           onClick={(e) => handleShare(e, demand)}
+                           title="Share to WhatsApp"
+                           style={{
+                             padding: "6px",
+                             borderRadius: "6px",
+                             border: "1px solid #e2e8f0",
+                             background: "white",
+                             color: "#25D366",
+                             cursor: "pointer",
+                             display: "flex",
+                             alignItems: "center",
+                             justifyContent: "center",
+                             width: "32px",
+                             height: "32px"
+                           }}
+                         >
+                           <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                           </svg>
+                         </button>
+                         <button
+                           onClick={(e) => handleVote(e, id)}
+                           disabled={votedIds.has(id)}
+                           style={{
+                             padding: "6px 16px",
+                             borderRadius: "6px",
+                             border: votedIds.has(id) ? "1px solid #ccc" : "1px solid var(--col-orange)",
+                             background: votedIds.has(id) ? "#f1f5f9" : "var(--col-orange)",
+                             color: votedIds.has(id) ? "#94a3b8" : "white",
+                             fontWeight: 700,
+                             fontSize: "12px",
+                             cursor: votedIds.has(id) ? "default" : "pointer",
+                             display: "flex",
+                             alignItems: "center",
+                             gap: "4px",
+                             transition: "all 0.2s ease",
+                           }}
+                         >
+                           {votedIds.has(id) ? "✓ Voted" : "▲ Vote"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
             )}
           </div>
 
           {/* Feed Map */}
-          <div className="feed-map">
+          <div className="feed-map" style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid #e2e8f0" }}>
             <MapContainer center={userLocation || [22.5937, 78.9629]} zoom={userLocation ? 13 : 4} style={{ height: "100%", width: "100%" }}>
               <ChangeMapView center={userLocation || [22.5937, 78.9629]} zoom={userLocation ? 13 : 4} />
               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
@@ -199,26 +415,47 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
               {userLocation && (
                 <Marker 
                   position={userLocation} 
-                  icon={new L.Icon({ 
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png', 
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png', 
-                    iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41] 
+                  icon={new L.DivIcon({ 
+                    html: `<div style="width: 16px; height: 16px; background-color: #3b82f6; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(59,130,246,0.5);"></div>`,
+                    className: 'user-location-marker',
+                    iconSize: [16, 16],
+                    iconAnchor: [8, 8]
                   })}
                 >
-                  <Popup>You are here</Popup>
+                  <Popup>Your Location</Popup>
                 </Marker>
               )}
 
               {demands.map(demand => {
                 if (!demand.lat || !demand.lng) return null;
+                const id = demand.id || demand.Demand_id;
+                const isHovered = hoveredCardId === id;
+                const statusInfo = formatStatus(demand.status);
+                
                 return (
-                  <Marker key={demand.id || demand.Demand_id} position={[demand.lat, demand.lng]}>
+                  <CircleMarker 
+                    key={id} 
+                    center={[demand.lat, demand.lng]}
+                    radius={isHovered ? 12 : 8}
+                    pathOptions={{ 
+                      fillColor: statusInfo.color, 
+                      color: isHovered ? "white" : statusInfo.color,
+                      weight: isHovered ? 3 : 1,
+                      fillOpacity: isHovered ? 1 : 0.7 
+                    }}
+                    eventHandlers={{
+                      click: () => scrollToCard(id),
+                      mouseover: () => setHoveredCardId(id),
+                      mouseout: () => setHoveredCardId(null)
+                    }}
+                  >
                     <Popup>
                       <strong>{demand.title || demand.category}</strong><br/>
+                      <span style={{ fontSize: "11px", color: statusInfo.color }}>{statusInfo.label}</span><br/>
                       {demand.votes || 0} Votes<br/>
-                      <button onClick={() => onNavigate("citizen-detail", demand.id || demand.Demand_id)} style={{ marginTop: "4px", padding: "2px 8px", fontSize: "11px", cursor: "pointer" }}>View</button>
+                      <button onClick={() => onNavigate("citizen-detail", id)} style={{ marginTop: "4px", padding: "2px 8px", fontSize: "11px", cursor: "pointer", background: "var(--col-navy)", color: "white", border: "none", borderRadius: "4px" }}>View Details</button>
                     </Popup>
-                  </Marker>
+                  </CircleMarker>
                 )
               })}
             </MapContainer>

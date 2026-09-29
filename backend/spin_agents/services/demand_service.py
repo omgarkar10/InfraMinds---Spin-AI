@@ -1,6 +1,7 @@
 import uuid
 import logging
 from typing import Optional
+from datetime import datetime, timezone
 from google.cloud import firestore
 
 from spin_agents.db import get_firestore_db
@@ -81,15 +82,22 @@ async def process_pipeline_run(payload: dict) -> dict:
         parsed = result.get("parsed_payload", {})
         lat = parsed.get("lat_long", {}).get("lat", 0.0)
         lng = parsed.get("lat_long", {}).get("lng", 0.0)
-        
+        location_data = parsed.get("location", {})
         payload_for_db = {
             "user_id": intake.get("user_id"),
             "domain": parsed.get("domain"),
             "category": parsed.get("category"),
             "original_text": intake.get("original_text"),
             "english_translation": intake.get("english_translation"),
-            "district": parsed.get("district"),
-            "state": parsed.get("state"),
+            "district": location_data.get("district"),
+            "state": location_data.get("state"),
+            "address": location_data.get("address"),
+            "pincode": location_data.get("pincode"),
+            "landmark": location_data.get("landmark_text"),
+            "request_type": parsed.get("request_type", "maintenance"),
+            "reason": parsed.get("reason"),
+            "intended_beneficiaries": parsed.get("beneficiaries"),
+            "media_url": intake.get("media_url"),
         }
         
         demand_id = result.get("policy_routing_output", {}).get("query_id") if result.get("policy_routing_output") else str(uuid.uuid4())
@@ -99,24 +107,53 @@ async def process_pipeline_run(payload: dict) -> dict:
 
     return {"status": "completed", **result}
 
-def get_demands_list(limit: int = 50) -> dict:
+def get_demands_list(limit: int = 50, author_user_id: Optional[str] = None) -> dict:
     db = get_firestore_db()
     if not db:
         return {"count": 0, "demands": []}
     
-    demands_ref = db.collection("demands").order_by("created_at", direction=firestore.Query.DESCENDING).limit(limit)
-    docs = demands_ref.stream()
-    
-    demands = []
-    for doc in docs:
-        data = doc.to_dict()
-        data["id"] = doc.id
-        demands.append(data)
+    demands_ref = db.collection("demands")
+    if author_user_id:
+        demands_ref = demands_ref.where("author_user_id", "==", author_user_id)
+        docs = demands_ref.stream()
+        demands = []
+        for doc in docs:
+            data = doc.to_dict()
+            data["id"] = doc.id
+            demands.append(data)
+        
+        # Sort in python to avoid requiring a composite index in Firestore
+        demands.sort(
+            key=lambda x: x.get("created_at").timestamp() if hasattr(x.get("created_at"), 'timestamp') else 0,
+            reverse=True
+        )
+        demands = demands[:limit]
+    else:
+        demands_ref = demands_ref.order_by("created_at", direction=firestore.Query.DESCENDING).limit(limit)
+        docs = demands_ref.stream()
+        demands = []
+        for doc in docs:
+            data = doc.to_dict()
+            data["id"] = doc.id
+            demands.append(data)
         
     return {
         "count": len(demands),
         "demands": demands,
     }
+
+def get_demand_by_id(demand_id: str) -> dict:
+    db = get_firestore_db()
+    if not db:
+        return None
+    
+    doc = db.collection("demands").document(demand_id).get()
+    if not doc.exists:
+        return None
+        
+    data = doc.to_dict()
+    data["id"] = doc.id
+    return data
 
 def persist_demand_to_db(demand_id: str, payload: dict, lat: float, lng: float) -> str:
     db = get_firestore_db()
@@ -125,8 +162,16 @@ def persist_demand_to_db(demand_id: str, payload: dict, lat: float, lng: float) 
     
     doc_ref = db.collection("demands").document(demand_id)
     
+    author_user_id = payload.get("user_id", "anonymous")
+    author_name = "Anonymous Citizen"
+    if author_user_id != "anonymous":
+        user_doc = db.collection("users").document(author_user_id).get()
+        if user_doc.exists:
+            author_name = user_doc.to_dict().get("name") or author_name
+    
     demand_data = {
-        "author_user_id": payload.get("user_id", "anonymous"),
+        "author_user_id": author_user_id,
+        "author_name": author_name,
         "domain": payload.get("domain", "General"),
         "category": payload.get("category", "General"),
         "latitude": lat,
@@ -135,9 +180,24 @@ def persist_demand_to_db(demand_id: str, payload: dict, lat: float, lng: float) 
         "english_translation": payload.get("english_translation", ""),
         "district": payload.get("district"),
         "state": payload.get("state"),
+        "address": payload.get("address"),
+        "pincode": payload.get("pincode"),
+        "landmark": payload.get("landmark"),
+        "request_type": payload.get("request_type", "maintenance"),
+        "reason": payload.get("reason"),
+        "intended_beneficiaries": payload.get("intended_beneficiaries"),
+        "media_urls": [payload.get("media_url")] if payload.get("media_url") else [],
         "status": "gathering_support",
-        "vote_count": 1,
+        "vote_count": 0,
         "vote_threshold": 100,
+        "timeline": [
+            {
+                "title": "Demand Registered",
+                "description": "Request safely stored in authoritative municipal database",
+                "date": datetime.now(timezone.utc).isoformat(),
+                "completed": True
+            }
+        ],
         "created_at": firestore.SERVER_TIMESTAMP,
         "status_updated_at": firestore.SERVER_TIMESTAMP,
     }
@@ -173,3 +233,11 @@ def cast_vote(demand_id: str, user_id: str) -> bool:
     })
     
     return True
+
+def get_user_votes(user_id: str) -> list[str]:
+    db = get_firestore_db()
+    if not db:
+        return []
+    
+    docs = db.collection("demand_votes").where("user_id", "==", user_id).stream()
+    return [d.to_dict().get("demand_id") for d in docs]

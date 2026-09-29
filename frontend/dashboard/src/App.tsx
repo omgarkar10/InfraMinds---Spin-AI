@@ -92,7 +92,7 @@ function AppInner() {
       if (parts[1]) setSelectedDemandId(parts[1]);
       
       // Prevent bypassing auth by manually typing URL
-      if (["citizen", "citizen-raise", "citizen-track", "citizen-detail", "citizen-profile"].includes(newView) && !citizenUser.isLoggedIn) {
+      if (["citizen-raise", "citizen-track", "citizen-profile"].includes(newView) && !citizenUser.isLoggedIn) {
         setView("citizen-login");
       } else if (["staff-dashboard", "dashboard"].includes(newView) && !staffUser.isLoggedIn) {
         setView("staff-login");
@@ -124,7 +124,7 @@ function AppInner() {
     }
 
     // Require Citizen Login BEFORE "Propose Initiative" or "Track Proposals" or Profile
-    if ((newView === "citizen-raise" || newView === "citizen-track" || newView === "citizen" || newView === "citizen-profile") && !citizenUser.isLoggedIn) {
+    if ((newView === "citizen-raise" || newView === "citizen-track" || newView === "citizen-profile") && !citizenUser.isLoggedIn) {
       setTargetViewAfterLogin(newView);
       handleNavigate("citizen-login");
       return;
@@ -152,15 +152,21 @@ function AppInner() {
   /* Citizen Login Success Callback */
   const handleCitizenLoginSuccess = (user: CitizenUser) => {
     setCitizenUser(user);
-    const destination = targetViewAfterLogin || "citizen";
-    setTargetViewAfterLogin("citizen");
+    const pendingDemandId = localStorage.getItem("pending_vote_demand_id");
     
-    const baseUrl = VIEW_TO_URL[destination] || destination;
-    const url = `/${baseUrl}`;
-    // Replace the login view in history so 'Back' doesn't go to login
-    window.history.replaceState({}, "", url);
-    setView(destination as ViewState);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (pendingDemandId) {
+      handleNavigate("citizen-detail", pendingDemandId);
+      // Component will handle auto-voting upon mounting
+    } else {
+      const destination = targetViewAfterLogin || "citizen";
+      setTargetViewAfterLogin("citizen");
+      const baseUrl = VIEW_TO_URL[destination] || destination;
+      const url = `/${baseUrl}`;
+      // Replace the login view in history so 'Back' doesn't go to login
+      window.history.replaceState({}, "", url);
+      setView(destination as ViewState);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   /* Staff Login Success Callback */
@@ -190,14 +196,14 @@ function AppInner() {
       {(view === "staff-dashboard" || view === "dashboard") && staffUser.id ? (
         <StaffNavbar
           user={staffUser as StaffUser}
-          onViewChange={(v) => handleNavigate(v)}
+          onViewChange={(v, id) => handleNavigate(v, id)}
           onLogout={handleStaffLogout}
         />
       ) : isCitizenPortalView ? null : (
         <Navbar
           view={view}
           user={citizenUser.isLoggedIn ? citizenUser : undefined}
-          onViewChange={(v) => handleNavigate(v)}
+          onViewChange={(v, id) => handleNavigate(v, id)}
         />
       )}
 
@@ -214,7 +220,7 @@ function AppInner() {
       {view === "citizen" && (
         <CitizenPortalHome
           user={citizenUser}
-          onNavigate={(v) => handleNavigate(v)}
+          onNavigate={(v, id) => handleNavigate(v, id)}
         />
       )}
 
@@ -277,7 +283,7 @@ function AppInner() {
         <DemandDetail
           user={citizenUser}
           DemandId={selectedDemandId}
-          onNavigate={(v) => handleNavigate(v)}
+          onNavigate={(v, id) => handleNavigate(v, id)}
         />
       )}
 
@@ -299,7 +305,7 @@ function AppInner() {
       {view === "staff-dashboard" && (
         <StaffDashboard
           user={staffUser}
-          onNavigate={(v) => handleNavigate(v)}
+          onNavigate={(v, id) => handleNavigate(v, id)}
         />
       )}
 
@@ -307,13 +313,13 @@ function AppInner() {
       {view === "landing" && (
         <main>
           <HeroSection
-            onViewChange={(v) => handleNavigate(v)}
+            onViewChange={(v, id) => handleNavigate(v, id)}
           />
           <WhySpinSection />
           <HowItHelpsSection />
           <WhatYouCanDemandSection />
-          <FinalCtaSection onViewChange={(v) => handleNavigate(v)} />
-          <Footer onViewChange={(v) => handleNavigate(v)} />
+          <FinalCtaSection onViewChange={(v, id) => handleNavigate(v, id)} />
+          <Footer onViewChange={(v, id) => handleNavigate(v, id)} />
         </main>
       )}
 

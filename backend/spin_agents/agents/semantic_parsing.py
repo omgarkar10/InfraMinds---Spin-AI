@@ -71,8 +71,13 @@ OUTPUT FORMAT (JSON only, no markdown backticks):
     "landmark_text": string or null,
     "home_ward": string or null,
     "district": string or null,
-    "state": string or null
+    "state": string or null,
+    "address": string or null,
+    "pincode": string or null
   },
+  "request_type": "new_development|maintenance|other",
+  "reason": string or null,
+  "beneficiaries": string or null,
   "confidence_scores": {
     "category": float (0.0 to 1.0),
     "severity": float (0.0 to 1.0),
@@ -196,7 +201,12 @@ def parse_with_gemini_or_heuristic(
             "home_ward": ward,
             "district": district or ("Pune" if lat and 18.0 <= lat <= 19.0 else None),
             "state": state or ("Maharashtra" if district == "Pune" else None),
+            "address": location_hint.get("address") if location_hint else None,
+            "pincode": location_hint.get("pincode") if location_hint else None,
         },
+        "request_type": "maintenance",
+        "reason": None,
+        "beneficiaries": None,
         "confidence_scores": {
             "category": cat_conf,
             "severity": sev_conf,

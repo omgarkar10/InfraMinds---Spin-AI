@@ -1,18 +1,27 @@
-import { auth } from "../config/firebase";
+import { auth, storage } from "../config/firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8080/api`;
 
 export async function fetchDemands() {
-  const token = await auth.currentUser?.getIdToken();
-  const response = await fetch(`${API_URL}/demands`, {
-    headers: {
-      "Authorization": `Bearer ${token}`
-    }
-  });
+  const response = await fetch(`${API_URL}/demands`);
   if (!response.ok) {
     throw new Error("Failed to fetch demands");
   }
   return response.json();
+}
+
+export async function fetchMyVotes() {
+  const token = await auth.currentUser?.getIdToken(true) || localStorage.getItem("citizen_token");
+  if (!token) return [];
+  const response = await fetch(`${API_URL}/users/me/votes`, {
+    headers: {
+      "Authorization": `Bearer ${token}`
+    }
+  });
+  if (!response.ok) return [];
+  const data = await response.json();
+  return data.voted_demand_ids || [];
 }
 
 export async function voteForDemand(demandId: string) {
@@ -89,10 +98,21 @@ export function getStaffDemands(..._args: any[]): any[] { return []; }
 export function getStaffDemandById(..._args: any[]): any { return undefined; }
 export function updateStaffDecision(..._args: any[]) {}
 export function updateDemandStatus(..._args: any[]) {}
-export async function getRequestDetailFromBackend(..._args: any[]) { return null; }
+export async function getRequestDetailFromBackend(demandId: string) {
+  const token = await auth.currentUser?.getIdToken(true) || localStorage.getItem("citizen_token");
+  const response = await fetch(`${API_URL}/demands/${demandId}`, {
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    }
+  });
+  if (!response.ok) {
+    throw new Error("Request not found in authoritative registry.");
+  }
+  return response.json();
+}
 export function getDemandById(..._args: any[]) { return null; }
 export async function submitRequestToBackend(payload: SubmitRequestPayload) {
-  const token = localStorage.getItem("citizen_token");
+  const token = await auth.currentUser?.getIdToken(true) || localStorage.getItem("citizen_token");
   const userStr = localStorage.getItem("citizen_user");
   const user = userStr ? JSON.parse(userStr) : { id: "anonymous" };
 
@@ -138,14 +158,13 @@ Beneficiaries: ${payload.intended_beneficiaries || 'N/A'}
 }
 
 export async function getMyRequestsFromBackend() {
-  const token = localStorage.getItem("citizen_token");
+  const token = await auth.currentUser?.getIdToken(true) || localStorage.getItem("citizen_token");
   const userStr = localStorage.getItem("citizen_user");
   const user = userStr ? JSON.parse(userStr) : null;
   
   if (!user || !user.id) return [];
   
-  // For now, fetch all demands and filter by user_id
-  const response = await fetch(`${API_URL}/demands`, {
+  const response = await fetch(`${API_URL}/demands?author_user_id=${user.id}`, {
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {})
     }
@@ -154,16 +173,31 @@ export async function getMyRequestsFromBackend() {
   if (!response.ok) return [];
   
   const data = await response.json();
-  if (data && data.demands) {
-    return data.demands.filter((d: any) => d.author_user_id === user.id);
-  }
-  return [];
+  return data.demands || [];
 }
 
 export async function uploadEvidenceToBackend(file: File) {
-  // Mocking upload to Firebase Storage or backend, since an actual file upload endpoint doesn't exist yet
-  // In a real implementation, we would upload to Firebase Storage and return the download URL
-  return { url: URL.createObjectURL(file), filename: file.name };
+  const token = await auth.currentUser?.getIdToken(true) || localStorage.getItem("citizen_token");
+  if (!token) throw new Error("Must be logged in to upload");
+  
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_URL}/upload`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${token}`
+    },
+    body: formData
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Failed to upload file");
+  }
+
+  const data = await response.json();
+  return { url: data.url, filename: data.filename };
 }
 // Maps backend GrievanceCategory enum values → frontend CATEGORY_ISSUE_MAP keys
 const BACKEND_CATEGORY_TO_FRONTEND: Record<string, string> = {
@@ -179,7 +213,7 @@ const BACKEND_CATEGORY_TO_FRONTEND: Record<string, string> = {
   "other": "Other",
 };
 
-export async function analyzeRequestWithGemini(textToAnalyze: string, requestType: string = "existing_problem") {
+export async function analyzeRequestWithGemini(textToAnalyze: string) {
   try {
     const userStr = localStorage.getItem("citizen_user");
     const user = userStr ? JSON.parse(userStr) : { id: "anonymous" };
@@ -233,7 +267,7 @@ export async function analyzeRequestWithGemini(textToAnalyze: string, requestTyp
 }
 
 export async function castVote(demandId: string): Promise<{ status: string }> {
-  const token = localStorage.getItem("citizen_token");
+  const token = await auth.currentUser?.getIdToken(true) || localStorage.getItem("citizen_token");
   const response = await fetch(`${API_URL}/demands/${demandId}/vote`, {
     method: "POST",
     headers: {

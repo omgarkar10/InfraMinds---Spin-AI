@@ -176,33 +176,28 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
   const [isVoiceConfirmCardVisible, setIsVoiceConfirmCardVisible] = useState<boolean>(false);
 
   const placesLibrary = useMapsLibrary("places");
-  const autocompleteService = useRef<any>(null);
-  // unused placesService removed
-
-  useEffect(() => {
-    if (!placesLibrary) return;
-    if (!autocompleteService.current) {
-      autocompleteService.current = new placesLibrary.AutocompleteService();
-    }
-  }, [placesLibrary]);
-
-  const handleAddressSearch = (input: string) => {
+  // Use modern AutocompleteSuggestion instead of deprecated AutocompleteService
+  const handleAddressSearch = async (input: string) => {
     setAddress(input);
-    if (!input.trim() || !autocompleteService.current) {
+    if (!input.trim() || !placesLibrary?.AutocompleteSuggestion) {
       setAddressPredictions([]);
       return;
     }
 
-    autocompleteService.current.getPlacePredictions(
-      { input, componentRestrictions: { country: "in" } },
-      (predictions: any, status: any) => {
-        if (status === "OK" && predictions) {
-          setAddressPredictions(predictions.slice(0, 5));
-        } else {
-          setAddressPredictions([]);
-        }
+    try {
+      const response = await placesLibrary.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+        input,
+        includedRegionCodes: ["in"],
+      });
+      if (response && response.suggestions) {
+        setAddressPredictions(response.suggestions.slice(0, 5));
+      } else {
+        setAddressPredictions([]);
       }
-    );
+    } catch (e) {
+      console.error("AutocompleteSuggestion error:", e);
+      setAddressPredictions([]);
+    }
   };
 
   const handlePlaceSelect = (placeId: string, description: string) => {
@@ -446,7 +441,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
     setAiStatus(null);
 
     try {
-      const res = await analyzeRequestWithGemini(textToAnalyze, requestType) as any;
+      const res = await analyzeRequestWithGemini(textToAnalyze) as any;
       setAiStatus(res.status);
       setAiMessage(res.message);
 
@@ -1705,22 +1700,26 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                           overflowY: "auto",
                         }}
                       >
-                        {addressPredictions.map((pred) => (
-                          <div
-                            key={pred.place_id}
-                            onClick={() => handlePlaceSelect(pred.place_id, pred.description)}
-                            style={{
-                              padding: "10px 12px",
-                              cursor: "pointer",
-                              borderBottom: "1px solid var(--col-border)",
-                              fontSize: "13px",
-                            }}
-                            onMouseOver={(e) => (e.currentTarget.style.background = "#f1f5f9")}
-                            onMouseOut={(e) => (e.currentTarget.style.background = "#fff")}
-                          >
-                            {pred.description}
-                          </div>
-                        ))}
+                        {addressPredictions.map((pred: any) => {
+                          const placeId = pred.placePrediction?.placeId || pred.place_id;
+                          const desc = pred.placePrediction?.text?.text || pred.description;
+                          return (
+                            <div
+                              key={placeId}
+                              onClick={() => handlePlaceSelect(placeId, desc)}
+                              style={{
+                                padding: "10px 12px",
+                                cursor: "pointer",
+                                borderBottom: "1px solid var(--col-border)",
+                                fontSize: "13px",
+                              }}
+                              onMouseOver={(e) => (e.currentTarget.style.background = "#f1f5f9")}
+                              onMouseOut={(e) => (e.currentTarget.style.background = "#fff")}
+                            >
+                              {desc}
+                            </div>
+                          );
+                        })}
                         <div
                           onClick={() => {
                             setIsManualAddress(true);

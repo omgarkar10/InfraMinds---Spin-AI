@@ -7,8 +7,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup
 } from "firebase/auth";
-import { googleProvider, db } from "../config/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { googleProvider } from "../config/firebase";
 
 const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8080/api`;
 
