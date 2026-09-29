@@ -83,16 +83,12 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 
 # ── Middleware ────────────────────────────────────────────────────────────────
 
+origins = [origin.strip() for origin in CONFIG.cors_origins.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://spin-portal-hack-106.web.app",
-        "https://spin-portal-hack-106.firebaseapp.com",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:4173"
-    ],
-    allow_credentials=True,
+    allow_origins=["*"] if "*" in origins else origins,
+    allow_credentials=False if "*" in origins else True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
