@@ -60,8 +60,33 @@ function getFriendlyAuthErrorMessage(error: any): string {
   }
 }
 
-// Removed synthetic email logic
+export async function syncProfileWithBackend(token: string, payload: { name: string, email: string, phone: string, dob: string }) {
+  const response = await fetch(`${API_URL}/auth/sync-profile`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) {
+    throw new Error("Failed to sync profile with backend");
+  }
+  return response.json();
+}
 
+export async function fetchCitizenProfile(token: string) {
+  const response = await fetch(`${API_URL}/auth/me`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+  if (!response.ok) {
+    throw new Error("Failed to fetch profile from backend");
+  }
+  return response.json();
+}
 export async function citizenSignup(payload: {
   name: string;
   email: string;
@@ -82,13 +107,21 @@ export async function citizenSignup(payload: {
     const token = await userCredential.user.getIdToken();
     localStorage.setItem("citizen_token", token);
     
+    // Sync to backend to permanently store phone and dob
+    const syncedProfile = await syncProfileWithBackend(token, {
+      name: payload.name,
+      email: payload.email,
+      phone: payload.phone,
+      dob: payload.dob
+    });
+    
     return {
       user: {
-        id: userCredential.user.uid,
-        name: payload.name,
-        phone: payload.phone,
-        email: payload.email,
-        dob: payload.dob
+        id: syncedProfile.id,
+        name: syncedProfile.name,
+        phone: syncedProfile.phone,
+        email: syncedProfile.email,
+        dob: syncedProfile.dob
       },
       access_token: token
     };
@@ -126,12 +159,16 @@ export async function citizenLogin(payload: { email: string; password: string; }
     
     localStorage.setItem("citizen_token", token);
     
+    // Fetch complete profile from backend
+    const profile = await fetchCitizenProfile(token);
+    
     return {
       user: {
-        id: userCredential.user.uid,
-        name: userCredential.user.displayName || "Citizen",
-        phone: "", // In a real app, fetch from Firestore
-        email: payload.email
+        id: profile.id,
+        name: profile.name || "Citizen",
+        phone: profile.phone || "",
+        email: profile.email || payload.email,
+        dob: profile.dob || ""
       },
       access_token: token
     };
@@ -147,23 +184,19 @@ export async function citizenFirebaseGoogleLogin() {
     localStorage.setItem("citizen_token", token);
     
     // Check if the user already has a complete profile in Firestore
-    const userDocRef = doc(db, "users", result.user.uid);
     let isComplete = false;
     let phone = result.user.phoneNumber || "";
     let dob = "";
     
     try {
-      const userDoc = await getDoc(userDocRef);
-      if (userDoc.exists()) {
-        const data = userDoc.data();
-        if (data.phone && data.dob) {
-          isComplete = true;
-          phone = data.phone;
-          dob = data.dob;
-        }
+      const profile = await fetchCitizenProfile(token);
+      if (profile && profile.phone && profile.dob) {
+        isComplete = true;
+        phone = profile.phone;
+        dob = profile.dob;
       }
     } catch (e) {
-      console.warn("Firestore offline or unavailable, treating as new user.", e);
+      console.warn("Backend fetch failed, treating as new user.", e);
     }
     
     return {

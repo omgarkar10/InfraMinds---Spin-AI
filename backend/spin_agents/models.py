@@ -4,11 +4,20 @@ from typing import Optional
 
 class UserSchema(BaseModel):
     id: str
+    name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    dob: Optional[str] = None
     location_id: Optional[str] = None
     age_bracket: Optional[str] = None
     is_verified_resident: bool = False
-    role: str = "Citizen"
+    role: str = "citizen"
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class UserProfileUpdate(BaseModel):
+    name: str
+    phone: str
+    dob: str
 
 class LocationSchema(BaseModel):
     id: str

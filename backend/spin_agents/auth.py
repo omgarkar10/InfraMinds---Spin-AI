@@ -2,8 +2,9 @@ import os
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import firebase_admin
-from firebase_admin import auth as firebase_auth
-from spin_agents.models import UserSchema
+from firebase_admin import auth as firebase_auth, firestore
+from spin_agents.models import UserSchema, UserProfileUpdate
+from spin_agents.db import db
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 security = HTTPBearer(auto_error=False)
@@ -57,3 +58,75 @@ async def require_staff(current_user: UserSchema = Depends(get_current_user)) ->
             detail=f"Insufficient permissions. Role '{current_user.role}' is not authorized for staff endpoints.",
         )
     return current_user
+
+@router.post("/sync-profile", response_model=UserSchema)
+async def sync_profile(
+    profile_data: UserProfileUpdate,
+    current_user: UserSchema = Depends(get_current_user)
+) -> UserSchema:
+    if not db:
+        raise HTTPException(status_code=500, detail="Firestore not initialized")
+    
+    uid = current_user.id
+    
+    user_ref = db.collection("users").document(uid)
+    doc = user_ref.get()
+    
+    update_data = {
+        "name": profile_data.name,
+        "phone": profile_data.phone,
+        "dob": profile_data.dob,
+        "updated_at": firestore.SERVER_TIMESTAMP
+    }
+    
+    if not doc.exists:
+        # Create a new record
+        user_data = {
+            "uid": uid,
+            "email": current_user.email,
+            "role": current_user.role,
+            "is_verified_resident": current_user.is_verified_resident,
+            "created_at": firestore.SERVER_TIMESTAMP,
+            **update_data
+        }
+        user_ref.set(user_data)
+    else:
+        # Update existing record
+        user_ref.update(update_data)
+        user_data = {**doc.to_dict(), **update_data}
+    
+    return UserSchema(
+        id=uid,
+        name=user_data.get("name"),
+        email=user_data.get("email"),
+        phone=user_data.get("phone"),
+        dob=user_data.get("dob"),
+        role=user_data.get("role", "citizen"),
+        is_verified_resident=user_data.get("is_verified_resident", False)
+    )
+
+@router.get("/me", response_model=UserSchema)
+async def get_my_profile(
+    current_user: UserSchema = Depends(get_current_user)
+) -> UserSchema:
+    if not db:
+        raise HTTPException(status_code=500, detail="Firestore not initialized")
+        
+    uid = current_user.id
+    doc = db.collection("users").document(uid).get()
+    
+    if not doc.exists:
+        # Return basic info from token if not fully registered in Firestore yet
+        return current_user
+        
+    data = doc.to_dict()
+    
+    return UserSchema(
+        id=uid,
+        name=data.get("name"),
+        email=data.get("email"),
+        phone=data.get("phone"),
+        dob=data.get("dob"),
+        role=data.get("role", "citizen"),
+        is_verified_resident=data.get("is_verified_resident", False)
+    )
