@@ -317,3 +317,65 @@ eact-leaflet map and leaflet.heat heatmap layer. Added leaflet.heat to package.j
 - **Description**: Merged the `niketan` branch into the `main` branch.
 - **Files Modified**: Various files across frontend and backend.
 - **Rationale**: User requested to merge the `main` and the `niketan` branch. Direction chosen was `niketan` into `main`.
+
+## 2026-09-29: Sync Branch
+- **Description**: Merged the `main` branch into the `niketan` branch to sync them.
+- **Files Modified**: Various files from main.
+- **Rationale**: User requested to sync `niketan` with `main`.
+
+## 2026-09-29: Pre-Deployment Readiness and TS Compilation Fixes
+- **Description**: Addressed 50+ TypeScript compilation errors by adding missing properties to GrievanceStatus, LocationData, Proposal, and StaffUser. Removed unused variables and resolved type mismatch errors across components. Removed tracked service-account.json. Hardened CORS configuration to allow only production web.app domains and localhost. Removed hardcoded API URL from bhashiniService.ts. Created .firebaserc and firebase.json for Firebase Hosting SPA support. Updated vite.config.ts for PWA icons and explicit manual chunks.
+- **Files Modified**: 
+  - frontend/dashboard/src/types/index.ts
+  - frontend/dashboard/src/components/citizen/CitizenSignup.tsx
+  - frontend/dashboard/src/components/citizen/CreateDemandForm.tsx
+  - frontend/dashboard/src/components/navigation/Navbar.tsx
+  - frontend/dashboard/src/components/navigation/StaffNavbar.tsx
+  - frontend/dashboard/src/components/staff/DepartmentOfficerDashboard.tsx
+  - frontend/dashboard/src/components/staff/FieldOfficerDashboard.tsx
+  - frontend/dashboard/src/components/staff/StaffDashboard.tsx
+  - frontend/dashboard/src/components/staff/StaffLogin.tsx
+  - frontend/dashboard/src/services/authService.ts
+  - frontend/dashboard/src/services/bhashiniService.ts
+  - frontend/dashboard/src/services/demandService.ts
+  - frontend/dashboard/vite.config.ts
+  - backend/spin_agents/api.py
+  - backend/spin_agents/auth.py
+  - frontend/dashboard/.firebaserc (Created)
+  - firebase.json (Created)
+- **Rationale**: To ensure successful build on AWS ECS/Fargate (Backend) and Firebase Hosting (Frontend SPA). Secured backend against unauthorized origin access and enforced RBAC.
+
+## 2026-09-29: Dockerfile PYTHONPATH Fix for Spin Agents Import
+- **Description**: Updated `PYTHONPATH` environment variable in `deploy/Dockerfile.api` and `deploy/Dockerfile.agent` to include `/app/backend` alongside `/app`.
+- **Files Modified**:
+  - `deploy/Dockerfile.api`
+  - `deploy/Dockerfile.agent`
+- **Rationale**: The code inside `backend/spin_agents/` uses absolute imports like `from spin_agents...`, while root imports use `schemas...`. Setting `PYTHONPATH=/app:/app/backend` ensures both top-level `schemas` and `spin_agents` are resolvable in the container runtime.
+
+## 2026-09-29: Resilient Environment Variable Parsing for Docker
+- **Description**: Added `_clean_env` and `_clean_int_env` helper functions to `backend/spin_agents/config.py` to strip leading/trailing whitespace and enclosing quotes from environment variables. Stripped literal quotes from `backend/.env`.
+- **Files Modified**:
+  - `backend/spin_agents/config.py`
+  - `backend/.env`
+- **Rationale**: Docker `--env-file` does not strip quotation marks from `.env` entries, causing `int('"450"')` to throw a `ValueError` on container startup. Sanitizing both `.env` and `config.py` prevents startup crashes in Docker, ECS, and Cloud Run environments.
+
+
+
+ # #   A u t h   R e f a c t o r   ( F i r e b a s e   E m a i l   &   P a s s w o r d   +   B a c k e n d   S y n c ) 
+ -   R e m o v e d   f a k e   c l i e n t - s i d e   6 - d i g i t   O T P   f r o m   \ C i t i z e n S i g n u p . t s x \ . 
+ -   U p d a t e d   \ C i t i z e n S i g n u p . t s x \   a n d   \ C i t i z e n L o g i n . t s x \   t o   s t r e a m - l i n e   e m a i l / p a s s w o r d   c o l l e c t i o n . 
+ -   A d d e d   \ s y n c P r o f i l e W i t h B a c k e n d \   a n d   \  e t c h C i t i z e n P r o f i l e \   t o   \  u t h S e r v i c e . t s \ . 
+ -   C r e a t e d   b a c k e n d   e n d p o i n t s   \ / a p i / a u t h / s y n c - p r o f i l e \   a n d   \ / a p i / a u t h / m e \   i n s i d e   \  a c k e n d / s p i n _ a g e n t s / a u t h . p y \   u s i n g   \  i r e b a s e - a d m i n \   t o   s e c u r e l y   w r i t e   a n d   r e a d   t h e   p h o n e   a n d   d o b   f i e l d s . 
+ -   U p d a t e d   \ U s e r S c h e m a \   i n   \  a c k e n d / s p i n _ a g e n t s / m o d e l s . p y \   t o   s u p p o r t   c o m p l e t e   p r o f i l e s . 
+  
+ 
+ # #   P r o f i l e   F e a t u r e s 
+ -   A d d e d   \  
+ S e t u p  
+ P a s s w o r d \   f u n c t i o n a l i t y   t o   \ C i t i z e n P r o f i l e . t s x \   w h i c h   a l l o w s   u s e r s   w h o   o r i g i n a l l y   l o g g e d   i n   v i a   G o o g l e   O A u t h   t o   s e t   a   p a s s w o r d   s o   t h e y   c a n   l o g i n   v i a   E m a i l / P a s s w o r d   i n   t h e   f u t u r e . 
+  
+ 
+ # #   P r o f i l e   F e a t u r e s 
+ -   D i f f e r e n t i a t e d   P a s s w o r d   S e t u p   f o r   G o o g l e   v s   E m a i l   u s e r s   i n   \ C i t i z e n P r o f i l e . t s x \ .   U s e r s   w i t h o u t   a   p a s s w o r d   s e e   ' S e t u p   P a s s w o r d ' ,   w h i l e   u s e r s   w i t h   a n   e x i s t i n g   p a s s w o r d   s e e   ' C h a n g e   P a s s w o r d '   r e q u i r i n g   t h e i r   c u r r e n t   p a s s w o r d   f o r   s e c u r i t y   r e - a u t h e n t i c a t i o n . 
+  
+ 

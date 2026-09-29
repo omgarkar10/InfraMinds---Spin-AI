@@ -10,7 +10,7 @@ COPY backend/ ./backend/
 # Copy root-level schemas package (required by spin_agents imports)
 COPY schemas/ ./schemas/
 
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app:/app/backend
 
 # AGENT_SERVICE: intake | parsing | geospatial | policy | pipeline
 ENV AGENT_SERVICE=pipeline

@@ -11,7 +11,7 @@ interface StaffDashboardProps {
   onNavigate: (view: string) => void;
 }
 
-export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate }) => {
+export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate: _onNavigate }) => {
   const [proposals, setDemands] = useState<Proposal[]>([]);
 
   useEffect(() => {

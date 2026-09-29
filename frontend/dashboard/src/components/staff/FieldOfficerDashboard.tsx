@@ -86,8 +86,6 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
       formData.append("safetyConstraints", String(checklist.safetyConstraints));
       formData.append("estimatedEffort", checklist.estimatedEffort);
       
-      const token = localStorage.getItem("staff_token");
-      
       // Simulated API Call
       await new Promise(r => setTimeout(r, 1000));
       
@@ -170,7 +168,7 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
                   demand.location.coordinates && (
                     <AdvancedMarker 
                       key={demand.id} 
-                      position={demand.location.coordinates}
+                      position={{ lat: demand.location.coordinates[0], lng: demand.location.coordinates[1] }}
                       onClick={() => { setSelectedDemand(demand); setViewMode("report"); }}
                     >
                       <Pin background={"var(--col-orange)"} borderColor={"var(--col-navy)"} glyphColor={"#fff"} />

@@ -177,7 +177,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
 
   const placesLibrary = useMapsLibrary("places");
   const autocompleteService = useRef<any>(null);
-  const placesService = useRef<any>(null);
+  // unused placesService removed
 
   useEffect(() => {
     if (!placesLibrary) return;
@@ -459,11 +459,23 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
           setDetectedLanguage(res.data.detected_language);
         }
         if (res.data.category && CATEGORY_ISSUE_MAP[res.data.category]) {
-          setCategory(res.data.category);
+          const aiCategory = res.data.category;
+          setCategory(aiCategory);
+          // Auto-select first available sub-issue in the category
+          const issueList = CATEGORY_ISSUE_MAP[aiCategory] || [];
+          const aiIssue = res.data.specific_issue;
+          const matchedIssue = issueList.includes(aiIssue) ? aiIssue : issueList[0];
+          if (matchedIssue) {
+            setSpecificIssue(matchedIssue);
+            setProposedFacility(matchedIssue);
+          }
         }
-        if (res.data.specific_issue) {
-          setSpecificIssue(res.data.specific_issue);
-          setProposedFacility(res.data.specific_issue);
+        if (!res.data.category) {
+          // category didn't match — still apply specific_issue if explicitly set
+          if (res.data.specific_issue) {
+            setSpecificIssue(res.data.specific_issue);
+            setProposedFacility(res.data.specific_issue);
+          }
         }
         if (res.data.description && !description) {
           setDescription(res.data.description);
@@ -1574,7 +1586,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                   <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
                   <LocationMarker 
                     position={latitude && longitude ? { lat: latitude, lng: longitude } : null} 
-                    setPosition={(p: any) => { setLatitude(p.lat); setLongitude(p.lng); setGpsConfirmed(true); }} 
+                    onLocationChange={(lat, lng) => { setLatitude(lat); setLongitude(lng); setGpsConfirmed(true); }} 
                   />
                 </MapContainer>
               </div>

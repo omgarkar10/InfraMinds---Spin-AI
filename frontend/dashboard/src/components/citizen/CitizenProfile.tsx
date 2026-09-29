@@ -13,6 +13,14 @@ export const CitizenProfile: React.FC<CitizenProfileProps> = ({ user, onNavigate
   const [demands, setDemands] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [showPasswordSetup, setShowPasswordSetup] = useState(false);
+  const [hasPassword, setHasPassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordMessage, setPasswordMessage] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+
   useEffect(() => {
     async function loadData() {
       try {
@@ -26,7 +34,64 @@ export const CitizenProfile: React.FC<CitizenProfileProps> = ({ user, onNavigate
       }
     }
     loadData();
+
+    import("../../config/firebase").then(({ auth }) => {
+      const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+         if (currentUser) {
+            const hasPass = currentUser.providerData.some(p => p.providerId === 'password');
+            setHasPassword(hasPass);
+         }
+      });
+      return unsubscribe;
+    });
   }, []);
+
+  const handleSetupPassword = async () => {
+    setPasswordMessage("");
+    setPasswordError("");
+    if (hasPassword && !currentPassword) {
+      setPasswordError("Please enter your current password.");
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordError("Password must be at least 8 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Passwords do not match.");
+      return;
+    }
+    
+    try {
+      const { auth } = await import("../../config/firebase");
+      const { updatePassword, reauthenticateWithCredential, EmailAuthProvider } = await import("firebase/auth");
+      
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        if (hasPassword && currentUser.email) {
+           const credential = EmailAuthProvider.credential(currentUser.email, currentPassword);
+           await reauthenticateWithCredential(currentUser, credential);
+        }
+        await updatePassword(currentUser, newPassword);
+        setPasswordMessage(hasPassword ? "Password changed successfully!" : "Password setup successfully! You can now log in using your email and password.");
+        setShowPasswordSetup(false);
+        setNewPassword("");
+        setConfirmPassword("");
+        setCurrentPassword("");
+        setHasPassword(true);
+      } else {
+        setPasswordError("Session expired. Please log in again to set a password.");
+      }
+    } catch (err: any) {
+      if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password") {
+         setPasswordError("Incorrect current password.");
+      } else if (err.code === "auth/requires-recent-login") {
+        setPasswordError("Security restriction: Please log out and log back in before changing your password.");
+      } else {
+        setPasswordError(err.message || "Failed to set password.");
+      }
+    }
+  };
 
   return (
     <div className="citizen-portal-container">
@@ -113,6 +178,57 @@ export const CitizenProfile: React.FC<CitizenProfileProps> = ({ user, onNavigate
               <div style={{ fontSize: "11px", color: "#666", textTransform: "uppercase", fontWeight: "600", marginBottom: "2px" }}>Citizen ID</div>
               <div style={{ fontSize: "14px", fontFamily: "monospace" }}>{user.id}</div>
             </div>
+          </div>
+          
+          <div style={{ borderTop: "1px solid #eee", paddingTop: "16px", marginTop: "16px" }}>
+            <button
+              onClick={() => { setShowPasswordSetup(!showPasswordSetup); setPasswordMessage(""); setPasswordError(""); }}
+              className="btn-outline"
+              style={{ width: "100%", fontSize: "12px", justifyContent: "center" }}
+            >
+              {hasPassword ? "Change Password" : "Setup Password"}
+            </button>
+            
+            {showPasswordSetup && (
+              <div style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                {hasPassword && (
+                  <input
+                    type="password"
+                    placeholder="Current Password"
+                    className="form-input"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    style={{ fontSize: "12px", padding: "8px" }}
+                  />
+                )}
+                <input
+                  type="password"
+                  placeholder="New Password"
+                  className="form-input"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  style={{ fontSize: "12px", padding: "8px" }}
+                />
+                <input
+                  type="password"
+                  placeholder="Confirm Password"
+                  className="form-input"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  style={{ fontSize: "12px", padding: "8px" }}
+                />
+                <button
+                  onClick={handleSetupPassword}
+                  className="service-card-btn service-card-btn-orange"
+                  style={{ width: "100%", fontSize: "12px", justifyContent: "center", padding: "8px" }}
+                >
+                  {hasPassword ? "Update Password" : "Save Password"}
+                </button>
+              </div>
+            )}
+            
+            {passwordMessage && <div style={{ marginTop: "10px", fontSize: "12px", color: "green" }}>{passwordMessage}</div>}
+            {passwordError && <div style={{ marginTop: "10px", fontSize: "12px", color: "red" }}>{passwordError}</div>}
           </div>
         </div>
 

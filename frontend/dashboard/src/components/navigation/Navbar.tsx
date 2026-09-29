@@ -14,9 +14,8 @@ export function Navbar({ view, user, onViewChange }: NavbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [_profileModalOpen, setProfileModalOpen] = useState(false);
   const [languageQuery, setLanguageQuery] = useState("");
-  const [toastMessage, setToastMessage] = useState("");
   const { country, setCountry } = useLanguage();
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const profileModalRef = useRef<HTMLDivElement>(null);
@@ -88,12 +87,6 @@ export function Navbar({ view, user, onViewChange }: NavbarProps) {
     setCountry(code);
     setLanguageQuery("");
     setLangOpen(false);
-  };
-
-  const handleCopyId = (id: string) => {
-    navigator.clipboard.writeText(id);
-    setToastMessage("Citizen ID copied");
-    setTimeout(() => setToastMessage(""), 3000);
   };
 
   const isCitizenView = view.startsWith("citizen");

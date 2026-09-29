@@ -84,13 +84,13 @@ export interface SubmitRequestPayload {
   bhashini_translated_text?: string;
 }
 
-export function getStoredDemands(...args: any[]): any[] { return []; }
-export function getStaffDemands(...args: any[]): any[] { return []; }
-export function getStaffDemandById(...args: any[]): any { return undefined; }
-export function updateStaffDecision(...args: any[]) {}
-export function updateDemandStatus(...args: any[]) {}
-export async function getRequestDetailFromBackend(...args: any[]) { return null; }
-export function getDemandById(...args: any[]) { return null; }
+export function getStoredDemands(..._args: any[]): any[] { return []; }
+export function getStaffDemands(..._args: any[]): any[] { return []; }
+export function getStaffDemandById(..._args: any[]): any { return undefined; }
+export function updateStaffDecision(..._args: any[]) {}
+export function updateDemandStatus(..._args: any[]) {}
+export async function getRequestDetailFromBackend(..._args: any[]) { return null; }
+export function getDemandById(..._args: any[]) { return null; }
 export async function submitRequestToBackend(payload: SubmitRequestPayload) {
   const token = localStorage.getItem("citizen_token");
   const userStr = localStorage.getItem("citizen_user");
@@ -165,8 +165,71 @@ export async function uploadEvidenceToBackend(file: File) {
   // In a real implementation, we would upload to Firebase Storage and return the download URL
   return { url: URL.createObjectURL(file), filename: file.name };
 }
-export async function analyzeRequestWithGemini(...args: any[]) {
-  return { status: "success", data: { category: "Other", issue: "Mock", priority: "Low", location: "Mock", confidence: 90, nearbyDemands: 0, redZone: false, reasoning: "Mock" } };
+// Maps backend GrievanceCategory enum values → frontend CATEGORY_ISSUE_MAP keys
+const BACKEND_CATEGORY_TO_FRONTEND: Record<string, string> = {
+  "electricity": "Electricity",
+  "water": "Water Supply",
+  "roads": "Roads & Potholes",
+  "garbage": "Waste Management",
+  "drainage": "Drainage / Flooding",
+  "street_lighting": "Street Lighting",
+  "public_health": "Public Health",
+  "education": "Education",
+  "housing": "Housing",
+  "other": "Other",
+};
+
+export async function analyzeRequestWithGemini(textToAnalyze: string, requestType: string = "existing_problem") {
+  try {
+    const userStr = localStorage.getItem("citizen_user");
+    const user = userStr ? JSON.parse(userStr) : { id: "anonymous" };
+
+    const payload = {
+      citizen_id: user.id,
+      channel: "pwa",
+      text: textToAnalyze,
+      language: "en"
+    };
+
+    const response = await fetch(`${API_URL.replace('/api', '')}/a2a/semantic-parsing`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      throw new Error(`AI Parsing failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Normalize category: map backend enum → frontend display key
+    const rawCategory: string = (data.category || "other").toLowerCase();
+    const frontendCategory = BACKEND_CATEGORY_TO_FRONTEND[rawCategory] || "Other";
+
+    // Normalize request type: backend returns GrievanceType like "issue", "complaint" → map to frontend
+    const rawType: string = (data.type || "").toLowerCase();
+    const frontendRequestType =
+      rawType === "suggestion" || rawType === "new_development"
+        ? "new_development"
+        : "existing_problem";
+
+    return {
+      status: "success",
+      data: {
+        request_type: frontendRequestType,
+        category: frontendCategory,
+        description: data.description_translated || data.description_original || "",
+        state: data.location?.state || null,
+        district: data.location?.district || null,
+        landmark: data.location?.landmark_text || data.location?.location_landmark || null,
+        specific_issue: frontendCategory,
+      }
+    };
+  } catch (err: any) {
+    console.error("AI Analysis error:", err);
+    return { status: "error", message: err.message };
+  }
 }
 
 export async function castVote(demandId: string): Promise<{ status: string }> {

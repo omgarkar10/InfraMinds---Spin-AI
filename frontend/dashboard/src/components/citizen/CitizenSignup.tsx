@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getCountriesConfig, getAuthConfig, getCaptchaChallenge, citizenSignup, citizenFirebaseGoogleLogin } from "../../services/authService";
+import { getCountriesConfig, getAuthConfig, getCaptchaChallenge, citizenSignup, citizenFirebaseGoogleLogin, syncProfileWithBackend } from "../../services/authService";
 import { setStoredCitizenUser } from "../../services/demandService";
 import { CountryPhoneConfig, validatePhoneNumber } from "../../utils/phoneValidation";
 import { PhoneNumberField } from "./PhoneNumberField";
@@ -42,8 +42,6 @@ export const CitizenSignup: React.FC<CitizenSignupProps> = ({
     }
   }, [googlePrefill]);
 
-  // Step 2 State (OTP)
-  const [otp, setOtp] = useState("");
 
   // Step 3 State (Password)
   const [password, setPassword] = useState("");
@@ -122,54 +120,46 @@ export const CitizenSignup: React.FC<CitizenSignupProps> = ({
     }
   };
 
-  const handleNextStep2 = () => {
-    if (otp.length === 6) { // Simulate OTP validation
-      setStep(3);
-      setSubmitError(null);
-    } else {
-      setSubmitError("Please enter a valid 6-digit OTP.");
-    }
-  };
+
 
   const submitGoogleProfile = async () => {
     const phoneVal = validatePhoneNumber(countryCode, phone, countries);
     const normalizedPhone = phoneVal.normalizedNumber || phone;
-    const user: CitizenUser = {
-      id: googlePrefill?.id || "google-uid-" + Date.now(), // Real ID is populated from props or context in a real app, but we will use the one passed from the caller if it exists. Wait, googlePrefill doesn't have ID! Let's get it from the parent or just use a token.
-      name: name.trim(),
-      phone: normalizedPhone,
-      email: email.trim(),
-      dob: dob,
-      isLoggedIn: true,
-    };
     
-    // Attempt to get the UID from the currently logged in Firebase user
-    import("../../config/firebase").then(async ({ auth, db }) => {
-       const currentUser = auth.currentUser;
-       if (currentUser) {
-          user.id = currentUser.uid;
-          const { doc, setDoc } = await import("firebase/firestore");
-          const userDocRef = doc(db, "users", currentUser.uid);
-          await setDoc(userDocRef, {
-            name: user.name,
-            email: user.email,
-            phone: user.phone,
-            dob: user.dob || "",
-            updatedAt: new Date().toISOString()
-          }, { merge: true }).catch(err => console.error(err));
-       }
-       setStoredCitizenUser(user);
-       onSignupSuccess(user);
+    import("../../config/firebase").then(async ({ auth }) => {
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        try {
+          const token = await currentUser.getIdToken();
+          const syncedProfile = await syncProfileWithBackend(token, {
+            name: name.trim(),
+            email: email.trim(),
+            phone: normalizedPhone,
+            dob: dob || ""
+          });
+          
+          const user: CitizenUser = {
+            id: syncedProfile.id,
+            name: syncedProfile.name,
+            phone: syncedProfile.phone,
+            email: syncedProfile.email,
+            dob: syncedProfile.dob,
+            isLoggedIn: true,
+          };
+          setStoredCitizenUser(user);
+          onSignupSuccess(user);
+        } catch (err) {
+          setSubmitError("Failed to sync profile with backend.");
+        }
+      }
     });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (step === 1) return handleNextStep1();
-    if (step === 2) return handleNextStep2();
 
     // Step 3 validation
-    let pwdError = null;
     const minLength = authConfig?.minLength || 8;
     if (password.length < minLength) {
       setPasswordError(authConfig?.error_message || `Password must be at least ${minLength} characters long.`);
@@ -244,8 +234,7 @@ export const CitizenSignup: React.FC<CitizenSignupProps> = ({
           </h2>
           <p className="portal-subtext" style={{ fontSize: "13px" }}>
             {step === 1 && "Register to raise proposals and track infrastructure issues."}
-            {step === 2 && "Verify your email to continue."}
-            {step === 3 && "Secure your account with a password."}
+            {step === 2 && "Secure your account with a password."}
           </p>
         </div>
 
@@ -389,45 +378,6 @@ export const CitizenSignup: React.FC<CitizenSignupProps> = ({
 
           {step === 2 && !isGoogleFlow && (
             <>
-              <div className="form-group" style={{ marginBottom: "1.5rem" }}>
-                <label className="form-label" htmlFor="otp">
-                  Enter OTP sent to {email}
-                </label>
-                <input
-                  id="otp"
-                  type="text"
-                  className="form-input"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  placeholder="6-digit OTP (any 6 digits for demo)"
-                  maxLength={6}
-                  required
-                />
-              </div>
-
-              <div style={{ display: "flex", gap: "10px" }}>
-                <button
-                  type="button"
-                  className="btn-outline"
-                  onClick={() => setStep(1)}
-                  style={{ flex: 1, justifyContent: "center" }}
-                >
-                  Back
-                </button>
-                <button
-                  type="submit"
-                  className="service-card-btn service-card-btn-orange"
-                  disabled={otp.length !== 6}
-                  style={{ flex: 1, justifyContent: "center" }}
-                >
-                  Verify OTP
-                </button>
-              </div>
-            </>
-          )}
-
-          {step === 3 && !isGoogleFlow && (
-            <>
               <PasswordField
                 id="signup-password"
                 label="Password"
@@ -449,7 +399,7 @@ export const CitizenSignup: React.FC<CitizenSignupProps> = ({
                 <button
                   type="button"
                   className="btn-outline"
-                  onClick={() => setStep(2)}
+                  onClick={() => setStep(1)}
                   style={{ flex: 1, justifyContent: "center" }}
                 >
                   Back
