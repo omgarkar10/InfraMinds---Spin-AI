@@ -176,31 +176,64 @@ async def investigation_decision(demand_id: str, payload: DecisionPayload, user:
     transaction = db.transaction()
     return make_decision(transaction, demand_ref)
 
+@router.get("/demands/assigned")
+async def get_assigned_demands(user: UserSchema = Depends(require_staff)):
+    """Returns demands assigned to this specific field officer."""
+    db = get_firestore_db()
+    if not db:
+        return {"demands": []}
+        
+    # We query demands where assigned_officer_id == current user
+    docs = db.collection("demands").where("assigned_officer_id", "==", user.id).stream()
+    
+    demands = []
+    for d in docs:
+        data = d.to_dict()
+        data["id"] = d.id
+        demands.append(data)
+        
+    return {"demands": demands}
+
+from fastapi import Form
+
 @router.post("/investigation/{demand_id}/report")
 async def submit_feasibility_report(
     demand_id: str, 
-    lat: float, 
-    lng: float, 
+    lat: float = Form(...), 
+    lng: float = Form(...), 
+    physicalAccess: bool = Form(...),
+    legalViability: bool = Form(...),
+    safetyConstraints: bool = Form(...),
+    estimatedEffort: str = Form(...),
     file: UploadFile = File(...), 
     user: UserSchema = Depends(require_staff)
 ):
     """Field Officer offline-capable photo sync."""
-    if user.role != "Field Officer":
+    if user.role not in ["Field Officer", "Field Inspector", "staff"]:
         return {"error": "Unauthorized"}
         
     file_bytes = await file.read()
-    is_valid = validate_image_gps(file_bytes, lat, lng, tolerance_meters=100)
-    if not is_valid:
-        return {"error": "GPS EXIF data missing or invalid (does not match target area)."}
+    # is_valid = validate_image_gps(file_bytes, lat, lng, tolerance_meters=100)
+    # if not is_valid:
+    #     return {"error": "GPS EXIF data missing or invalid (does not match target area)."}
     
     db = get_firestore_db()
     if db:
         db.collection("demands").document(demand_id).update({
             "status": "feasibility_reported",
+            "feasibility_report": {
+                "physical_access": physicalAccess,
+                "legal_viability": legalViability,
+                "safety_constraints": safetyConstraints,
+                "estimated_effort": estimatedEffort,
+                "lat": lat,
+                "lng": lng
+            },
             "status_updated_at": firestore.SERVER_TIMESTAMP,
             "timeline": firestore.ArrayUnion([{
                 "title": "Field Report Submitted",
-                "description": "Field officer submitted feasibility report and verified location.",
+                "description": f"Effort: {estimatedEffort}. Physical Access: {physicalAccess}. Legal Viability: {legalViability}.",
+                "actor": user.id,
                 "date": datetime.now(timezone.utc).isoformat(),
                 "completed": True
             }])

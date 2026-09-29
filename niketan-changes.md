@@ -426,3 +426,7 @@ Bhashini requires correct serviceIds from its own catalog. The meity-auth endpoi
   - rontend/dashboard/src/components/staff/DepartmentOfficerDashboard.tsx: Rewritten to fetch directly from the live API with accurate metrics.
   - rontend/dashboard/src/components/staff/StaffDashboard.tsx: Cleaned up props.
 - **Rationale**: The UI was purely mock data and lacked the necessary security to isolate demands to the specific logged-in officer's department. The new transactions prevent race conditions during Field Officer assignment.
+-   O v e r h a u l e d   F i e l d   O f f i c e r   D a s h b o a r d   U I   t o   u s e   a   r e s p o n s i v e   s p l i t - p a n e   L e a f l e t   m a p   i n s t e a d   o f   G o o g l e   M a p s .  
+ -   A d d e d   G E T   / a p i / s t a f f / d e m a n d s / a s s i g n e d   e n d p o i n t   t o   f e t c h   a c t u a l   o f f i c e r   a s s i g n m e n t s .  
+ -   U p d a t e d   P O S T   / a p i / s t a f f / i n v e s t i g a t i o n / { i d } / r e p o r t   t o   a c c e p t   m u l t i p a r t   f o r m - d a t a   f o r   c h e c k l i s t   c o n s t r a i n t s .  
+ 

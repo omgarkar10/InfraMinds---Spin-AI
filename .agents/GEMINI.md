@@ -43,3 +43,7 @@ When a user query starts with a slash command, override default formatting and s
    - Highlight single points of failure, edge cases, bottlenecks, and specific code improvements.
 
 If no slash command is present at the start of the message, proceed with standard conversational collaboration.
+
+# Deployment Safety Rule
+
+DO NOT automatically deploy code to production (e.g., `firebase deploy`, `docker push`, AWS ECS deployments, etc.). You MUST always ask for explicit permission from the user before executing any command that pushes code or infrastructure changes to remote production environments.
