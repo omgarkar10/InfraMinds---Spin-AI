@@ -44,8 +44,6 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
       <div className="container">
         <DepartmentOfficerDashboard 
           user={user} 
-          demands={proposals} 
-          onRefresh={refreshData} 
         />
       </div>
     </div>

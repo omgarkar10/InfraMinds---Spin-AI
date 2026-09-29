@@ -417,3 +417,12 @@ Bhashini requires correct serviceIds from its own catalog. The meity-auth endpoi
 - **Files modified:** Added rontend/dashboard/.env.production 
 - **Description:** Created production environment file pointing VITE_API_URL to the newly deployed AWS Application Load Balancer (spin-api-alb-1642055735.ap-south-1.elb.amazonaws.com).
 - **Rationale:** Ensures the production build of the frontend connects to the live ECS Fargate backend without breaking the local .env configuration.
+
+### Staff Dashboard & Queue System Overhaul
+- **Description**: Replaced hardcoded stubs in the Department Officer dashboard with a live Firestore implementation, enforcing department-scoped isolation and real-time dispatch workflows.
+- **Files Updated**:
+  - ackend/spin_agents/routers/staff_router.py: Completely rewritten with transactional endpoints for dispatch, decision, and filtered queue fetch.
+  - ackend/spin_agents/models.py: Added department field to UserSchema.
+  - rontend/dashboard/src/components/staff/DepartmentOfficerDashboard.tsx: Rewritten to fetch directly from the live API with accurate metrics.
+  - rontend/dashboard/src/components/staff/StaffDashboard.tsx: Cleaned up props.
+- **Rationale**: The UI was purely mock data and lacked the necessary security to isolate demands to the specific logged-in officer's department. The new transactions prevent race conditions during Field Officer assignment.

@@ -12,6 +12,7 @@ class UserSchema(BaseModel):
     age_bracket: Optional[str] = None
     is_verified_resident: bool = False
     role: str = "citizen"
+    department: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class UserProfileUpdate(BaseModel):
