@@ -14,6 +14,70 @@ async def citizen_webhook(payload: CitizenMessage):
     """Public webhook for citizen-facing channels (WhatsApp, Telegram, PWA)."""
     return await process_citizen_webhook(payload.model_dump())
 
+from fastapi import Request, Response
+import os
+
+@router.get("/webhook/whatsapp")
+async def verify_whatsapp_webhook(request: Request):
+    """Webhook Verification for Meta/WhatsApp."""
+    mode = request.query_params.get("hub.mode")
+    token = request.query_params.get("hub.verify_token")
+    challenge = request.query_params.get("hub.challenge")
+
+    if mode and token:
+        if mode == "subscribe" and token == os.getenv("WHATSAPP_VERIFY_TOKEN", "my_secure_token"):
+            return Response(content=challenge, status_code=200)
+        else:
+            raise HTTPException(status_code=403, detail="Verification token mismatch")
+    raise HTTPException(status_code=400, detail="Missing parameters")
+
+@router.post("/webhook/whatsapp")
+async def handle_whatsapp_webhook(request: Request):
+    """Handle incoming WhatsApp messages from citizens."""
+    body = await request.json()
+    
+    # Meta webhook structure
+    # body["entry"][0]["changes"][0]["value"]["messages"][0]
+    try:
+        if body.get("object") == "whatsapp_business_account":
+            for entry in body.get("entry", []):
+                for change in entry.get("changes", []):
+                    value = change.get("value", {})
+                    messages = value.get("messages", [])
+                    contacts = value.get("contacts", [])
+                    
+                    for msg in messages:
+                        sender_phone = msg.get("from")
+                        msg_type = msg.get("type")
+                        text = ""
+                        
+                        if msg_type == "text":
+                            text = msg.get("text", {}).get("body", "")
+                        elif msg_type == "audio":
+                            audio_id = msg.get("audio", {}).get("id")
+                            text = f"[Audio ID: {audio_id}]" # Need Graph API call to download in full implementation
+                            
+                        # Map to internal schema
+                        citizen_msg = {
+                            "user_id": sender_phone,
+                            "text": text,
+                            "channel": "whatsapp",
+                            "source_language": "hi", # We can detect this later
+                        }
+                        
+                        # Process via pipeline
+                        # We should run this as a background task to return 200 OK fast
+                        from fastapi import BackgroundTasks
+                        # Assuming background tasks or just await it if fast enough
+                        await process_citizen_webhook(citizen_msg)
+                        
+            return Response(content="EVENT_RECEIVED", status_code=200)
+    except Exception as e:
+        print("Error processing whatsapp payload:", e)
+        
+    # Return 200 even on errors to prevent Meta from retrying indefinitely
+    return Response(content="EVENT_RECEIVED", status_code=200)
+
 @router.post("/api/pipeline/run")
 async def pipeline_run(
     payload: PipelineRequest,

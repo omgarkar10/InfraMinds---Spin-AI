@@ -429,4 +429,7 @@ Bhashini requires correct serviceIds from its own catalog. The meity-auth endpoi
 -   O v e r h a u l e d   F i e l d   O f f i c e r   D a s h b o a r d   U I   t o   u s e   a   r e s p o n s i v e   s p l i t - p a n e   L e a f l e t   m a p   i n s t e a d   o f   G o o g l e   M a p s .  
  -   A d d e d   G E T   / a p i / s t a f f / d e m a n d s / a s s i g n e d   e n d p o i n t   t o   f e t c h   a c t u a l   o f f i c e r   a s s i g n m e n t s .  
  -   U p d a t e d   P O S T   / a p i / s t a f f / i n v e s t i g a t i o n / { i d } / r e p o r t   t o   a c c e p t   m u l t i p a r t   f o r m - d a t a   f o r   c h e c k l i s t   c o n s t r a i n t s .  
+ # #   2 0 2 6 - 0 9 - 3 0 :   W h a t s A p p   W e b h o o k   I m p l e m e n t a t i o n 
+ -   * * D e s c r i p t i o n * * :   A d d e d   G E T   a n d   P O S T   / w e b h o o k / w h a t s a p p   e n d p o i n t s   t o   d e m a n d _ r o u t e r . p y   f o r   M e t a   i n t e g r a t i o n ,   a n d   c r e a t e d   w h a t s a p p - w e b h o o k . m d   s e t u p   g u i d e . 
+ -   * * F i l e s   M o d i f i e d / C r e a t e d * * :   b a c k e n d / s p i n _ a g e n t s / r o u t e r s / d e m a n d _ r o u t e r . p y ,   w h a t s a p p - w e b h o o k . m d  
  
