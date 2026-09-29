@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import type { StaffUser, DemandStatus } from "../../types";
+import type { StaffUser } from "../../types";
 import { DemandKPIBar } from "./DemandKPIBar";
 
 // API Response Types
@@ -21,7 +21,7 @@ interface DepartmentOfficerDashboardProps {
   user: StaffUser;
 }
 
-export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProps> = ({ user }) => {
+export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProps> = ({ user: _user }) => {
   const [demands, setDemands] = useState<any[]>([]);
   const [metrics, setMetrics] = useState<QueueMetrics | null>(null);
   const [officers, setOfficers] = useState<Officer[]>([]);
@@ -29,7 +29,7 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
   const [viewMode, setViewMode] = useState<"queue" | "review" | "dispatch">("queue");
   const [staffNote, setStaffNote] = useState("");
   const [authError, setAuthError] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
+  // isLoading removed
 
   useEffect(() => {
     fetchQueue();
@@ -37,7 +37,6 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
   }, []);
 
   const fetchQueue = async () => {
-    setIsLoading(true);
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/staff/demands/queue`, {
         headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
@@ -50,8 +49,6 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
     } catch (err) {
       console.error(err);
       setAuthError("Failed to load queue. Ensure you have Department Officer access.");
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -218,7 +215,7 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
                           {d.status === "feasibility_reported" ? (
                             <button 
                               className="btn-outline" 
-                              style={{ padding: "4px 12px", fontSize: "11px", borderColor: "var(--col-orange)", color: "var(--col-orange)", background: "var(--col-orange)", color: "#fff" }}
+                              style={{ padding: "4px 12px", fontSize: "11px", borderColor: "var(--col-orange)", background: "var(--col-orange)", color: "#fff" }}
                               onClick={() => { setSelectedDemand(d); setViewMode("review"); }}
                             >
                               Review & Decide
