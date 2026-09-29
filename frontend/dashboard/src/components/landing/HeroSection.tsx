@@ -16,6 +16,7 @@ function HeatmapLayer({ data }: { data: [number, number, number][] }) {
     (window as any).L = L;
     let heat: any;
 
+    // @ts-ignore
     import("leaflet.heat/dist/leaflet-heat.js").then(() => {
       // @ts-ignore - leaflet.heat adds L.heatLayer
       if (!L.heatLayer) return;
@@ -47,7 +48,7 @@ function ChangeMapView({ center, zoom }: { center: [number, number]; zoom: numbe
 }
 
 interface HeroSectionProps {
-  onViewChange?: (view: "landing" | "dashboard" | "citizen" | "citizen-raise" | "citizen-track") => void;
+  onViewChange?: (view: "landing" | "dashboard" | "citizen" | "citizen-raise" | "citizen-track", id?: string) => void;
 }
 
 export function HeroSection({ onViewChange }: HeroSectionProps) {

@@ -293,8 +293,8 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
                 });
 
                 const voteCount = demand.vote_count || demand.votes || 0;
-                const voteThreshold = demand.vote_threshold || 100;
-                const votePercentage = Math.min((voteCount / voteThreshold) * 100, 100);
+                // const voteThreshold = demand.vote_threshold || 100;
+                // const votePercentage = Math.min((voteCount / voteThreshold) * 100, 100);
 
                 return (
                   <div 

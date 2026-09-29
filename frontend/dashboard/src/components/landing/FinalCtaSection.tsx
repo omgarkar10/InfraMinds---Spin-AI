@@ -1,7 +1,7 @@
 import "./FinalCtaSection.css";
 
 interface FinalCtaSectionProps {
-  onViewChange: (view: "citizen-raise" | "citizen-track") => void;
+  onViewChange: (view: "citizen-raise" | "citizen-track", id?: string) => void;
 }
 
 export function FinalCtaSection({ onViewChange }: FinalCtaSectionProps) {

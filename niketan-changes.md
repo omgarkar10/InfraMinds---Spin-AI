@@ -412,3 +412,8 @@ Bhashini requires correct serviceIds from its own catalog. The meity-auth endpoi
 - **Database Structure Report**: Generated comprehensive audit report covering all 3 Firestore collections (users, demands, demand_votes), full API surface (17 endpoints), authentication flows, the 3-agent AI pipeline sequence diagram, and 9 identified issues with severity ratings.
 
 - **Refactor Database Connections & APIs**: Implemented the 8-point architectural refactoring plan. (1) Fixed token desync in frontend by fetching fresh tokens dynamically. (2) Implemented real Firebase Storage image uploads. (3) Updated DemandSchema Pydantic model with new fields and default vote_count to 0. (4) Sanitized AI fallbacks in runner.py and fixed timeline timestamp formats in demand_service.py. (5) Refactored GET /api/demands to support server-side author_user_id filtering. (6) Denormalized author_name by fetching from users collection. (7) Upgraded staff endpoints (/queue, /assign, /report) with live Firestore logic. (8) Replaced dashboard analytics stubs with direct Firestore aggregations and groupings.
+
+### Added .env.production for Frontend Deployment
+- **Files modified:** Added rontend/dashboard/.env.production 
+- **Description:** Created production environment file pointing VITE_API_URL to the newly deployed AWS Application Load Balancer (spin-api-alb-1642055735.ap-south-1.elb.amazonaws.com).
+- **Rationale:** Ensures the production build of the frontend connects to the live ECS Fargate backend without breaking the local .env configuration.

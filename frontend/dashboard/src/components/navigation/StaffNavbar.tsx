@@ -4,7 +4,7 @@ import "../navigation/Navbar.css";
 
 interface StaffNavbarProps {
   user: StaffUser;
-  onViewChange: (view: string) => void;
+  onViewChange: (view: string, id?: string) => void;
   onLogout: () => void;
 }
 

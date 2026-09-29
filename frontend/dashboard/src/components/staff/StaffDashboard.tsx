@@ -8,7 +8,7 @@ import { DepartmentOfficerDashboard } from "./DepartmentOfficerDashboard";
 
 interface StaffDashboardProps {
   user: StaffUser;
-  onNavigate: (view: string) => void;
+  onNavigate: (view: string, id?: string) => void;
 }
 
 export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate: _onNavigate }) => {

@@ -2,7 +2,7 @@ import { useLanguage } from "../../hooks/useLanguage";
 import "./Footer.css";
 
 interface FooterProps {
-  onViewChange: (view: any) => void;
+  onViewChange: (view: any, id?: string) => void;
 }
 
 export function Footer({ onViewChange }: FooterProps) {
