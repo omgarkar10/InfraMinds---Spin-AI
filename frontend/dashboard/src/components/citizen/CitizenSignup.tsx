@@ -135,7 +135,7 @@ export const CitizenSignup: React.FC<CitizenSignupProps> = ({
     const phoneVal = validatePhoneNumber(countryCode, phone, countries);
     const normalizedPhone = phoneVal.normalizedNumber || phone;
     const user: CitizenUser = {
-      id: googlePrefill?.id || "google-uid-" + Date.now(), // Real ID is populated from props or context in a real app, but we will use the one passed from the caller if it exists. Wait, googlePrefill doesn't have ID! Let's get it from the parent or just use a token.
+      id: (googlePrefill as any)?.id || "google-uid-" + Date.now(), // Real ID is populated from props or context in a real app, but we will use the one passed from the caller if it exists. Wait, googlePrefill doesn't have ID! Let's get it from the parent or just use a token.
       name: name.trim(),
       phone: normalizedPhone,
       email: email.trim(),
@@ -169,7 +169,6 @@ export const CitizenSignup: React.FC<CitizenSignupProps> = ({
     if (step === 2) return handleNextStep2();
 
     // Step 3 validation
-    let pwdError = null;
     const minLength = authConfig?.minLength || 8;
     if (password.length < minLength) {
       setPasswordError(authConfig?.error_message || `Password must be at least ${minLength} characters long.`);

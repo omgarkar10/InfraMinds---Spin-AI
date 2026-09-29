@@ -9,7 +9,7 @@ interface DepartmentOfficerDashboardProps {
   onRefresh: () => void;
 }
 
-export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProps> = ({ user, demands, onRefresh }) => {
+export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProps> = ({ user: _user, demands, onRefresh }) => {
   const [selectedDemand, setSelectedDemand] = useState<Proposal | null>(null);
   const [viewMode, setViewMode] = useState<"queue" | "review" | "dispatch">("queue");
   const [staffNote, setStaffNote] = useState("");
@@ -215,7 +215,7 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
                 <p style={{ fontSize: "14px", color: "#666", lineHeight: "1.6" }}>
                   <strong>Category:</strong> {selectedDemand.category} <br/>
                   <strong>Location:</strong> {selectedDemand.location.address || selectedDemand.location.district} <br/>
-                  <strong>Submitted:</strong> {new Date(selectedDemand.created_at).toLocaleDateString()} <br/>
+                  <strong>Submitted:</strong> {new Date(selectedDemand.created_at || selectedDemand.createdAt || Date.now()).toLocaleDateString()} <br/>
                   <strong>Community Votes:</strong> {selectedDemand.upvotes}
                 </p>
               </div>

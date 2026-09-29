@@ -84,13 +84,13 @@ export interface SubmitRequestPayload {
   bhashini_translated_text?: string;
 }
 
-export function getStoredDemands(...args: any[]): any[] { return []; }
-export function getStaffDemands(...args: any[]): any[] { return []; }
-export function getStaffDemandById(...args: any[]): any { return undefined; }
-export function updateStaffDecision(...args: any[]) {}
-export function updateDemandStatus(...args: any[]) {}
-export async function getRequestDetailFromBackend(...args: any[]) { return null; }
-export function getDemandById(...args: any[]) { return null; }
+export function getStoredDemands(..._args: any[]): any[] { return []; }
+export function getStaffDemands(..._args: any[]): any[] { return []; }
+export function getStaffDemandById(..._args: any[]): any { return undefined; }
+export function updateStaffDecision(..._args: any[]) {}
+export function updateDemandStatus(..._args: any[]) {}
+export async function getRequestDetailFromBackend(..._args: any[]) { return null; }
+export function getDemandById(..._args: any[]) { return null; }
 export async function submitRequestToBackend(payload: SubmitRequestPayload) {
   const token = localStorage.getItem("citizen_token");
   const userStr = localStorage.getItem("citizen_user");
@@ -165,7 +165,7 @@ export async function uploadEvidenceToBackend(file: File) {
   // In a real implementation, we would upload to Firebase Storage and return the download URL
   return { url: URL.createObjectURL(file), filename: file.name };
 }
-export async function analyzeRequestWithGemini(...args: any[]) {
+export async function analyzeRequestWithGemini(..._args: any[]) {
   return { status: "success", data: { category: "Other", issue: "Mock", priority: "Low", location: "Mock", confidence: 90, nearbyDemands: 0, redZone: false, reasoning: "Mock" } };
 }
 

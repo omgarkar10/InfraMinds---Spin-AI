@@ -322,3 +322,41 @@ eact-leaflet map and leaflet.heat heatmap layer. Added leaflet.heat to package.j
 - **Description**: Merged the `main` branch into the `niketan` branch to sync them.
 - **Files Modified**: Various files from main.
 - **Rationale**: User requested to sync `niketan` with `main`.
+
+## 2026-09-29: Pre-Deployment Readiness and TS Compilation Fixes
+- **Description**: Addressed 50+ TypeScript compilation errors by adding missing properties to GrievanceStatus, LocationData, Proposal, and StaffUser. Removed unused variables and resolved type mismatch errors across components. Removed tracked service-account.json. Hardened CORS configuration to allow only production web.app domains and localhost. Removed hardcoded API URL from bhashiniService.ts. Created .firebaserc and firebase.json for Firebase Hosting SPA support. Updated vite.config.ts for PWA icons and explicit manual chunks.
+- **Files Modified**: 
+  - frontend/dashboard/src/types/index.ts
+  - frontend/dashboard/src/components/citizen/CitizenSignup.tsx
+  - frontend/dashboard/src/components/citizen/CreateDemandForm.tsx
+  - frontend/dashboard/src/components/navigation/Navbar.tsx
+  - frontend/dashboard/src/components/navigation/StaffNavbar.tsx
+  - frontend/dashboard/src/components/staff/DepartmentOfficerDashboard.tsx
+  - frontend/dashboard/src/components/staff/FieldOfficerDashboard.tsx
+  - frontend/dashboard/src/components/staff/StaffDashboard.tsx
+  - frontend/dashboard/src/components/staff/StaffLogin.tsx
+  - frontend/dashboard/src/services/authService.ts
+  - frontend/dashboard/src/services/bhashiniService.ts
+  - frontend/dashboard/src/services/demandService.ts
+  - frontend/dashboard/vite.config.ts
+  - backend/spin_agents/api.py
+  - backend/spin_agents/auth.py
+  - frontend/dashboard/.firebaserc (Created)
+  - firebase.json (Created)
+- **Rationale**: To ensure successful build on AWS ECS/Fargate (Backend) and Firebase Hosting (Frontend SPA). Secured backend against unauthorized origin access and enforced RBAC.
+
+## 2026-09-29: Dockerfile PYTHONPATH Fix for Spin Agents Import
+- **Description**: Updated `PYTHONPATH` environment variable in `deploy/Dockerfile.api` and `deploy/Dockerfile.agent` to include `/app/backend` alongside `/app`.
+- **Files Modified**:
+  - `deploy/Dockerfile.api`
+  - `deploy/Dockerfile.agent`
+- **Rationale**: The code inside `backend/spin_agents/` uses absolute imports like `from spin_agents...`, while root imports use `schemas...`. Setting `PYTHONPATH=/app:/app/backend` ensures both top-level `schemas` and `spin_agents` are resolvable in the container runtime.
+
+## 2026-09-29: Resilient Environment Variable Parsing for Docker
+- **Description**: Added `_clean_env` and `_clean_int_env` helper functions to `backend/spin_agents/config.py` to strip leading/trailing whitespace and enclosing quotes from environment variables. Stripped literal quotes from `backend/.env`.
+- **Files Modified**:
+  - `backend/spin_agents/config.py`
+  - `backend/.env`
+- **Rationale**: Docker `--env-file` does not strip quotation marks from `.env` entries, causing `int('"450"')` to throw a `ValueError` on container startup. Sanitizing both `.env` and `config.py` prevents startup crashes in Docker, ECS, and Cloud Run environments.
+
+

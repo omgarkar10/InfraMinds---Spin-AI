@@ -11,7 +11,10 @@ export default defineConfig(({ mode }) => ({
         name: 'SPIN Staff Field Portal',
         short_name: 'SPIN Field',
         theme_color: '#0a2540',
-        icons: []
+        icons: [
+          { src: "/images/spin-icon-192.png", sizes: "192x192", type: "image/png" },
+          { src: "/images/spin-icon-512.png", sizes: "512x512", type: "image/png" }
+        ]
       },
       workbox: {
         runtimeCaching: [
@@ -59,6 +62,8 @@ export default defineConfig(({ mode }) => ({
         manualChunks: {
           react: ["react", "react-dom"],
           maps: ["@vis.gl/react-google-maps"],
+          leaflet: ["leaflet", "react-leaflet"],
+          firebase: ["firebase/app", "firebase/auth", "firebase/firestore"],
         },
       },
     },

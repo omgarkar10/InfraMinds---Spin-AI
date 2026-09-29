@@ -5,11 +5,10 @@ import {
   updateProfile,
   signInWithCredential,
   GoogleAuthProvider,
-  signInWithPopup,
-  getAdditionalUserInfo
+  signInWithPopup
 } from "firebase/auth";
 import { googleProvider, db } from "../config/firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 
 const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8080/api`;
 
@@ -145,7 +144,6 @@ export async function citizenFirebaseGoogleLogin() {
   try {
     const result = await signInWithPopup(auth, googleProvider);
     const token = await result.user.getIdToken();
-    const additionalInfo = getAdditionalUserInfo(result);
     localStorage.setItem("citizen_token", token);
     
     // Check if the user already has a complete profile in Firestore
@@ -186,13 +184,13 @@ export async function citizenFirebaseGoogleLogin() {
 
 
 
-export async function citizenForgotPassword(payload: { countryCode: string; phone: string; }) {
+export async function citizenForgotPassword(_payload: { countryCode: string; phone: string; }) {
   // Phone password reset usually requires SMS OTP in Firebase.
   // We mock this or link to a backend endpoint if using synthetic email
   throw new Error("Password reset flow needs SMS OTP integration.");
 }
 
-export async function citizenResetPassword(payload: { phone: string; password: string; }) {
+export async function citizenResetPassword(_payload: { phone: string; password: string; }) {
   throw new Error("Password reset flow needs SMS OTP integration.");
 }
 

@@ -65,7 +65,11 @@ export type GrievanceStatus =
   | "INSPECTION_SCHEDULED"
   | "ACTION_TAKEN"
   | "RESOLVED"
-  | "REOPENED";
+  | "REOPENED"
+  | "GATHERING_SUPPORT"
+  | "PENDING"
+  | "FEASIBILITY_STUDY"
+  | "APPROVED_FOR_BUDGET";
 
 export interface LocationData {
   lat: number;
@@ -75,6 +79,7 @@ export interface LocationData {
   state: string;
   pinCode: string;
   isVerified: boolean;
+  coordinates?: [number, number];
 }
 
 export interface EvidenceData {
@@ -128,7 +133,9 @@ export interface Proposal {
   department: string;
   assignedTo: string;
   createdAt: string;
+  created_at?: string;
   updatedAt: string;
+  upvotes?: number;
   timeline: TimelineEvent[];
   feedback?: GrievanceFeedback;
   staffNotes?: string[];
@@ -150,7 +157,7 @@ export interface StaffUser {
   employeeId: string;
   email: string;
   department: string;
-  role: "Staff" | "Department Officer" | "Policymaker" | "Administrator";
+  role: "Staff" | "Department Officer" | "Policymaker" | "Administrator" | "Field Officer" | "Field Inspector";
   isLoggedIn: boolean;
 }
 

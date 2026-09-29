@@ -177,7 +177,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
 
   const placesLibrary = useMapsLibrary("places");
   const autocompleteService = useRef<any>(null);
-  const placesService = useRef<any>(null);
+  // unused placesService removed
 
   useEffect(() => {
     if (!placesLibrary) return;
@@ -1574,7 +1574,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                   <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
                   <LocationMarker 
                     position={latitude && longitude ? { lat: latitude, lng: longitude } : null} 
-                    setPosition={(p: any) => { setLatitude(p.lat); setLongitude(p.lng); setGpsConfirmed(true); }} 
+                    onLocationChange={(lat, lng) => { setLatitude(lat); setLongitude(lng); setGpsConfirmed(true); }} 
                   />
                 </MapContainer>
               </div>

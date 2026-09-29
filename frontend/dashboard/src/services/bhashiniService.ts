@@ -3,7 +3,7 @@
  * All actual API keys live on the backend; this module only calls our own FastAPI endpoints.
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8081/api";
+const API_BASE = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8080/api`;
 
 export interface DetectAndTranslateResult {
   original_text: string;

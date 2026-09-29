@@ -85,7 +85,13 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=".*",
+    allow_origins=[
+        "https://spin-portal-hack-106.web.app",
+        "https://spin-portal-hack-106.firebaseapp.com",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:4173"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import "../../styles/citizen.css";
 import { setStoredStaffUser } from "../../services/demandService";
 import { staffLogin } from "../../services/authService";
-import { DEPARTMENTS } from "../../utils/departmentConfig";
 import type { StaffUser } from "../../types";
 import { PasswordField } from "../citizen/PasswordField";
 
@@ -12,11 +11,9 @@ interface StaffLoginProps {
   onSwitchToCitizen?: () => void;
 }
 
-export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel, onSwitchToCitizen }) => {
+export const StaffLogin: React.FC<StaffLoginProps> = ({ onLoginSuccess, onCancel, onSwitchToCitizen: _onSwitchToCitizen }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [department] = useState<string>(DEPARTMENTS[0]);
-  const [role] = useState<StaffUser["role"]>("Department Officer");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 

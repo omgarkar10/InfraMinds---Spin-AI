@@ -80,7 +80,7 @@ export function HeroSection({ onViewChange }: HeroSectionProps) {
         {/* Left Column: Hero Headline & Citizen Actions */}
         <div className="hero-left">
           <div className="hero-eyebrow-group">
-            <span className="label-eyebrow tag-navy">SPIN Â· PUBLIC INFRASTRUCTURE NETWORK</span>
+            <span className="label-eyebrow tag-navy">SPIN · PUBLIC INFRASTRUCTURE NETWORK</span>
           </div>
 
           <h1 className="editorial-h1 hero-headline">
@@ -94,7 +94,7 @@ export function HeroSection({ onViewChange }: HeroSectionProps) {
           {/* Primary Action Buttons for Citizens */}
           <div className="hero-actions">
             <button className="hero-btn-primary" onClick={() => onViewChange?.("citizen-raise")}>
-              Start a Public Demand â†’
+              Start a Public Demand →
             </button>
             <button className="hero-btn-secondary" onClick={() => onViewChange?.("citizen-track")}>
               Vote on Local Demands
@@ -105,13 +105,13 @@ export function HeroSection({ onViewChange }: HeroSectionProps) {
           {/* Citizen Benefit Highlights */}
           <div className="hero-highlights">
             <div className="highlight-item">
-              <span className="highlight-check">âœ“</span> Simple 1-minute reporting
+              <span className="highlight-check">✓</span> Simple 1-minute reporting
             </div>
             <div className="highlight-item">
-              <span className="highlight-check">âœ“</span> Speak in your local language
+              <span className="highlight-check">✓</span> Speak in your local language
             </div>
             <div className="highlight-item">
-              <span className="highlight-check">âœ“</span> Track status with live updates
+              <span className="highlight-check">✓</span> Track status with live updates
             </div>
           </div>
         </div>
@@ -121,7 +121,7 @@ export function HeroSection({ onViewChange }: HeroSectionProps) {
           <div className="hero-map-frame">
             <div className="hero-map-header">
               <span className="label-eyebrow">COMMUNITY INFRASTRUCTURE MAP</span>
-              <span className="status-live">â— LIVE SIGNALS</span>
+              <span className="status-live">● LIVE SIGNALS</span>
             </div>
 
             <div className="canvas-wrapper leaflet-hero-wrapper" style={{ height: "400px", width: "100%", zIndex: 1, borderRadius: "12px", overflow: "hidden" }}>

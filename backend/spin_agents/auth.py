@@ -51,8 +51,9 @@ async def get_current_user(
 
 async def require_staff(current_user: UserSchema = Depends(get_current_user)) -> UserSchema:
     """Permission dependency: ensures the caller has a staff-level role."""
-    # Since we are decoding claims from Firebase Auth, role would be there.
-    # If not present, we assume they are not staff unless specified.
-    # In a real setup, we'd verify custom claims. For now, we allow access
-    # if it's hitting a staff endpoint.
+    if current_user.role.lower() not in {r.lower() for r in STAFF_ROLES}:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Insufficient permissions. Role '{current_user.role}' is not authorized for staff endpoints.",
+        )
     return current_user
