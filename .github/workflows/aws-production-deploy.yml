@@ -62,138 +62,28 @@ jobs:
           cache-from: type=registry,ref=${{ env.ECR_REGISTRY }}/${{ env.API_SERVICE_NAME }}:cache
           cache-to: type=registry,ref=${{ env.ECR_REGISTRY }}/${{ env.API_SERVICE_NAME }}:cache,mode=max
 
-      # ── Deploy API to AWS App Runner ───────────────────────────────────────────
-      - name: Deploy API to AWS App Runner
-        id: deploy
+      # ── Download Current Task Definition ────────────────────────────────────
+      - name: Download task definition
         run: |
-          SERVICE_ARN=$(aws apprunner list-services \
-            --query "ServiceSummaryList[?ServiceName=='${{ env.API_SERVICE_NAME }}'].ServiceArn" \
-            --output text --region ${{ env.AWS_REGION }})
+          aws ecs describe-task-definition \
+            --task-definition spin-api \
+            --region ${{ env.AWS_REGION }} \
+            --query taskDefinition > task-definition.json
 
-          ENV_VARS=$(cat <<EOF
-          {
-            "DATABASE_URL": "${{ secrets.DATABASE_URL }}",
-            "JWT_SECRET": "${{ secrets.JWT_SECRET }}",
-            "GOOGLE_CLOUD_PROJECT": "${{ secrets.GOOGLE_CLOUD_PROJECT }}",
-            "GOOGLE_CLOUD_LOCATION": "${{ secrets.GOOGLE_CLOUD_LOCATION }}",
-            "GEMINI_MODEL": "gemini-2.5-flash",
-            "GEMINI_API_KEY": "${{ secrets.GEMINI_API_KEY }}",
-            "BHASHINI_API_KEY": "${{ secrets.BHASHINI_API_KEY }}",
-            "BHASHINI_USER_ID": "${{ secrets.BHASHINI_USER_ID }}",
-            "BHASHINI_ASR_SERVICE_ID": "${{ secrets.BHASHINI_ASR_SERVICE_ID }}",
-            "BHASHINI_TRANSLATION_SERVICE_ID": "${{ secrets.BHASHINI_TRANSLATION_SERVICE_ID }}",
-            "FIREBASE_PROJECT_ID": "${{ secrets.FIREBASE_PROJECT_ID }}",
-            "GATI_SHAKTI_API_KEY": "${{ secrets.GATI_SHAKTI_API_KEY }}",
-            "CORS_ORIGINS": "${{ secrets.CORS_ORIGINS }}",
-            "SPIN_BQ_DATASET": "spin_grievances",
-            "SPIN_BQ_TABLE": "citizen_complaints",
-            "SPIN_USE_REMOTE_AGENTS": "false"
-          }
-          EOF
-          )
+      # ── Render New Task Definition ──────────────────────────────────────────
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: spin-api
+          image: ${{ env.ECR_REGISTRY }}/${{ env.API_SERVICE_NAME }}:${{ github.sha }}
 
-          IMAGE_ID="${{ env.ECR_REGISTRY }}/${{ env.API_SERVICE_NAME }}:${{ github.sha }}"
-          ACCESS_ROLE_ARN="${{ secrets.APPRUNNER_ECR_ROLE_ARN }}"
-
-          if [ -z "$ACCESS_ROLE_ARN" ]; then
-            ACCESS_ROLE_ARN="arn:aws:iam::541259832110:role/AppRunnerECRAccessRole"
-          fi
-
-          if [ -z "$SERVICE_ARN" ] || [ "$SERVICE_ARN" = "None" ]; then
-            echo "Creating new App Runner service..."
-            aws apprunner create-service \
-              --service-name ${{ env.API_SERVICE_NAME }} \
-              --source-configuration "{
-                \"ImageRepository\": {
-                  \"ImageIdentifier\": \"$IMAGE_ID\",
-                  \"ImageConfiguration\": {
-                    \"Port\": \"8080\",
-                    \"RuntimeEnvironmentVariables\": $ENV_VARS
-                  },
-                  \"ImageRepositoryType\": \"ECR\"
-                },
-                \"AuthenticationConfiguration\": {
-                  \"AccessRoleArn\": \"$ACCESS_ROLE_ARN\"
-                }
-              }" \
-              --instance-configuration "Cpu=1 vCPU,Memory=2 GB" \
-              --health-check-configuration "Protocol=HTTP,Path=/,Interval=10,Timeout=5,HealthyThreshold=2,UnhealthyThreshold=3" \
-              --region ${{ env.AWS_REGION }}
-          else
-            echo "Checking status of existing service: $SERVICE_ARN"
-            for i in $(seq 1 30); do
-              STATUS=$(aws apprunner describe-service \
-                --service-arn "$SERVICE_ARN" \
-                --query "Service.Status" \
-                --output text --region ${{ env.AWS_REGION }})
-              echo "Current status: $STATUS"
-              if [ "$STATUS" = "RUNNING" ]; then
-                echo "Service is ready for update."
-                break
-              elif [ "$STATUS" = "OPERATION_IN_PROGRESS" ]; then
-                echo "Operation in progress, waiting 15s..."
-                sleep 15
-              else
-                echo "Warning: Service status is $STATUS"
-                break
-              fi
-            done
-
-            echo "Updating existing App Runner service: $SERVICE_ARN"
-            aws apprunner update-service \
-              --service-arn "$SERVICE_ARN" \
-              --source-configuration "{
-                \"ImageRepository\": {
-                  \"ImageIdentifier\": \"$IMAGE_ID\",
-                  \"ImageConfiguration\": {
-                    \"Port\": \"8080\",
-                    \"RuntimeEnvironmentVariables\": $ENV_VARS
-                  },
-                  \"ImageRepositoryType\": \"ECR\"
-                }
-              }" \
-              --region ${{ env.AWS_REGION }}
-          fi
-
-      # ── Wait for Deployment to Stabilise ──────────────────────────────────
-      - name: Wait for App Runner Deployment
-        run: |
-          SERVICE_ARN=$(aws apprunner list-services \
-            --query "ServiceSummaryList[?ServiceName=='${{ env.API_SERVICE_NAME }}'].ServiceArn" \
-            --output text --region ${{ env.AWS_REGION }})
-          echo "Polling service status for: $SERVICE_ARN"
-          for i in $(seq 1 30); do
-            STATUS=$(aws apprunner describe-service \
-              --service-arn "$SERVICE_ARN" \
-              --query "Service.Status" \
-              --output text --region ${{ env.AWS_REGION }})
-            echo "Attempt $i/30 — Status: $STATUS"
-            if [ "$STATUS" = "RUNNING" ]; then
-              echo "✅ Deployment successful — service is RUNNING"
-              break
-            fi
-            if [ "$STATUS" = "CREATE_FAILED" ] || [ "$STATUS" = "UPDATE_FAILED" ]; then
-              echo "❌ Deployment FAILED with status: $STATUS"
-              exit 1
-            fi
-            sleep 15
-          done
-
-      # ── Smoke Test ─────────────────────────────────────────────────────────
-      - name: Smoke Test — Health Endpoint
-        continue-on-error: true
-        run: |
-          SERVICE_ARN=$(aws apprunner list-services \
-            --query "ServiceSummaryList[?ServiceName=='${{ env.API_SERVICE_NAME }}'].ServiceArn" \
-            --output text --region ${{ env.AWS_REGION }})
-          SERVICE_URL=$(aws apprunner describe-service \
-            --service-arn "$SERVICE_ARN" \
-            --query "Service.ServiceUrl" \
-            --output text --region ${{ env.AWS_REGION }})
-          
-          echo "Checking application health at https://$SERVICE_URL..."
-          
-          HTTP_STATUS=$(curl -s -o response.txt -w "%{http_code}" "https://$SERVICE_URL/" || true)
-          echo "HTTP Status Code: $HTTP_STATUS"
-          echo "Response Body:"
-          cat response.txt
+      # ── Deploy to Amazon ECS ──────────────────────────────────────────────
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: spin-api-service-v2
+          cluster: spin-prod
+          wait-for-service-stability: true
