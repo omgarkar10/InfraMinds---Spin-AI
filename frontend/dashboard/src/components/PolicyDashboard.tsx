@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { HeatMap } from "./HeatMap";
 import { ExecutiveSummaryPanel } from "./ExecutiveSummaryPanel";
 import { BudgetReallocationPanel } from "./BudgetReallocationPanel";
@@ -8,6 +9,32 @@ import type { BudgetAllocation } from "../types";
 export function PolicyDashboard() {
   const { summary, redZones, loading, error, refresh, approvePolicyAction } = usePolicyData();
   const [districtFilter, setDistrictFilter] = useState<string>("");
+  const [aiBrief, setAiBrief] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  const generateAIBrief = async () => {
+    setIsAnalyzing(true);
+    try {
+      const { auth } = await import("../config/firebase");
+      const token = await auth.currentUser?.getIdToken();
+      // Assuming backend runs on 8000 or the app is served via proxy. Using relative path or typical backend URL.
+      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
+      const res = await fetch(`${baseUrl}/api/policy/ai-advisor`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      setAiBrief(data.recommendation_markdown || "No brief generated.");
+    } catch (err) {
+      console.error(err);
+      setAiBrief("Error generating AI brief.");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const districts = useMemo(
     () => [...new Set(redZones.map((z) => z.district))].sort(),
@@ -166,6 +193,24 @@ export function PolicyDashboard() {
                 <div style={{ width: "100%", background: "#eee", height: "6px", borderRadius: "3px" }}><div style={{ width: "25%", background: "var(--col-green)", height: "100%", borderRadius: "3px" }}/></div>
               </div>
             </div>
+          </div>
+
+          <div className="panel" style={{ padding: "20px" }}>
+            <div className="panel-header" style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h2 className="panel-title">AI Policy Advisor</h2>
+              <button 
+                onClick={generateAIBrief} 
+                disabled={isAnalyzing}
+                style={{ background: "var(--col-navy)", color: "white", padding: "6px 12px", border: "none", borderRadius: "4px", cursor: "pointer" }}
+              >
+                {isAnalyzing ? "Analyzing..." : "Generate AI Policy Brief"}
+              </button>
+            </div>
+            {aiBrief && (
+              <div style={{ background: "#f8f9fa", padding: "16px", borderRadius: "8px", fontSize: "14px", lineHeight: "1.6" }}>
+                <ReactMarkdown>{aiBrief}</ReactMarkdown>
+              </div>
+            )}
           </div>
 
           <BudgetReallocationPanel

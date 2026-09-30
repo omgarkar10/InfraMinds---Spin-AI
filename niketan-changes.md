@@ -577,3 +577,11 @@ ull, the backend crashed while trying to decode a malformed/missing JWT. Switchi
 ## September 30, 2026: Refactored State Administrator Dashboard
 - **Description**: Refactored the `StateAdminDashboard` component to ensure strict isolation within `StaffLayout` and removed legacy backward navigation buttons. Implemented dynamic headers in `StaffNavbar` to read "State Overview" for state administrators. Completely rebuilt the District Administrator provisioning flow, binding frontend inputs to a new `POST /api/admin/provision-district` backend endpoint that strictly scopes invites to the caller's `state_id`. Added a District Roster table (`GET /api/admin/districts`) to track provisioned accounts within the state jurisdiction.
 - **Files Updated**: `StateAdminDashboard.tsx`, `StaffNavbar.tsx`, `admin_router.py`
+
+## AI Policy Advisor Integration
+- **Description**: Implemented the AI Policy Advisor using Gemini 1.5 Flash in a new backend router and integrated it into the Policymaker Dashboard.
+- **Files Modified/Created**:
+  - backend/spin_agents/routers/policy_router.py (New)
+  - backend/spin_agents/api.py
+  - frontend/dashboard/src/components/PolicyDashboard.tsx
+- **Rationale**: Bypassed complex multi-agent loops to quickly prototype a Direct Prompt Injection approach that synthesizes verified demands into actionable markdown reports.
