@@ -515,3 +515,9 @@ ull, the backend crashed while trying to decode a malformed/missing JWT. Switchi
 - **Files updated:**
   - frontend/dashboard/src/components/citizen/CreateDemandForm.tsx
 - **Description:** Removed the automatic microphone recording that triggered immediately when a user clicked "Describe by Voice". The recording no longer starts automatically. The user must now: (1) click "Describe by Voice", (2) select their language from the dropdown, and (3) manually click "Start Speaking". This prevents confusing audio captures before the user has configured their language.
+
+### Fix Broken bhashiniService.ts try/catch Nesting (Critical Bug)
+- **Files updated:**
+  - frontend/dashboard/src/services/bhashiniService.ts
+  - frontend/dashboard/src/utils/audioConversion.ts
+- **Description:** Completely rewrote bhashiniService.ts. The previous try/catch blocks were malformed — the response.ok check and return were placed OUTSIDE the try block but BEFORE the catch, meaning esponse was undefined after a network failure and all three API functions (detectAndTranslate, translateText, speechToText) were broken. Rewrote audioConversion.ts to first decode at the browser native sample rate, then resample to 16kHz mono via OfflineAudioContext instead of forcing sampleRate in the constructor (which caused decodeAudioData to throw in Chrome/Edge).
