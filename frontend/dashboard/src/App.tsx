@@ -109,7 +109,7 @@ function AppInner() {
   };
 
   const isLanding = location.pathname === "/";
-  const isStaffView = location.pathname.startsWith("/staff-") || location.pathname.startsWith("/admin-");
+  const isStaffView = location.pathname.startsWith("/staff") || location.pathname.startsWith("/admin");
 
   // Redirect Stranded Staff
   if (isLanding && staffUser.isLoggedIn && staffUser.role) {
@@ -178,8 +178,8 @@ function AppInner() {
         
         <Route element={<StaffLayout user={staffUser as StaffUser} onLogout={handleStaffLogout} />}>
           <Route path="/staff-dashboard" element={<RequireStaffAuth><StaffDashboard user={staffUser as StaffUser} onNavigate={(v) => navigate(v)} /></RequireStaffAuth>} />
-          <Route path="/admin-dashboard" element={<RequireStaffAuth><PolicyDashboard /></RequireStaffAuth>} />
-          <Route path="/admin/district" element={<RequireStaffAuth><DistrictAdminDashboard /></RequireStaffAuth>} />
+          <Route path="/admin-dashboard" element={<RequireStaffAuth><PolicyDashboard user={staffUser as StaffUser} /></RequireStaffAuth>} />
+          <Route path="/admin/district" element={<RequireStaffAuth><DistrictAdminDashboard user={staffUser as StaffUser} /></RequireStaffAuth>} />
           <Route path="/admin/state" element={<RequireStaffAuth><StateAdminDashboard /></RequireStaffAuth>} />
           <Route path="/admin/platform" element={<RequireStaffAuth><PlatformAdminDashboard /></RequireStaffAuth>} />
         </Route>

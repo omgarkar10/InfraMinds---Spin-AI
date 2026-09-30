@@ -25,6 +25,27 @@ export function StaffLayout({ user, allowedRoles, onLogout }: StaffLayoutProps) 
     return <Navigate to="/staff-dashboard" replace />;
   }
 
+  const requiresDistrict = ["field_officer", "Field Officer", "Field Inspector", "department_officer", "policymaker", "Policymaker", "district_admin"];
+  const isMissingDistrict = requiresDistrict.includes(user.role) && !user.district_id;
+
+  if (isMissingDistrict) {
+    return (
+      <div className="staff-layout-wrapper" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "var(--col-bg)" }}>
+        <StaffNavbar user={user} onViewChange={(v) => navigate(v)} onLogout={onLogout} />
+        <main className="staff-main-content" style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+          <div style={{ textAlign: "center", padding: "40px", background: "white", borderRadius: "12px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", maxWidth: "500px" }}>
+            <div style={{ fontSize: "48px", marginBottom: "16px" }}>⚠️</div>
+            <h2 style={{ color: "var(--col-red)", marginBottom: "12px", marginTop: 0 }}>Unassigned Jurisdiction</h2>
+            <p style={{ color: "var(--col-text-mid)", marginBottom: "24px", lineHeight: "1.6" }}>
+              Your account has not been assigned a specific geographic jurisdiction. Multi-tenant isolation rules require a strict district assignment to view or act on civic infrastructure data.
+            </p>
+            <p style={{ fontSize: "14px", color: "#666" }}>Please contact your State or Platform Administrator to provision your account.</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="staff-layout-wrapper" style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "var(--col-bg)" }}>
       <StaffNavbar

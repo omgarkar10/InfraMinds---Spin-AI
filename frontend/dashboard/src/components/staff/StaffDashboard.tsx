@@ -31,9 +31,9 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user }) => {
       return <FieldOfficerDashboard user={user} />;
     case "policymaker":
     case "Policymaker":
-      return <PolicyDashboard />;
+      return <PolicyDashboard user={user} />;
     case "district_admin": 
-      return <DistrictAdminDashboard />;
+      return <DistrictAdminDashboard user={user} />;
     case "state_admin": 
       return <StateAdminDashboard />;
     case "platform_admin": 

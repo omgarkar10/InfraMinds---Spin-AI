@@ -15,6 +15,7 @@ class UserSchema(BaseModel):
     department_id: Optional[str] = None
     state_id: Optional[str] = None
     district_id: Optional[str] = None
+    district_display_name: Optional[str] = None
     assigned_wards: List[str] = Field(default_factory=list)
     status: str = "active"
     created_at: datetime = Field(default_factory=datetime.utcnow)

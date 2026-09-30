@@ -7,7 +7,12 @@ export const PlatformAdminDashboard: React.FC = () => {
   const [health, setHealth] = useState<any>(null);
 
   useEffect(() => {
-    loadHealth();
+    const unsubscribe = auth.onIdTokenChanged((user) => {
+      if (user) {
+        loadHealth();
+      }
+    });
+    return () => unsubscribe();
   }, []);
 
   const loadHealth = async () => {

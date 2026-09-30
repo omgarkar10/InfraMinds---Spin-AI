@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
-from typing import List
+from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import List, Optional
 from spin_agents.auth import get_current_user
 from spin_agents.models import UserSchema
 from spin_agents.rbac import has_min_role
@@ -16,26 +16,29 @@ def require_admin(min_tier: str):
         return user
     return role_checker
 
-@router.get("/staff", response_model=List[dict])
+@router.get("/district/staff", response_model=List[dict])
 async def list_district_staff(user: UserSchema = Depends(require_admin("district_admin"))):
-    query = db.collection("users").where("district_id", "==", user.district_id)
-    # Exclude platform admins and state admins from being listed by district admin
-    # Simple workaround: fetch all and filter locally for district-level roles
-    docs = query.get()
+    if not user.district_id:
+        return []
+    docs = db.collection("users").where("district_id", "==", user.district_id).stream()
     staff = []
     for doc in docs:
         data = doc.to_dict()
-        if data.get("role") in ["district_admin", "policymaker", "department_officer", "field_officer"]:
+        if data.get("role") in ["policymaker", "department_officer", "field_officer"]:
             staff.append(data)
     return staff
 
-@router.post("/staff/invite")
-async def invite_staff(payload: dict, user: UserSchema = Depends(require_admin("district_admin"))):
+@router.post("/district/invite")
+async def invite_district_staff(payload: dict, user: UserSchema = Depends(require_admin("district_admin"))):
     target_role = payload.get("role")
     email = payload.get("email")
-    dept_id = payload.get("department_id", "all")
-    if not has_min_role(user.role, target_role) or target_role == user.role:
-        raise HTTPException(status_code=403, detail="Cannot invite roles equal or higher to yours.")
+    dept_id = payload.get("department_id")
+    
+    if target_role not in ["policymaker", "department_officer", "field_officer"]:
+        raise HTTPException(status_code=400, detail="Invalid role specified.")
+    
+    if dept_id not in ["water", "electricity", "roads", "garbage", "drainage", "other", "all"]:
+        raise HTTPException(status_code=400, detail="Invalid canonical department enum.")
     
     from firebase_admin import auth
     try:
@@ -47,7 +50,8 @@ async def invite_staff(payload: dict, user: UserSchema = Depends(require_admin("
         custom_claims = {
             "role": target_role,
             "department": dept_id,
-            "district_id": user.district_id
+            "district_id": user.district_id,
+            "state_id": user.state_id
         }
         auth.set_custom_user_claims(new_user.uid, custom_claims)
         
@@ -58,6 +62,7 @@ async def invite_staff(payload: dict, user: UserSchema = Depends(require_admin("
             "role": target_role,
             "department_id": dept_id,
             "district_id": user.district_id,
+            "state_id": user.state_id,
             "is_verified_resident": True,
             "status": "active"
         })
@@ -65,66 +70,47 @@ async def invite_staff(payload: dict, user: UserSchema = Depends(require_admin("
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/metrics")
-async def get_metrics(user: UserSchema = Depends(require_admin("district_admin"))):
-    if not user.district_id or user.district_id == "all":
-        # Handle state/platform admin viewing everything
-        docs = db.collection("demands").stream()
-    else:
-        # Currently the mock data might not have `district` matching perfectly.
-        docs = db.collection("demands").where("district", "==", user.district_id).stream()
+@router.get("/district/stats")
+async def get_district_stats(user: UserSchema = Depends(require_admin("district_admin"))):
+    if not user.district_id:
+        return {"total_demands": 0, "unassigned_surveys": 0, "pending_review": 0, "escalated_policy": 0}
         
+    docs = db.collection("demands").where("district", "==", user.district_id).stream()
+    
     metrics = {
-        "total_grievances": 0,
-        "unassigned_field_surveys": 0,
-        "pending_department_review": 0,
-        "escalated_to_policy": 0
+        "total_demands": 0,
+        "unassigned_surveys": 0,
+        "pending_review": 0,
+        "escalated_policy": 0
     }
     
     for doc in docs:
         d = doc.to_dict()
-        metrics["total_grievances"] += 1
+        metrics["total_demands"] += 1
         status = d.get("status", "")
         if status in ["gathering_support", "under_review", "field_survey"]:
             if not d.get("assigned_officer_id"):
-                metrics["unassigned_field_surveys"] += 1
+                metrics["unassigned_surveys"] += 1
         if status == "feasibility_reported":
-            metrics["pending_department_review"] += 1
+            metrics["pending_review"] += 1
         if status == "escalated_to_policy":
-            metrics["escalated_to_policy"] += 1
+            metrics["escalated_policy"] += 1
             
-    return {
-        "district": user.district_id or "All",
-        "metrics": metrics
-    }
+    return metrics
 
-@router.patch("/staff/{uid}")
-async def update_staff(uid: str, payload: dict, user: UserSchema = Depends(require_admin("district_admin"))):
+@router.post("/district/staff/{uid}/suspend")
+async def toggle_staff_suspension(uid: str, user: UserSchema = Depends(require_admin("district_admin"))):
     doc_ref = db.collection("users").document(uid)
     doc = doc_ref.get()
     if not doc.exists:
         raise HTTPException(status_code=404, detail="Staff not found")
     data = doc.to_dict()
-    if data.get("district_id") != user.district_id and not has_min_role(user.role, "state_admin"):
+    if data.get("district_id") != user.district_id:
         raise HTTPException(status_code=403, detail="Cross-district edits not allowed")
     
-    update_data = {}
-    if "department_id" in payload: update_data["department_id"] = payload["department_id"]
-    if "role" in payload:
-        if not has_min_role(user.role, payload["role"]):
-            raise HTTPException(status_code=403, detail="Cannot elevate to this role.")
-        update_data["role"] = payload["role"]
-    if "assigned_wards" in payload: update_data["assigned_wards"] = payload["assigned_wards"]
-    
-    if update_data:
-        doc_ref.update(update_data)
-    return {"status": "success"}
-
-@router.delete("/staff/{uid}")
-async def deactivate_staff(uid: str, user: UserSchema = Depends(require_admin("district_admin"))):
-    doc_ref = db.collection("users").document(uid)
-    doc_ref.update({"status": "suspended"})
-    return {"status": "suspended"}
+    new_status = "active" if data.get("status") == "suspended" else "suspended"
+    doc_ref.update({"status": new_status})
+    return {"status": "success", "new_status": new_status}
 
 @router.get("/districts")
 async def list_districts(user: UserSchema = Depends(require_admin("state_admin"))):
@@ -172,6 +158,25 @@ async def provision_district(payload: dict, user: UserSchema = Depends(require_a
         return {"status": "success", "message": f"Provisioned district_admin for {district_name}"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+def is_district_in_state(district_id: str, state_id: str) -> bool:
+    # In a real app, this would query a canonical location registry
+    # For now, allow any district if they match the user's state_id in the DB
+    return True
+
+@router.get("/state/demands")
+async def get_state_demands(
+    district_id: Optional[str] = Query(None), 
+    user: UserSchema = Depends(require_admin("state_admin"))
+):
+    query = db.collection("demands").where("state", "==", user.state_id)
+    
+    if district_id and district_id != "all":
+        if not is_district_in_state(district_id, user.state_id):
+            raise HTTPException(status_code=403, detail="District outside jurisdiction")
+        query = query.where("district_id", "==", district_id)
+        
+    return [d.to_dict() for d in query.stream()]
 
 @router.patch("/demands/{id}/reroute")
 async def reroute_demand(id: str, payload: dict, user: UserSchema = Depends(require_admin("district_admin"))):

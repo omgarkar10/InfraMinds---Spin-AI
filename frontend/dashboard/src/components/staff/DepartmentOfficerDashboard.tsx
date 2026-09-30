@@ -1,14 +1,7 @@
 import React, { useState, useEffect } from "react";
 import type { StaffUser } from "../../types";
 import { DemandKPIBar } from "./DemandKPIBar";
-
-// API Response Types
-interface QueueMetrics {
-  total_demands: number;
-  pending_action: number;
-  in_field_survey: number;
-  ready_for_escalation: number;
-}
+import { auth } from "../../config/firebase";
 
 interface Officer {
   id: string;
@@ -21,31 +14,55 @@ interface DepartmentOfficerDashboardProps {
   user: StaffUser;
 }
 
-export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProps> = ({ user: _user }) => {
-  const [demands, setDemands] = useState<any[]>([]);
-  const [metrics, setMetrics] = useState<QueueMetrics | null>(null);
+export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProps> = ({ user }) => {
+  const [thresholdQueue, setThresholdQueue] = useState<any[]>([]);
+  const [emergingQueue, setEmergingQueue] = useState<any[]>([]);
+  const [reviewQueue, setReviewQueue] = useState<any[]>([]);
+  const [metrics, setMetrics] = useState<any>(null);
   const [officers, setOfficers] = useState<Officer[]>([]);
   const [selectedDemand, setSelectedDemand] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<"queue" | "review" | "dispatch">("queue");
   const [queueTab, setQueueTab] = useState<"threshold" | "emerging">("threshold");
   const [staffNote, setStaffNote] = useState("");
   const [authError, setAuthError] = useState("");
-  // isLoading removed
+
+  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
 
   useEffect(() => {
-    fetchQueue();
-    fetchOfficers();
+    const unsubscribe = auth.onIdTokenChanged((user) => {
+      if (user) {
+        fetchStats();
+        fetchQueue();
+      }
+    });
+    return () => unsubscribe();
   }, []);
+
+  const fetchStats = async () => {
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch(`${API_BASE}/staff/department/stats`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setMetrics(await res.json());
+      }
+    } catch (err) {
+      console.error("Failed to load metrics", err);
+    }
+  };
 
   const fetchQueue = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/staff/demands/queue`, {
-        headers: { "Authorization": `Bearer ${localStorage.getItem("staff_token")}` }
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch(`${API_BASE}/staff/demands/queue`, {
+        headers: { "Authorization": `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
-        setDemands(data.demands || []);
-        setMetrics(data.metrics || null);
+        setThresholdQueue(data.threshold_queue || []);
+        setEmergingQueue(data.emerging_queue || []);
+        setReviewQueue(data.review_queue || []);
       }
     } catch (err) {
       console.error(err);
@@ -55,8 +72,9 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
 
   const fetchOfficers = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/staff/field-officers`, {
-        headers: { "Authorization": `Bearer ${localStorage.getItem("staff_token")}` }
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch(`${API_BASE}/staff/field-officers`, {
+        headers: { "Authorization": `Bearer ${token}` }
       });
       if (res.ok) {
         setOfficers(await res.json());
@@ -66,20 +84,28 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
     }
   };
 
-  const handleDecision = async (action: "approve_to_policy" | "reinspect" | "reject") => {
+  const openDispatch = (demand: any) => {
+    setSelectedDemand(demand);
+    setViewMode("dispatch");
+    fetchOfficers();
+  };
+
+  const handleDecision = async (action: "approve" | "reinspect" | "reject") => {
     if (!selectedDemand) return;
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/staff/investigation/${selectedDemand.id}/decision`, {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch(`${API_BASE}/staff/investigation/${selectedDemand.id}/review`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("staff_token")}` 
+          "Authorization": `Bearer ${token}` 
         },
-        body: JSON.stringify({ action, reason: staffNote || "No notes provided." })
+        body: JSON.stringify({ decision: action, notes: staffNote || "No notes provided." })
       });
       if (res.ok) {
         setStaffNote("");
         fetchQueue();
+        fetchStats();
         setViewMode("queue");
       } else {
         setAuthError("Failed to submit decision.");
@@ -92,40 +118,33 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
   const handleAssignFieldOfficer = async (officerId: string) => {
     if (!selectedDemand) return;
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/staff/investigation/${selectedDemand.id}/assign`, {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch(`${API_BASE}/staff/investigation/${selectedDemand.id}/assign`, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("staff_token")}` 
+          "Authorization": `Bearer ${token}` 
         },
         body: JSON.stringify({ 
-          field_officer_id: officerId, 
-          notes: staffNote || "Please conduct site feasibility survey.",
-          deadline: new Date(Date.now() + 86400000 * 3).toISOString() // +3 days
+          field_officer_uid: officerId, 
+          notes: staffNote || "Please conduct site feasibility survey."
         })
       });
       if (res.ok) {
         setStaffNote("");
         fetchQueue();
+        fetchStats();
         setViewMode("queue");
+      } else {
+        const errorData = await res.json();
+        setAuthError(errorData.detail || "Failed to assign.");
       }
     } catch (err) {
       console.error(err);
     }
   };
 
-  const activeDemands = demands.filter(d => d.status === "gathering_support" || d.status === "under_review");
-  const underReviewDemands = demands.filter(d => d.status === "field_survey" || d.status === "feasibility_reported");
-
-  const VOTE_THRESHOLD = 50;
-  const thresholdDemands = activeDemands.filter(d => (d.vote_count || 0) >= VOTE_THRESHOLD);
-  const emergingDemands = activeDemands.filter(d => (d.vote_count || 0) < VOTE_THRESHOLD).sort((a, b) => {
-    const aDays = Math.max(1, (Date.now() - new Date(a.created_at || Date.now()).getTime()) / 86400000);
-    const bDays = Math.max(1, (Date.now() - new Date(b.created_at || Date.now()).getTime()) / 86400000);
-    return ((b.vote_count || 0) / bDays) - ((a.vote_count || 0) / aDays);
-  });
-
-  const displayedQueue = queueTab === "threshold" ? thresholdDemands : emergingDemands;
+  const displayedQueue = queueTab === "threshold" ? thresholdQueue : emergingQueue;
 
   return (
     <div style={{ paddingTop: "20px" }}>
@@ -138,7 +157,7 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
 
       {viewMode === "queue" && (
         <>
-          <DemandKPIBar proposals={demands} isLiveApi={true} />
+          <DemandKPIBar metrics={metrics} isLiveApi={true} />
           
           <div className="panel" style={{ marginTop: "24px" }}>
             <div className="panel-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -147,16 +166,16 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
                   onClick={() => setQueueTab("threshold")}
                   style={{ background: "none", border: "none", borderBottom: queueTab === "threshold" ? "3px solid var(--col-navy)" : "3px solid transparent", fontSize: "20px", fontWeight: 700, paddingBottom: "8px", cursor: "pointer", color: queueTab === "threshold" ? "var(--col-navy)" : "var(--col-text-muted)" }}
                 >
-                  Threshold Trigger Queue
+                  Threshold Trigger Queue {user.district_display_name ? `— ${user.district_display_name}` : ""}
                 </button>
                 <button 
                   onClick={() => setQueueTab("emerging")}
                   style={{ background: "none", border: "none", borderBottom: queueTab === "emerging" ? "3px solid var(--col-navy)" : "3px solid transparent", fontSize: "20px", fontWeight: 700, paddingBottom: "8px", cursor: "pointer", color: queueTab === "emerging" ? "var(--col-navy)" : "var(--col-text-muted)" }}
                 >
-                  Emerging Queue
+                  Emerging Queue {user.district_display_name ? `— ${user.district_display_name}` : ""}
                 </button>
               </div>
-              <span className="panel-badge" style={{ background: "var(--col-red)", color: "#fff" }}>{queueTab === "threshold" ? thresholdDemands.length : emergingDemands.length} Requires Action</span>
+              <span className="panel-badge" style={{ background: "var(--col-red)", color: "#fff" }}>{queueTab === "threshold" ? thresholdQueue.length : emergingQueue.length} Requires Action</span>
             </div>
             
             <div className="table-responsive">
@@ -196,9 +215,9 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
                           <button 
                             className="btn-outline" 
                             style={{ padding: "4px 12px", fontSize: "11px", borderColor: "var(--col-navy)", color: "var(--col-navy)" }}
-                            onClick={() => { setSelectedDemand(d); setViewMode("dispatch"); }}
+                            onClick={() => openDispatch(d)}
                           >
-                            Dispatch Field Officer
+                            Dispatch Survey
                           </button>
                         </td>
                       </tr>
@@ -212,7 +231,7 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
           <div className="panel" style={{ marginTop: "24px" }}>
             <div className="panel-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <h2 className="panel-title">Report Review Workspace</h2>
-              <span className="panel-badge" style={{ background: "var(--col-orange)", color: "#fff" }}>{metrics?.ready_for_escalation || underReviewDemands.length} Pending Review</span>
+              <span className="panel-badge" style={{ background: "var(--col-orange)", color: "#fff" }}>{reviewQueue.length} Pending Review</span>
             </div>
             <div className="table-responsive">
               <table className="portal-table">
@@ -225,28 +244,24 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
                   </tr>
                 </thead>
                 <tbody>
-                  {underReviewDemands.length === 0 ? (
+                  {reviewQueue.length === 0 ? (
                     <tr>
-                      <td colSpan={4} style={{ textAlign: "center", padding: "20px", color: "var(--col-text-muted)" }}>No active feasibility studies.</td>
+                      <td colSpan={4} style={{ textAlign: "center", padding: "20px", color: "var(--col-text-muted)" }}>No active feasibility reports to review.</td>
                     </tr>
                   ) : (
-                    underReviewDemands.map(d => (
+                    reviewQueue.map(d => (
                       <tr key={d.id}>
                         <td style={{ fontWeight: 600, color: "var(--col-navy)" }}>{d.id.substring(0, 8)}</td>
                         <td><span style={{ fontSize: "12px", color: "#666" }}>{d.assigned_officer_id || "Field Officer"}</span></td>
                         <td><span className={`status-badge status-progress`}>{d.status.replace(/_/g, " ")}</span></td>
                         <td>
-                          {d.status === "feasibility_reported" ? (
-                            <button 
-                              className="btn-outline" 
-                              style={{ padding: "4px 12px", fontSize: "11px", borderColor: "var(--col-orange)", background: "var(--col-orange)", color: "#fff" }}
-                              onClick={() => { setSelectedDemand(d); setViewMode("review"); }}
-                            >
-                              Review & Decide
-                            </button>
-                          ) : (
-                            <span style={{ fontSize: "12px", color: "#666" }}>Awaiting Report</span>
-                          )}
+                          <button 
+                            className="btn-outline" 
+                            style={{ padding: "4px 12px", fontSize: "11px", borderColor: "var(--col-orange)", background: "var(--col-orange)", color: "#fff" }}
+                            onClick={() => { setSelectedDemand(d); setViewMode("review"); }}
+                          >
+                            Review Report
+                          </button>
                         </td>
                       </tr>
                     ))
@@ -285,8 +300,8 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
                   placeholder="Enter specific items to verify (e.g. pipe width, street access)..."
                   style={{ width: "100%", height: "60px", marginBottom: "16px", resize: "none" }}
                 />
-                <h4 style={{ margin: "0 0 10px 0", fontSize: "12px", color: "var(--col-text-muted)", textTransform: "uppercase" }}>Available Officers (Zone)</h4>
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <h4 style={{ margin: "0 0 10px 0", fontSize: "12px", color: "var(--col-text-muted)", textTransform: "uppercase" }}>Available Officers</h4>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px", maxHeight: "200px", overflowY: "auto" }}>
                   {officers.length === 0 ? (
                     <div style={{ fontSize: "13px", color: "var(--col-red)" }}>No field officers found in your department.</div>
                   ) : (
@@ -356,20 +371,20 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
                     style={{ width: "100%", height: "80px", marginBottom: "16px", resize: "none" }}
                   />
                   
-                  <div style={{ display: "flex", gap: "10px" }}>
+                  <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                     <button 
-                      onClick={() => handleDecision("approve_to_policy")} 
+                      onClick={() => handleDecision("approve")} 
                       className="service-card-btn" 
-                      style={{ flex: 1, background: "var(--col-green)", justifyContent: "center", padding: "12px" }}
+                      style={{ flex: 1, background: "var(--col-green)", justifyContent: "center", padding: "12px", minWidth: "200px" }}
                     >
-                      ✓ Approve to Policymaker
+                      ✓ Approve to Policy
                     </button>
                     <button 
                       onClick={() => handleDecision("reject")} 
                       className="service-card-btn" 
-                      style={{ flex: 1, background: "var(--col-red)", justifyContent: "center", padding: "12px" }}
+                      style={{ flex: 1, background: "var(--col-red)", justifyContent: "center", padding: "12px", minWidth: "120px" }}
                     >
-                      ✕ Reject Demand
+                      ✕ Reject
                     </button>
                   </div>
                   <button 
@@ -377,7 +392,7 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
                     className="btn-outline" 
                     style={{ width: "100%", marginTop: "10px", padding: "10px", borderColor: "var(--col-border)" }}
                   >
-                    Request Re-inspection
+                    Request Re-survey
                   </button>
                 </div>
               </div>

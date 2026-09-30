@@ -161,6 +161,7 @@ export interface StaffUser {
   isLoggedIn: boolean;
   state_id?: string;
   district_id?: string;
+  district_display_name?: string;
   department_id?: string;
   assigned_wards?: string[];
   status?: string;

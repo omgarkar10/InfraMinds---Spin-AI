@@ -5,6 +5,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
+import { auth } from "../../config/firebase";
 
 // Fix Leaflet's default icon path issues with webpack/vite
 let DefaultIcon = L.icon({
@@ -44,13 +45,18 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
   const mapRef = useRef<any>(null);
 
   useEffect(() => {
-    fetchAssignedDemands();
+    const unsubscribe = auth.onIdTokenChanged((user) => {
+      if (user) {
+        fetchAssignedDemands();
+      }
+    });
 
     const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
     return () => {
+      unsubscribe();
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
@@ -59,8 +65,9 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
   const fetchAssignedDemands = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/staff/demands/assigned`, {
-        headers: { "Authorization": `Bearer ${localStorage.getItem("staff_token")}` }
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/staff/field/tasks`, {
+        headers: { "Authorization": `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
@@ -118,10 +125,11 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
       formData.append("safetyConstraints", String(checklist.safetyConstraints));
       formData.append("estimatedEffort", checklist.estimatedEffort);
       
+      const token = await auth.currentUser?.getIdToken();
       const res = await fetch(`${import.meta.env.VITE_API_URL}/staff/investigation/${selectedDemand.id}/report`, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${localStorage.getItem("staff_token")}`
+          "Authorization": `Bearer ${token}`
         },
         body: formData
       });
@@ -144,31 +152,44 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
   const filteredDemands = demands.filter(d => {
     if (activeTab === "assigned") return d.status === "field_survey" || d.status === "assigned";
     if (activeTab === "progress") return d.status === "feasibility_reported";
-    return d.status === "escalated_to_policy" || d.status === "resolved";
+    return d.status === "escalated_to_policy" || d.status === "resolved" || d.status === "approved_for_budget";
   });
 
-  const centerLat = filteredDemands.length > 0 && filteredDemands[0].location?.coordinates 
-    ? filteredDemands[0].location.coordinates[0] 
-    : 28.6139;
-  const centerLng = filteredDemands.length > 0 && filteredDemands[0].location?.coordinates 
-    ? filteredDemands[0].location.coordinates[1] 
-    : 77.2090;
+  const extractCoords = (d: any) => {
+    if (d.location && d.location.coordinates) return [d.location.coordinates[0], d.location.coordinates[1]];
+    if (d.lat && d.lng) return [d.lat, d.lng];
+    return null;
+  };
+
+  const centerCoords = filteredDemands.length > 0 && extractCoords(filteredDemands[0]) 
+    ? extractCoords(filteredDemands[0])
+    : [28.6139, 77.2090]; // Fallback to generic map center if empty
 
   useEffect(() => {
     if (mapRef.current && filteredDemands.length > 0) {
-      const bounds = L.latLngBounds(
-        filteredDemands
-          .filter(d => d.location && d.location.coordinates)
-          .map(d => [d.location.coordinates[0], d.location.coordinates[1]])
-      );
-      if (bounds.isValid()) {
-        mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+      const coords = filteredDemands.map(extractCoords).filter(c => c !== null);
+      if (coords.length > 0) {
+        const bounds = L.latLngBounds(coords);
+        if (bounds.isValid()) {
+          mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+        }
       }
     }
   }, [filteredDemands, viewMode]);
 
   return (
     <div className="citizen-portal-container" style={{ padding: "0", background: "#f8f9fa", minHeight: "calc(100vh - 60px)" }}>
+      <style>{`
+        @media (min-width: 768px) {
+          .mobile-only { display: none !important; }
+          .desktop-pane { display: block !important; }
+        }
+        @media (max-width: 767px) {
+          .desktop-pane-list { display: var(--mobile-list-display) !important; }
+          .desktop-pane-map { display: var(--mobile-map-display) !important; }
+        }
+      `}</style>
+
       {/* Offline Banner */}
       {isOffline && (
         <div style={{ background: "var(--col-orange)", color: "#fff", padding: "10px", textAlign: "center", fontSize: "14px", fontWeight: 600 }}>
@@ -183,10 +204,10 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
         {viewMode !== "report" && (
           <div style={{ padding: "20px 20px 0 20px", borderBottom: "1px solid #eee" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-              <h2 style={{ fontSize: "20px", margin: 0, color: "var(--col-navy)" }}>Active Field Queue</h2>
+              <h2 style={{ fontSize: "20px", margin: 0, color: "var(--col-navy)" }}>Active Field Queue {user.district_display_name ? `— ${user.district_display_name}` : ""}</h2>
               
               {/* Mobile Only Toggle */}
-              <div className="md:hidden">
+              <div className="mobile-only">
                 <button 
                   onClick={() => setViewMode(viewMode === "list" ? "map" : "list")}
                   style={{ background: "none", border: "1px solid var(--col-navy)", color: "var(--col-navy)", padding: "6px 12px", borderRadius: "20px", fontSize: "12px", fontWeight: 600 }}
@@ -220,7 +241,17 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
         )}
 
         {/* View Routing */}
-        <div style={{ flex: 1, position: "relative" }}>
+        <div 
+          style={{ flex: 1, position: "relative" }} 
+          {...{ 
+            style: { 
+              flex: 1, 
+              position: "relative",
+              "--mobile-list-display": viewMode === "list" ? "block" : "none",
+              "--mobile-map-display": viewMode === "map" ? "block" : "none"
+            } as React.CSSProperties 
+          }}
+        >
           
           {/* DESKTOP SPLIT VIEW OR MOBILE LIST/MAP */}
           {viewMode !== "report" && (
@@ -228,12 +259,12 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
               
               {/* Left Pane: List View (Hidden on mobile if map view is active) */}
               <div 
+                className="desktop-pane desktop-pane-list"
                 style={{ 
                   flex: "0 0 35%", 
                   borderRight: "1px solid #eee", 
                   overflowY: "auto", 
                   padding: "20px",
-                  display: window.innerWidth < 768 && viewMode === "map" ? "none" : "block",
                   width: window.innerWidth < 768 ? "100%" : "auto"
                 }}
               >
@@ -263,28 +294,29 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
 
               {/* Right Pane: Map View (Hidden on mobile if list view is active) */}
               <div 
+                className="desktop-pane desktop-pane-map"
                 style={{ 
                   flex: 1, 
                   height: "100%", 
-                  display: window.innerWidth < 768 && viewMode === "list" ? "none" : "block",
                   width: window.innerWidth < 768 ? "100%" : "auto"
                 }}
               >
                 <MapContainer
-                  center={[centerLat, centerLng]}
+                  center={centerCoords as [number, number]}
                   zoom={12}
                   style={{ height: "100%", width: "100%" }}
                   ref={mapRef}
                 >
                   <TileLayer
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                   />
-                  {filteredDemands.map((demand) => (
-                    demand.location?.coordinates && (
+                  {filteredDemands.map((demand) => {
+                    const coords = extractCoords(demand);
+                    return coords && (
                       <Marker 
                         key={demand.id} 
-                        position={[demand.location.coordinates[0], demand.location.coordinates[1]]}
+                        position={coords as [number, number]}
                         eventHandlers={{
                           click: () => {
                             setSelectedDemand(demand);
@@ -297,8 +329,8 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
                           {demand.location?.address || demand.address}
                         </Popup>
                       </Marker>
-                    )
-                  ))}
+                    );
+                  })}
                 </MapContainer>
               </div>
             </div>

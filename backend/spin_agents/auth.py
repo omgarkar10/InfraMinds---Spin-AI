@@ -9,7 +9,7 @@ from spin_agents.db import db
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 security = HTTPBearer(auto_error=False)
 
-STAFF_ROLES = {"staff", "admin", "department officer", "policymaker", "field_officer", "district_admin", "state_admin", "platform_admin"}
+STAFF_ROLES = {"staff", "admin", "department_officer", "policymaker", "field_officer", "district_admin", "state_admin", "platform_admin"}
 
 def enhance_staff_user(user: UserSchema, email: str) -> UserSchema:
     if not email or not email.endswith("@gov.in"):
@@ -50,7 +50,7 @@ async def get_current_user(
         )
     token = credentials.credentials
     try:
-        decoded_token = firebase_auth.verify_id_token(token)
+        decoded_token = firebase_auth.verify_id_token(token, clock_skew_seconds=60)
         user_id = decoded_token.get("uid")
         role = decoded_token.get("role", "citizen")
         
@@ -69,6 +69,8 @@ async def get_current_user(
             user.department_id = data.get("department_id", user.department_id)
             user.state_id = data.get("state_id")
             user.district_id = data.get("district_id")
+            if user.district_id:
+                user.district_display_name = user.district_id.title()
             user.assigned_wards = data.get("assigned_wards", [])
             
         return user
@@ -93,6 +95,8 @@ async def get_current_user(
                 user.department_id = data.get("department_id", user.department_id)
                 user.state_id = data.get("state_id")
                 user.district_id = data.get("district_id")
+                if user.district_id:
+                    user.district_display_name = user.district_id.title()
                 user.assigned_wards = data.get("assigned_wards", [])
                 
             return user
