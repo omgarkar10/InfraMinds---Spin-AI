@@ -9,6 +9,7 @@ import {
 } from "../../services/demandService";
 import { translateText, speechToText } from "../../services/bhashiniService";
 import { convertWebmToWav, pickRecorderMimeType, SilentRecordingError } from "../../utils/audioConversion";
+import { classifyDemandText } from "../../utils/classifyDemand";
 import type { CitizenUser } from "../../types";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -577,9 +578,62 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
     }
   };
 
-  // SPIN AI Interpretation Trigger
-  const handleAnalyzeWithGemini = async () => {
-    const textToAnalyze = (description.trim() || speechTranscript.trim());
+  // SPIN AI Interpretation Trigger — uses English translation first; local classifier
+  // fills the summary. Gemini is only called when the local match is weak.
+  const applyClassification = useCallback((data: {
+    request_type?: string;
+    category?: string;
+    specific_issue?: string;
+    description?: string;
+    state?: string | null;
+    district?: string | null;
+    landmark?: string | null;
+    reason?: string | null;
+    intended_beneficiaries?: string | null;
+    detected_language?: string;
+  }) => {
+    if (data.request_type) {
+      const cleanReqType = data.request_type.toLowerCase().includes("new")
+        ? "new_development"
+        : "existing_problem";
+      setRequestType(cleanReqType);
+    }
+    if (data.detected_language) {
+      setDetectedLanguage(data.detected_language);
+    }
+    if (data.category && CATEGORY_ISSUE_MAP[data.category]) {
+      const aiCategory = data.category;
+      setCategory(aiCategory);
+      const issueList = CATEGORY_ISSUE_MAP[aiCategory] || [];
+      const matchedIssue = issueList.includes(data.specific_issue || "")
+        ? data.specific_issue
+        : issueList[0];
+      if (matchedIssue) {
+        setSpecificIssue(matchedIssue);
+        setProposedFacility(matchedIssue);
+      }
+    }
+    if (data.description) {
+      setDescription(data.description);
+    }
+    if (data.state && STATE_DISTRICT_MAP[data.state]) {
+      setState(data.state);
+      if (data.district) setDistrict(data.district);
+    }
+    if (data.landmark && !landmark) {
+      setLandmark(data.landmark);
+    }
+    if (data.reason) setReason(data.reason);
+    if (data.intended_beneficiaries) setIntendedBeneficiaries(data.intended_beneficiaries);
+  }, [landmark]);
+
+  const handleAnalyzeWithGemini = async (overrideText?: string) => {
+    const textToAnalyze = (
+      overrideText ||
+      bhashiniTranslatedText.trim() ||
+      description.trim() ||
+      speechTranscript.trim()
+    );
     if (textToAnalyze.length < 5) {
       setAiMessage("Please enter at least 5 characters in your request before requesting AI analysis.");
       setAiStatus("error");
@@ -591,59 +645,59 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
     setAiStatus(null);
 
     try {
+      const local = classifyDemandText(textToAnalyze);
+      if (local.confidence >= 0.7) {
+        applyClassification({
+          ...local,
+          detected_language: detectedLangName || spokenLanguage,
+        });
+        setAiStatus("success");
+        setAiMessage(
+          `Filled from your request: ${local.request_type === "new_development" ? "New Development" : "Current Need"} · ${local.category} · ${local.specific_issue}.`
+        );
+        return;
+      }
+
       const res = await analyzeRequestWithGemini(textToAnalyze) as any;
       setAiStatus(res.status);
-      setAiMessage(res.message);
-
       if (res.status === "success" && res.data) {
-        if (res.data.request_type) {
-          const cleanReqType = res.data.request_type.toLowerCase().includes("new") ? "new_development" : "existing_problem";
-          setRequestType(cleanReqType);
-        }
-        if (res.data.detected_language) {
-          setDetectedLanguage(res.data.detected_language);
-        }
-        if (res.data.category && CATEGORY_ISSUE_MAP[res.data.category]) {
-          const aiCategory = res.data.category;
-          setCategory(aiCategory);
-          // Auto-select first available sub-issue in the category
-          const issueList = CATEGORY_ISSUE_MAP[aiCategory] || [];
-          const aiIssue = res.data.specific_issue;
-          const matchedIssue = issueList.includes(aiIssue) ? aiIssue : issueList[0];
-          if (matchedIssue) {
-            setSpecificIssue(matchedIssue);
-            setProposedFacility(matchedIssue);
-          }
-        }
-        if (!res.data.category) {
-          // category didn't match — still apply specific_issue if explicitly set
-          if (res.data.specific_issue) {
-            setSpecificIssue(res.data.specific_issue);
-            setProposedFacility(res.data.specific_issue);
-          }
-        }
-        if (res.data.description && !description) {
-          setDescription(res.data.description);
-        }
-        if (res.data.state && STATE_DISTRICT_MAP[res.data.state]) {
-          setState(res.data.state);
-          if (res.data.district) {
-            setDistrict(res.data.district);
-          }
-        }
-        if (res.data.landmark && !landmark) {
-          setLandmark(res.data.landmark);
-        }
-        if (res.data.reason) {
-          setReason(res.data.reason);
-        }
-        if (res.data.intended_beneficiaries) {
-          setIntendedBeneficiaries(res.data.intended_beneficiaries);
-        }
+        const mergedIssue = res.data.specific_issue || local.specific_issue;
+        const mergedCategory = CATEGORY_ISSUE_MAP[res.data.category] ? res.data.category : local.category;
+        applyClassification({
+          ...res.data,
+          category: mergedCategory,
+          specific_issue: mergedIssue,
+          description: res.data.description || textToAnalyze,
+          request_type: res.data.request_type || local.request_type,
+          landmark: res.data.landmark || local.landmark,
+          detected_language: detectedLangName || spokenLanguage,
+        });
+        setAiMessage(
+          `Filled from your request: ${mergedCategory}${mergedIssue ? ` · ${mergedIssue}` : ""}.`
+        );
+      } else {
+        applyClassification({
+          ...local,
+          detected_language: detectedLangName || spokenLanguage,
+        });
+        setAiStatus("success");
+        setAiMessage(
+          `Filled from your request: ${local.category} · ${local.specific_issue}.`
+        );
       }
     } catch (err: any) {
-      setAiStatus("unavailable");
-      setAiMessage(err.message || "AI interpretation service unavailable. Please enter details manually.");
+      const local = classifyDemandText(textToAnalyze);
+      if (local.confidence >= 0.55) {
+        applyClassification({
+          ...local,
+          detected_language: detectedLangName || spokenLanguage,
+        });
+        setAiStatus("success");
+        setAiMessage(`Filled from your request: ${local.category} · ${local.specific_issue}.`);
+      } else {
+        setAiStatus("unavailable");
+        setAiMessage(err.message || "AI interpretation service unavailable. Please enter details manually.");
+      }
     } finally {
       setIsAiLoading(false);
     }
@@ -1207,16 +1261,16 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                       type="button"
                       className="service-card-btn service-card-btn-orange"
                       onClick={async () => {
-                        if (speechTranscript.trim().length < 5) {
+                        const englishPreview = (bhashiniTranslatedText.trim() || speechTranscript.trim());
+                        if (englishPreview.length < 5) {
                           setAiMessage("Please provide at least 5 characters in your spoken transcript before analyzing.");
                           setAiStatus("error");
                           return;
                         }
-                        setDescription(speechTranscript.trim());
-                        await handleAnalyzeWithGemini();
+                        await handleAnalyzeWithGemini(englishPreview);
                         setIsVoiceConfirmCardVisible(true);
                       }}
-                      disabled={isAiLoading || speechTranscript.trim().length < 5}
+                      disabled={isAiLoading || (bhashiniTranslatedText.trim() || speechTranscript.trim()).length < 5}
                       style={{ fontSize: "13px", padding: "8px 16px" }}
                     >
                       {isAiLoading ? "Analyzing Voice Input..." : "Analyze Transcript with SPIN AI →"}
@@ -1266,9 +1320,14 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                       )}
                     </div>
 
-                    <h3 style={{ fontSize: "16px", fontWeight: 700, color: "var(--col-navy)", marginBottom: "16px" }}>
+                    <h3 style={{ fontSize: "16px", fontWeight: 700, color: "var(--col-navy)", marginBottom: "8px" }}>
                       We understood your request as:
                     </h3>
+                    {(bhashiniTranslatedText || description) && (
+                      <p style={{ fontSize: "13px", color: "var(--col-navy)", lineHeight: 1.5, marginBottom: "16px", background: "#fff", border: "1px solid #e2e8f0", borderRadius: "8px", padding: "10px 12px" }}>
+                        {bhashiniTranslatedText.trim() || description.trim()}
+                      </p>
+                    )}
 
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
                       <div>

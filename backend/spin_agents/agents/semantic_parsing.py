@@ -49,10 +49,15 @@ CRITICAL RULES (NON-NEGOTIABLE):
    - NEVER guess, invent, or extrapolate locations, landmarks, categories, or severities.
    - For missing fields, confidence score must be set to 0.0 or low (e.g. < 0.5).
 2. CATEGORY CLASSIFICATION:
-   - Allowed categories: "roads", "water", "garbage", "electricity", "drainage", "other".
-   - If uncertain or missing details, set category to "other".
+   - Allowed categories: "Water Supply", "Electricity", "Roads & Transport", "Sanitation", "Public Health", "Police / Law & Order", "Public Transport", "Education", "Housing & Urban Development", "Environment & Forestry", "Social Welfare & Pensions", "General Administration", "Other".
+   - Parks, playgrounds, gardens, community halls, and urban amenities map to "Housing & Urban Development".
+   - If uncertain or missing details, set category to "Other".
 3. TYPE CLASSIFICATION:
-   - "complaint", "issue", "suggestion", "appreciation". Default to "complaint".
+   - "complaint" or "issue" for broken/damaged existing infrastructure.
+   - "suggestion" for new facilities (new park, new school, new road, new clinic).
+4. REQUEST TYPE:
+   - "new_development" if the citizen asks for something new to be built or provided.
+   - "maintenance" if they report an existing asset that is damaged or not working.
 4. SEVERITY SCORING (1-10):
    - Only score if concrete indicators exist (e.g. "danger", "burst pipe", "road blocked").
    - If no severity cues exist, set severity to null and confidence to 0.0.
@@ -89,13 +94,42 @@ OUTPUT FORMAT (JSON only, no markdown backticks):
 """
 
 
+def _coerce_category(raw: Any) -> GrievanceCategory:
+    try:
+        return GrievanceCategory(raw)
+    except Exception:
+        pass
+    aliases = {item.value.lower(): item for item in GrievanceCategory}
+    aliases.update({item.name.lower(): item for item in GrievanceCategory})
+    aliases.update({
+        "water": GrievanceCategory.WATER_SUPPLY,
+        "roads": GrievanceCategory.ROADS_TRANSPORT,
+        "garbage": GrievanceCategory.SANITATION,
+        "drainage": GrievanceCategory.SANITATION,
+        "housing": GrievanceCategory.HOUSING,
+        "environment": GrievanceCategory.ENVIRONMENT,
+        "other": GrievanceCategory.OTHER,
+    })
+    return aliases.get(str(raw or "").lower().strip(), GrievanceCategory.OTHER)
+
+
+def _coerce_type(raw: Any) -> GrievanceType:
+    try:
+        return GrievanceType(raw)
+    except Exception:
+        return GrievanceType.COMPLAINT
+
+
 def parse_with_gemini_or_heuristic(
     text: str,
     original_language: str = "en",
     location_hint: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    """Extract parameters using Gemini via Vertex AI or local zero-hallucination heuristic."""
-    # Attempt Vertex AI Agentic Engine / GenAI if project is configured
+    """Extract parameters using a local heuristic first; Gemini only if confidence is low."""
+    heuristic = _heuristic_parse(text, location_hint)
+    if heuristic["confidence_scores"]["category"] >= 0.7:
+        return heuristic
+
     if CONFIG.gcp_project:
         try:
             import vertexai
@@ -112,11 +146,19 @@ def parse_with_gemini_or_heuristic(
             resp_text = response.text.strip()
             if resp_text.startswith("```"):
                 resp_text = resp_text.split("```")[1].replace("json", "").strip()
-            return json.loads(resp_text)
+            parsed = json.loads(resp_text)
+            parsed.setdefault("confidence_scores", heuristic["confidence_scores"])
+            parsed.setdefault("location", heuristic["location"])
+            parsed.setdefault("request_type", heuristic["request_type"])
+            return parsed
         except Exception:
             pass
 
-    # Deterministic local fallback complying strictly with Zero Hallucination & Null Preservation
+    return heuristic
+
+
+def _heuristic_parse(text: str, location_hint: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Deterministic local fallback complying strictly with Zero Hallucination & Null Preservation."""
     lower = text.lower()
     
     # Category detection (order matters: more specific keywords checked first)
@@ -128,6 +170,9 @@ def parse_with_gemini_or_heuristic(
         cat_conf = 0.95
     elif any(k in lower for k in ["garbage", "waste", "kachra", "trash", "dump", "sanitation", "filth", "accumulation"]):
         cat = GrievanceCategory.SANITATION
+        cat_conf = 0.95
+    elif any(k in lower for k in ["park", "playground", "garden", "open gym"]):
+        cat = GrievanceCategory.HOUSING
         cat_conf = 0.95
     elif any(k in lower for k in ["water", "pipe", "leak", "pani", "jal", "tap", "drinking", "pipeline"]):
         cat = GrievanceCategory.WATER_SUPPLY
@@ -150,10 +195,10 @@ def parse_with_gemini_or_heuristic(
     elif any(k in lower for k in ["school", "education", "college", "teacher", "student"]):
         cat = GrievanceCategory.EDUCATION
         cat_conf = 0.95
-    elif any(k in lower for k in ["house", "housing", "urban", "slum", "development"]):
+    elif any(k in lower for k in ["house", "housing", "urban", "slum", "community hall"]):
         cat = GrievanceCategory.HOUSING
         cat_conf = 0.95
-    elif any(k in lower for k in ["tree", "forest", "environment", "park", "pollution", "air"]):
+    elif any(k in lower for k in ["tree", "forest", "environment", "pollution", "air"]):
         cat = GrievanceCategory.ENVIRONMENT
         cat_conf = 0.95
     elif any(k in lower for k in ["pension", "welfare", "social", "poor"]):
@@ -162,6 +207,11 @@ def parse_with_gemini_or_heuristic(
     elif any(k in lower for k in ["admin", "government", "office", "general"]):
         cat = GrievanceCategory.GENERAL
         cat_conf = 0.95
+
+    new_cues = ["new ", "need a", "needed", "construct", "build", "propose", "install", "required"]
+    existing_cues = ["broken", "leak", "burst", "pothole", "not working", "damaged", "overflow", "clogged"]
+    request_type = "new_development" if any(k in lower for k in new_cues) and not any(k in lower for k in existing_cues) else "maintenance"
+    grievance_type = GrievanceType.SUGGESTION if request_type == "new_development" else GrievanceType.COMPLAINT
 
     # Severity detection (strictly from cues)
     severity = None
@@ -215,7 +265,7 @@ def parse_with_gemini_or_heuristic(
         reasons.append("severity_unspecified")
 
     return {
-        "type": GrievanceType.COMPLAINT.value,
+        "type": grievance_type.value,
         "category": cat.value,
         "severity": severity,
         "location": {
@@ -228,7 +278,7 @@ def parse_with_gemini_or_heuristic(
             "address": location_hint.get("address") if location_hint else None,
             "pincode": location_hint.get("pincode") if location_hint else None,
         },
-        "request_type": "maintenance",
+        "request_type": request_type,
         "reason": None,
         "beneficiaries": None,
         "confidence_scores": {
@@ -258,13 +308,16 @@ def execute_semantic_parsing(request: IngestionRequest) -> SemanticParsingOutput
         original_text = asr_result["transcript"]
         detected_lang = asr_result["detected_language"]
 
-    # Step 2: Canonical Translation to English
-    translation_result = cloud_translate_text(
-        text=original_text,
-        target_language="en",
-        source_language=detected_lang,
-    )
-    translated_text = translation_result["translated_text"]
+    # Step 2: Canonical Translation to English (skip if already English)
+    if detected_lang.lower().startswith("en"):
+        translated_text = original_text
+    else:
+        translation_result = cloud_translate_text(
+            text=original_text,
+            target_language="en",
+            source_language=detected_lang,
+        )
+        translated_text = translation_result["translated_text"]
 
     # Step 3: Structured Extraction via Gemini with Null Preservation
     parsed = parse_with_gemini_or_heuristic(
@@ -310,8 +363,8 @@ def execute_semantic_parsing(request: IngestionRequest) -> SemanticParsingOutput
     return SemanticParsingOutput(
         citizen_id=request.citizen_id,
         channel=request.channel,
-        type=GrievanceType(parsed.get("type", "complaint")),
-        category=GrievanceCategory(parsed.get("category", "other")),
+        type=_coerce_type(parsed.get("type", "complaint")),
+        category=_coerce_category(parsed.get("category", "Other")),
         description_original=original_text,
         description_translated=translated_text,
         severity=parsed.get("severity"),
@@ -319,6 +372,9 @@ def execute_semantic_parsing(request: IngestionRequest) -> SemanticParsingOutput
         media_url=request.media_url,
         language=detected_lang,
         proxy_filed_for=request.proxy_filed_for,
+        request_type=parsed.get("request_type", "maintenance"),
+        reason=parsed.get("reason"),
+        beneficiaries=parsed.get("beneficiaries"),
         confidence_scores=ConfidenceScores(**parsed.get("confidence_scores", {})),
         duplicate_match_id=duplicate_match_id,
         vision_alignment_status=vision_status,  # type: ignore

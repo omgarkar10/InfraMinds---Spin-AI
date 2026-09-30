@@ -199,19 +199,7 @@ export async function uploadEvidenceToBackend(file: File) {
   const data = await response.json();
   return { url: data.url, filename: data.filename };
 }
-// Maps backend GrievanceCategory enum values → frontend CATEGORY_ISSUE_MAP keys
-const BACKEND_CATEGORY_TO_FRONTEND: Record<string, string> = {
-  "electricity": "Electricity",
-  "water": "Water Supply",
-  "roads": "Roads & Potholes",
-  "garbage": "Waste Management",
-  "drainage": "Drainage / Flooding",
-  "street_lighting": "Street Lighting",
-  "public_health": "Public Health",
-  "education": "Education",
-  "housing": "Housing",
-  "other": "Other",
-};
+import { mapBackendCategoryToFrontend, matchIssueInCategory } from "../utils/classifyDemand";
 
 export async function analyzeRequestWithGemini(textToAnalyze: string) {
   try {
@@ -236,15 +224,11 @@ export async function analyzeRequestWithGemini(textToAnalyze: string) {
     }
 
     const data = await response.json();
-
-    // Normalize category: map backend enum → frontend display key
-    const rawCategory: string = (data.category || "other").toLowerCase();
-    const frontendCategory = BACKEND_CATEGORY_TO_FRONTEND[rawCategory] || "Other";
-
-    // Normalize request type: backend returns GrievanceType like "issue", "complaint" → map to frontend
-    const rawType: string = (data.type || "").toLowerCase();
+    const frontendCategory = mapBackendCategoryToFrontend(data.category);
+    const description = data.description_translated || data.description_original || textToAnalyze;
+    const rawRequest = String(data.request_type || data.type || "").toLowerCase();
     const frontendRequestType =
-      rawType === "suggestion" || rawType === "new_development"
+      rawRequest.includes("new") || rawRequest === "suggestion"
         ? "new_development"
         : "existing_problem";
 
@@ -253,11 +237,13 @@ export async function analyzeRequestWithGemini(textToAnalyze: string) {
       data: {
         request_type: frontendRequestType,
         category: frontendCategory,
-        description: data.description_translated || data.description_original || "",
+        description,
         state: data.location?.state || null,
         district: data.location?.district || null,
         landmark: data.location?.landmark_text || data.location?.location_landmark || null,
-        specific_issue: frontendCategory,
+        specific_issue: matchIssueInCategory(frontendCategory, data.specific_issue, description),
+        reason: data.reason || null,
+        intended_beneficiaries: data.beneficiaries || null,
       }
     };
   } catch (err: any) {
