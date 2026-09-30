@@ -510,3 +510,8 @@ ull, the backend crashed while trying to decode a malformed/missing JWT. Switchi
   - CreateDemandForm.tsx
 - **Description:** Changed the default spokenLanguage state from "mr" to "" (empty). Added a disabled placeholder option ("Select your language first") to the language dropdown. The "Start Speaking" button is now grayed out and disabled until a language is explicitly chosen. The hint text below the button also updates to prompt users to select a language.
 - **Rationale:** Previously, "Marathi" was pre-selected by default, allowing users to start recording immediately without consciously choosing their language. This caused confusion for non-Marathi speakers who might not notice the dropdown. Now the flow enforces: Select Language ? then Record.
+
+### Remove Auto-Recording on Voice Intake Selection
+- **Files updated:**
+  - frontend/dashboard/src/components/citizen/CreateDemandForm.tsx
+- **Description:** Removed the automatic microphone recording that triggered immediately when a user clicked "Describe by Voice". The recording no longer starts automatically. The user must now: (1) click "Describe by Voice", (2) select their language from the dropdown, and (3) manually click "Start Speaking". This prevents confusing audio captures before the user has configured their language.
