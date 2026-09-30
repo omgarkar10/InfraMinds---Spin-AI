@@ -29,19 +29,17 @@ export async function detectAndTranslate(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, target_language: targetLanguage }),
     });
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.detail || `Bhashini service error: ${response.status}`);
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.detail || `Bhashini service error: ${response.status}`);
+    }
+    return response.json();
+  } catch (e: any) {
+    if (e.message === "Failed to fetch" || e.name === "TypeError") {
+      throw new Error("Cannot connect to translation service. Please check your internet connection.");
+    }
+    throw e;
   }
-
-  return response.json();
-} catch (e: any) {
-  if (e.message === "Failed to fetch" || e.name === "TypeError") {
-    throw new Error("Cannot connect to translation service. Please check your internet connection.");
-  }
-  throw e;
-}
 }
 
 /**
@@ -62,19 +60,17 @@ export async function translateText(
         target_language: targetLanguage,
       }),
     });
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.detail || `Bhashini translate error: ${response.status}`);
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.detail || `Bhashini translate error: ${response.status}`);
+    }
+    return response.json();
+  } catch (e: any) {
+    if (e.message === "Failed to fetch" || e.name === "TypeError") {
+      throw new Error("Cannot connect to translation service. Please check your internet connection.");
+    }
+    throw e;
   }
-
-  return response.json();
-} catch (e: any) {
-  if (e.message === "Failed to fetch" || e.name === "TypeError") {
-    throw new Error("Cannot connect to translation service. Please check your internet connection.");
-  }
-  throw e;
-}
 }
 
 /**
@@ -84,9 +80,16 @@ export async function getBhashiniStatus(): Promise<{
   configured: boolean;
   quota: { used: number; limit: number; remaining: number };
 }> {
-  const response = await fetch(`${API_BASE}/bhashini/status`);
-  if (!response.ok) throw new Error("Could not fetch Bhashini status");
-  return response.json();
+  try {
+    const response = await fetch(`${API_BASE}/bhashini/status`);
+    if (!response.ok) throw new Error("Could not fetch Bhashini status");
+    return response.json();
+  } catch (e: any) {
+    if (e.message === "Failed to fetch" || e.name === "TypeError") {
+      throw new Error("Cannot connect to Bhashini status endpoint.");
+    }
+    throw e;
+  }
 }
 
 /**
@@ -115,17 +118,15 @@ export async function speechToText(
         target_language: targetLanguage,
       }),
     });
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.detail || `Bhashini ASR error: ${response.status}`);
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.detail || `Bhashini ASR error: ${response.status}`);
+    }
+    return response.json();
+  } catch (e: any) {
+    if (e.message === "Failed to fetch" || e.name === "TypeError") {
+      throw new Error("Cannot connect to translation service. Please check your internet connection.");
+    }
+    throw e;
   }
-
-  return response.json();
-} catch (e: any) {
-  if (e.message === "Failed to fetch" || e.name === "TypeError") {
-    throw new Error("Cannot connect to translation service. Please check your internet connection.");
-  }
-  throw e;
-}
 }

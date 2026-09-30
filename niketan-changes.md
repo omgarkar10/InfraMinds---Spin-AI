@@ -505,10 +505,24 @@ ull, the backend crashed while trying to decode a malformed/missing JWT. Switchi
   - CitizenPortalHome.tsx
 - **Description:** Fixed vite build failure by installing @types/leaflet.heat and suppressing un-typable dist paths using @ts-expect-error. Removed unused voteThreshold variable.
 
- # # #   R e s o l v i n g   F i r e b a s e   5 0 0   E r r o r   ( M a n u a l   A W S   E C S   D e p l o y m e n t ) 
- -   * * D e s c r i p t i o n : * *   F i x e d   p e r s i s t e n t   \ 5 0 0   I n t e r n a l   S e r v e r   E r r o r \   o n   \ / a p i / a u t h / m e \   a n d   \ / a p i / a u t h / s y n c - p r o f i l e \   c a u s e d   b y   m i s s i n g   F i r e b a s e   c r e d e n t i a l s   i n   t h e   E C S   t a s k . 
- -   * * F i l e s   u p d a t e d : * *   N o n e   i n   c o d e b a s e   ( o n l y   g i t   c a c h e   a n d   u n t r a c k e d   f i l e s ) . 
- -   * * R a t i o n a l e : * *   T h e   G i t H u b   A c t i o n s   w o r k f l o w   f a i l e d   p r e v i o u s l y ,   c a u s i n g   A W S   E C S   t o   r o l l b a c k   t o   a   b r o k e n   T a s k   D e f i n i t i o n   ( \ s p i n - a p i : 6 \ )   r u n n i n g   a n   o l d   D o c k e r   i m a g e   w i t h o u t   \ s e r v i c e - a c c o u n t . j s o n \ .   B u i l t   a n d   p u s h e d   a   n e w   D o c k e r   i m a g e   c o n t a i n i n g   t h e   c r e d e n t i a l s   m a n u a l l y   f r o m   t h e   l o c a l   m a c h i n e ,   d o w n l o a d e d   t h e   l a t e s t   A W S   T a s k   D e f i n i t i o n ,   a n d   f o r c e f u l l y   u p d a t e d   t h e   E C S   S e r v i c e   ( \ s p i n - a p i - s e r v i c e - v 2 \ )   t o   u s e   t h e   c o r r e c t   T a s k   D e f i n i t i o n   ( \ s p i n - a p i : 7 \ ) . 
- -   * * C l e a n u p s : * *   R e m o v e d   a c c i d e n t a l l y   t r a c k e d   \ . f i r e b a s e / \   c a c h e   f i l e s   f r o m   t h e   g i t   i n d e x   t o   a v o i d   c l u t t e r . 
-  
- 
+
+
+⌀⌀⌀ 刀攀猀漀氀瘀椀渀最 䘀椀爀攀戀愀猀攀 㔀　　 䔀爀爀漀爀 ⠀䴀愀渀甀愀氀 䄀圀匀 䔀䌀匀 䐀攀瀀氀漀礀洀攀渀琀⤀਀ⴀ ⨀⨀䐀攀猀挀爀椀瀀琀椀漀渀㨀⨀⨀ 䘀椀砀攀搀 瀀攀爀猀椀猀琀攀渀琀 尀㔀　　 䤀渀琀攀爀渀愀氀 匀攀爀瘀攀爀 䔀爀爀漀爀尀 漀渀 尀⼀愀瀀椀⼀愀甀琀栀⼀洀攀尀 愀渀搀 尀⼀愀瀀椀⼀愀甀琀栀⼀猀礀渀挀ⴀ瀀爀漀昀椀氀攀尀 挀愀甀猀攀搀 戀礀 洀椀猀猀椀渀最 䘀椀爀攀戀愀猀攀 挀爀攀搀攀渀琀椀愀氀猀 椀渀 琀栀攀 䔀䌀匀 琀愀猀欀⸀਀ⴀ ⨀⨀䘀椀氀攀猀 甀瀀搀愀琀攀搀㨀⨀⨀ 一漀渀攀 椀渀 挀漀搀攀戀愀猀攀 ⠀漀渀氀礀 最椀琀 挀愀挀栀攀 愀渀搀 甀渀琀爀愀挀欀攀搀 昀椀氀攀猀⤀⸀਀ⴀ ⨀⨀刀愀琀椀漀渀愀氀攀㨀⨀⨀ 吀栀攀 䜀椀琀䠀甀戀 䄀挀琀椀漀渀猀 眀漀爀欀昀氀漀眀 昀愀椀氀攀搀 瀀爀攀瘀椀漀甀猀氀礀Ⰰ 挀愀甀猀椀渀最 䄀圀匀 䔀䌀匀 琀漀 爀漀氀氀戀愀挀欀 琀漀 愀 戀爀漀欀攀渀 吀愀猀欀 䐀攀昀椀渀椀琀椀漀渀 ⠀尀猀瀀椀渀ⴀ愀瀀椀㨀㘀尀⤀ 爀甀渀渀椀渀最 愀渀 漀氀搀 䐀漀挀欀攀爀 椀洀愀最攀 眀椀琀栀漀甀琀 尀猀攀爀瘀椀挀攀ⴀ愀挀挀漀甀渀琀⸀樀猀漀渀尀⸀ 䈀甀椀氀琀 愀渀搀 瀀甀猀栀攀搀 愀 渀攀眀 䐀漀挀欀攀爀 椀洀愀最攀 挀漀渀琀愀椀渀椀渀最 琀栀攀 挀爀攀搀攀渀琀椀愀氀猀 洀愀渀甀愀氀氀礀 昀爀漀洀 琀栀攀 氀漀挀愀氀 洀愀挀栀椀渀攀Ⰰ 搀漀眀渀氀漀愀搀攀搀 琀栀攀 氀愀琀攀猀琀 䄀圀匀 吀愀猀欀 䐀攀昀椀渀椀琀椀漀渀Ⰰ 愀渀搀 昀漀爀挀攀昀甀氀氀礀 甀瀀搀愀琀攀搀 琀栀攀 䔀䌀匀 匀攀爀瘀椀挀攀 ⠀尀猀瀀椀渀ⴀ愀瀀椀ⴀ猀攀爀瘀椀挀攀ⴀ瘀㈀尀⤀ 琀漀 甀猀攀 琀栀攀 挀漀爀爀攀挀琀 吀愀猀欀 䐀攀昀椀渀椀琀椀漀渀 ⠀尀猀瀀椀渀ⴀ愀瀀椀㨀㜀尀⤀⸀਀ⴀ ⨀⨀䌀氀攀愀渀甀瀀猀㨀⨀⨀ 刀攀洀漀瘀攀搀 愀挀挀椀搀攀渀琀愀氀氀礀 琀爀愀挀欀攀搀 尀⸀昀椀爀攀戀愀猀攀⼀尀 挀愀挀栀攀 昀椀氀攀猀 昀爀漀洀 琀栀攀 最椀琀 椀渀搀攀砀 琀漀 愀瘀漀椀搀 挀氀甀琀琀攀爀⸀਀ഀ਀਀
+
+### Require Language Selection Before Voice Recording
+- **Files updated:**
+  - CreateDemandForm.tsx
+- **Description:** Changed the default spokenLanguage state from "mr" to "" (empty). Added a disabled placeholder option ("Select your language first") to the language dropdown. The "Start Speaking" button is now grayed out and disabled until a language is explicitly chosen. The hint text below the button also updates to prompt users to select a language.
+- **Rationale:** Previously, "Marathi" was pre-selected by default, allowing users to start recording immediately without consciously choosing their language. This caused confusion for non-Marathi speakers who might not notice the dropdown. Now the flow enforces: Select Language ? then Record.
+
+### Remove Auto-Recording on Voice Intake Selection
+- **Files updated:**
+  - frontend/dashboard/src/components/citizen/CreateDemandForm.tsx
+- **Description:** Removed the automatic microphone recording that triggered immediately when a user clicked "Describe by Voice". The recording no longer starts automatically. The user must now: (1) click "Describe by Voice", (2) select their language from the dropdown, and (3) manually click "Start Speaking". This prevents confusing audio captures before the user has configured their language.
+
+### Fix Broken bhashiniService.ts try/catch Nesting (Critical Bug)
+- **Files updated:**
+  - frontend/dashboard/src/services/bhashiniService.ts
+  - frontend/dashboard/src/utils/audioConversion.ts
+- **Description:** Completely rewrote bhashiniService.ts. The previous try/catch blocks were malformed — the response.ok check and return were placed OUTSIDE the try block but BEFORE the catch, meaning esponse was undefined after a network failure and all three API functions (detectAndTranslate, translateText, speechToText) were broken. Rewrote audioConversion.ts to first decode at the browser native sample rate, then resample to 16kHz mono via OfflineAudioContext instead of forcing sampleRate in the constructor (which caused decodeAudioData to throw in Chrome/Edge).
+

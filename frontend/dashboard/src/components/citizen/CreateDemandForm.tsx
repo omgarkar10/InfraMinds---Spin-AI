@@ -836,9 +836,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                       setSpeechTranscript("");
                       setAiMessage(null);
                       setIsVoiceConfirmCardVisible(false);
-                      if (!isRecording) {
-                        toggleRecording();
-                      }
+                      // Do NOT auto-start recording — user must select language first
                     }}
                     style={{
                       padding: "24px",
