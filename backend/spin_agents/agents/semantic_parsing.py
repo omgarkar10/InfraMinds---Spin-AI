@@ -63,7 +63,7 @@ CRITICAL RULES (NON-NEGOTIABLE):
 OUTPUT FORMAT (JSON only, no markdown backticks):
 {
   "type": "complaint|issue|suggestion|appreciation",
-  "category": "roads|water|garbage|electricity|drainage|other",
+  "category": "Water Supply|Electricity|Roads & Transport|Sanitation|Public Health|Police / Law & Order|Public Transport|Education|Housing & Urban Development|Environment & Forestry|Social Welfare & Pensions|General Administration|Other",
   "severity": integer (1-10) or null,
   "location": {
     "latitude": float or null,
@@ -124,19 +124,43 @@ def parse_with_gemini_or_heuristic(
     cat_conf = 0.3
     # Drainage first (often uses 'road' words but is distinctly different)
     if any(k in lower for k in ["drain", "drainage", "flood", "sewage", "gutter", "overflow", "sewer"]):
-        cat = GrievanceCategory.DRAINAGE
+        cat = GrievanceCategory.SANITATION
         cat_conf = 0.95
     elif any(k in lower for k in ["garbage", "waste", "kachra", "trash", "dump", "sanitation", "filth", "accumulation"]):
-        cat = GrievanceCategory.GARBAGE
+        cat = GrievanceCategory.SANITATION
         cat_conf = 0.95
     elif any(k in lower for k in ["water", "pipe", "leak", "pani", "jal", "tap", "drinking", "pipeline"]):
-        cat = GrievanceCategory.WATER
+        cat = GrievanceCategory.WATER_SUPPLY
         cat_conf = 0.95
     elif any(k in lower for k in ["electric", "power", "light", "bijli", "transformer", "wire"]):
         cat = GrievanceCategory.ELECTRICITY
         cat_conf = 0.95
-    elif any(k in lower for k in ["road", "pothole", "sadak", "gaddha", "asphalt", "street"]):
-        cat = GrievanceCategory.ROADS
+    elif any(k in lower for k in ["road", "pothole", "sadak", "gaddha", "asphalt", "street", "highway"]):
+        cat = GrievanceCategory.ROADS_TRANSPORT
+        cat_conf = 0.95
+    elif any(k in lower for k in ["health", "hospital", "clinic", "disease", "mosquito", "dengue", "medicine"]):
+        cat = GrievanceCategory.PUBLIC_HEALTH
+        cat_conf = 0.95
+    elif any(k in lower for k in ["police", "crime", "theft", "safety", "law", "security"]):
+        cat = GrievanceCategory.POLICE
+        cat_conf = 0.95
+    elif any(k in lower for k in ["bus", "train", "metro", "transport"]):
+        cat = GrievanceCategory.PUBLIC_TRANSPORT
+        cat_conf = 0.95
+    elif any(k in lower for k in ["school", "education", "college", "teacher", "student"]):
+        cat = GrievanceCategory.EDUCATION
+        cat_conf = 0.95
+    elif any(k in lower for k in ["house", "housing", "urban", "slum", "development"]):
+        cat = GrievanceCategory.HOUSING
+        cat_conf = 0.95
+    elif any(k in lower for k in ["tree", "forest", "environment", "park", "pollution", "air"]):
+        cat = GrievanceCategory.ENVIRONMENT
+        cat_conf = 0.95
+    elif any(k in lower for k in ["pension", "welfare", "social", "poor"]):
+        cat = GrievanceCategory.SOCIAL_WELFARE
+        cat_conf = 0.95
+    elif any(k in lower for k in ["admin", "government", "office", "general"]):
+        cat = GrievanceCategory.GENERAL
         cat_conf = 0.95
 
     # Severity detection (strictly from cues)

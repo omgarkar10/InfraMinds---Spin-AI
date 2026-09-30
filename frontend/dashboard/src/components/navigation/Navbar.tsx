@@ -7,7 +7,7 @@ import "../navigation/Navbar.css";
 interface NavbarProps {
   view: string;
   user?: CitizenUser;
-  onViewChange: (view: string) => void;
+  onViewChange: (view: string, id?: string) => void;
 }
 
 export function Navbar({ view, user, onViewChange }: NavbarProps) {

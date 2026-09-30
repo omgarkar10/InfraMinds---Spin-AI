@@ -1,7 +1,19 @@
-import React, { useState, useEffect } from "react";
-import type { StaffUser, Proposal } from "../../types";
-import { getStaffDemands } from "../../services/demandService";
-import { Map, AdvancedMarker, Pin } from "@vis.gl/react-google-maps";
+import React, { useState, useEffect, useRef } from "react";
+import type { StaffUser } from "../../types";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+import icon from "leaflet/dist/images/marker-icon.png";
+import iconShadow from "leaflet/dist/images/marker-shadow.png";
+
+// Fix Leaflet's default icon path issues with webpack/vite
+let DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
+L.Marker.prototype.options.icon = DefaultIcon;
 
 interface FieldOfficerDashboardProps {
   user: StaffUser;
@@ -9,9 +21,10 @@ interface FieldOfficerDashboardProps {
 
 export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ user }) => {
   const [activeTab, setActiveTab] = useState<"assigned" | "progress" | "completed">("assigned");
-  const [demands, setDemands] = useState<Proposal[]>([]);
-  const [selectedDemand, setSelectedDemand] = useState<Proposal | null>(null);
+  const [demands, setDemands] = useState<any[]>([]);
+  const [selectedDemand, setSelectedDemand] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "map" | "report">("list");
+  const [loading, setLoading] = useState(false);
   
   // Geotagging & Form State
   const [photo, setPhoto] = useState<File | null>(null);
@@ -28,10 +41,10 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
     estimatedEffort: "Medium"
   });
 
+  const mapRef = useRef<any>(null);
+
   useEffect(() => {
-    // Simulated proximity sort based on dummy data
-    const allDemands = getStaffDemands(user);
-    setDemands(allDemands);
+    fetchAssignedDemands();
 
     const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);
@@ -41,7 +54,24 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [user]);
+  }, [user.id]);
+
+  const fetchAssignedDemands = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/staff/demands/assigned`, {
+        headers: { "Authorization": `Bearer ${localStorage.getItem("staff_token")}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDemands(data.demands || []);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCapturePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -81,28 +111,61 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
     try {
       const formData = new FormData();
       formData.append("file", photo);
+      formData.append("lat", String(lat));
+      formData.append("lng", String(lng));
       formData.append("physicalAccess", String(checklist.physicalAccess));
       formData.append("legalViability", String(checklist.legalViability));
       formData.append("safetyConstraints", String(checklist.safetyConstraints));
       formData.append("estimatedEffort", checklist.estimatedEffort);
       
-      // Simulated API Call
-      await new Promise(r => setTimeout(r, 1000));
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/staff/investigation/${selectedDemand.id}/report`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("staff_token")}`
+        },
+        body: formData
+      });
       
-      setStatus("Feasibility report submitted successfully!");
-      setPhoto(null);
-      setSelectedDemand(null);
-      setViewMode("list");
+      if (res.ok) {
+        setStatus("Feasibility report submitted successfully!");
+        setPhoto(null);
+        setSelectedDemand(null);
+        setViewMode("list");
+        fetchAssignedDemands();
+      } else {
+        const errData = await res.json();
+        setStatus(`Error: ${errData.error || "Failed to submit report"}`);
+      }
     } catch (err: any) {
       setStatus("Network error. The report is queued for background sync.");
     }
   };
 
   const filteredDemands = demands.filter(d => {
-    if (activeTab === "assigned") return d.status === "PENDING" || d.status === "GATHERING_SUPPORT";
-    if (activeTab === "progress") return d.status === "FEASIBILITY_STUDY";
-    return d.status === "APPROVED_FOR_BUDGET" || d.status === "RESOLVED";
+    if (activeTab === "assigned") return d.status === "field_survey" || d.status === "assigned";
+    if (activeTab === "progress") return d.status === "feasibility_reported";
+    return d.status === "escalated_to_policy" || d.status === "resolved";
   });
+
+  const centerLat = filteredDemands.length > 0 && filteredDemands[0].location?.coordinates 
+    ? filteredDemands[0].location.coordinates[0] 
+    : 28.6139;
+  const centerLng = filteredDemands.length > 0 && filteredDemands[0].location?.coordinates 
+    ? filteredDemands[0].location.coordinates[1] 
+    : 77.2090;
+
+  useEffect(() => {
+    if (mapRef.current && filteredDemands.length > 0) {
+      const bounds = L.latLngBounds(
+        filteredDemands
+          .filter(d => d.location && d.location.coordinates)
+          .map(d => [d.location.coordinates[0], d.location.coordinates[1]])
+      );
+      if (bounds.isValid()) {
+        mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+      }
+    }
+  }, [filteredDemands, viewMode]);
 
   return (
     <div className="citizen-portal-container" style={{ padding: "0", background: "#f8f9fa", minHeight: "calc(100vh - 60px)" }}>
@@ -113,20 +176,24 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
         </div>
       )}
 
-      {/* Main Content Area */}
-      <div style={{ maxWidth: "600px", margin: "0 auto", background: "#fff", minHeight: "100vh", boxShadow: "0 0 20px rgba(0,0,0,0.05)" }}>
+      {/* Main Content Area - Full width responsive container */}
+      <div className="w-full max-w-7xl mx-auto bg-white min-h-screen" style={{ boxShadow: "0 0 20px rgba(0,0,0,0.05)", display: "flex", flexDirection: "column" }}>
         
-        {/* Header & Tabs (Only in List/Map view) */}
+        {/* Header & Tabs */}
         {viewMode !== "report" && (
           <div style={{ padding: "20px 20px 0 20px", borderBottom: "1px solid #eee" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
               <h2 style={{ fontSize: "20px", margin: 0, color: "var(--col-navy)" }}>Active Field Queue</h2>
-              <button 
-                onClick={() => setViewMode(viewMode === "list" ? "map" : "list")}
-                style={{ background: "none", border: "1px solid var(--col-navy)", color: "var(--col-navy)", padding: "6px 12px", borderRadius: "20px", fontSize: "12px", fontWeight: 600 }}
-              >
-                {viewMode === "list" ? "🗺️ Map View" : "📋 List View"}
-              </button>
+              
+              {/* Mobile Only Toggle */}
+              <div className="md:hidden">
+                <button 
+                  onClick={() => setViewMode(viewMode === "list" ? "map" : "list")}
+                  style={{ background: "none", border: "1px solid var(--col-navy)", color: "var(--col-navy)", padding: "6px 12px", borderRadius: "20px", fontSize: "12px", fontWeight: 600 }}
+                >
+                  {viewMode === "list" ? "🗺️ Map View" : "📋 List View"}
+                </button>
+              </div>
             </div>
             <div style={{ display: "flex", gap: "20px" }}>
               {(["assigned", "progress", "completed"] as const).map(tab => (
@@ -153,59 +220,93 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
         )}
 
         {/* View Routing */}
-        <div style={{ padding: viewMode === "map" ? "0" : "20px" }}>
+        <div style={{ flex: 1, position: "relative" }}>
           
-          {/* MAP VIEW */}
-          {viewMode === "map" && (
-            <div style={{ height: "calc(100vh - 180px)", width: "100%" }}>
-              <Map
-                defaultZoom={12}
-                defaultCenter={{ lat: 28.6139, lng: 77.2090 }}
-                mapId="DEMAND_MAP_ID"
-                disableDefaultUI={true}
+          {/* DESKTOP SPLIT VIEW OR MOBILE LIST/MAP */}
+          {viewMode !== "report" && (
+            <div style={{ display: "flex", height: "calc(100vh - 180px)" }}>
+              
+              {/* Left Pane: List View (Hidden on mobile if map view is active) */}
+              <div 
+                style={{ 
+                  flex: "0 0 35%", 
+                  borderRight: "1px solid #eee", 
+                  overflowY: "auto", 
+                  padding: "20px",
+                  display: window.innerWidth < 768 && viewMode === "map" ? "none" : "block",
+                  width: window.innerWidth < 768 ? "100%" : "auto"
+                }}
               >
-                {filteredDemands.map((demand) => (
-                  demand.location.coordinates && (
-                    <AdvancedMarker 
-                      key={demand.id} 
-                      position={{ lat: demand.location.coordinates[0], lng: demand.location.coordinates[1] }}
-                      onClick={() => { setSelectedDemand(demand); setViewMode("report"); }}
-                    >
-                      <Pin background={"var(--col-orange)"} borderColor={"var(--col-navy)"} glyphColor={"#fff"} />
-                    </AdvancedMarker>
-                  )
-                ))}
-              </Map>
-            </div>
-          )}
-
-          {/* LIST VIEW */}
-          {viewMode === "list" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {filteredDemands.length === 0 ? (
-                <div style={{ padding: "40px 20px", textAlign: "center", color: "#666" }}>
-                  No tasks found for this category.
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {loading ? (
+                    <div style={{ padding: "40px 20px", textAlign: "center", color: "#666" }}>Loading assignments...</div>
+                  ) : filteredDemands.length === 0 ? (
+                    <div style={{ padding: "40px 20px", textAlign: "center", color: "#666" }}>
+                      No tasks found for this category.
+                    </div>
+                  ) : (
+                    filteredDemands.map(demand => (
+                      <div key={demand.id} style={{ border: "1px solid #eee", borderRadius: "8px", padding: "16px", cursor: "pointer", transition: "all 0.2s" }} onClick={() => { setSelectedDemand(demand); setViewMode("report"); }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+                          <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--col-orange)" }}>{demand.id.substring(0,8)}</span>
+                          <span style={{ fontSize: "12px", color: "#666" }}>{demand.category}</span>
+                        </div>
+                        <h3 style={{ fontSize: "16px", margin: "0 0 8px 0", color: "var(--col-navy)" }}>{demand.english_translation || demand.description || demand.original_text}</h3>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#666", fontSize: "13px" }}>
+                          <span>📍</span> {demand.location?.address || demand.location?.district || demand.address || "Location provided"}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
-              ) : (
-                filteredDemands.map(demand => (
-                  <div key={demand.id} style={{ border: "1px solid #eee", borderRadius: "8px", padding: "16px", cursor: "pointer", transition: "all 0.2s" }} onClick={() => { setSelectedDemand(demand); setViewMode("report"); }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-                      <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--col-orange)" }}>{demand.id}</span>
-                      <span style={{ fontSize: "12px", color: "#666" }}>{demand.category}</span>
-                    </div>
-                    <h3 style={{ fontSize: "16px", margin: "0 0 8px 0", color: "var(--col-navy)" }}>{demand.description}</h3>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#666", fontSize: "13px" }}>
-                      <span>📍</span> {demand.location.address || demand.location.district || "Location provided"}
-                    </div>
-                  </div>
-                ))
-              )}
+              </div>
+
+              {/* Right Pane: Map View (Hidden on mobile if list view is active) */}
+              <div 
+                style={{ 
+                  flex: 1, 
+                  height: "100%", 
+                  display: window.innerWidth < 768 && viewMode === "list" ? "none" : "block",
+                  width: window.innerWidth < 768 ? "100%" : "auto"
+                }}
+              >
+                <MapContainer
+                  center={[centerLat, centerLng]}
+                  zoom={12}
+                  style={{ height: "100%", width: "100%" }}
+                  ref={mapRef}
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  />
+                  {filteredDemands.map((demand) => (
+                    demand.location?.coordinates && (
+                      <Marker 
+                        key={demand.id} 
+                        position={[demand.location.coordinates[0], demand.location.coordinates[1]]}
+                        eventHandlers={{
+                          click: () => {
+                            setSelectedDemand(demand);
+                            setViewMode("report");
+                          }
+                        }}
+                      >
+                        <Popup>
+                          <strong>{demand.english_translation || demand.description || demand.original_text}</strong><br/>
+                          {demand.location?.address || demand.address}
+                        </Popup>
+                      </Marker>
+                    )
+                  ))}
+                </MapContainer>
+              </div>
             </div>
           )}
 
-          {/* REPORT / FEASIBILITY VIEW */}
+          {/* REPORT / FEASIBILITY VIEW (Drawer overlay style) */}
           {viewMode === "report" && selectedDemand && (
-            <div style={{ paddingBottom: "40px" }}>
+            <div style={{ padding: "20px", paddingBottom: "40px", maxWidth: "800px", margin: "0 auto" }}>
               <button 
                 onClick={() => setViewMode("list")}
                 style={{ background: "none", border: "none", color: "var(--col-text-muted)", fontSize: "14px", padding: "0 0 20px 0", cursor: "pointer" }}
@@ -215,8 +316,8 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
               
               <h2 style={{ fontSize: "22px", margin: "0 0 8px 0", color: "var(--col-navy)" }}>Feasibility Study</h2>
               <div style={{ background: "#f8f9fa", padding: "12px", borderRadius: "6px", marginBottom: "24px", fontSize: "13px" }}>
-                <strong>Demand:</strong> {selectedDemand.description} <br/>
-                <strong>Location:</strong> {selectedDemand.location.address || selectedDemand.location.district}
+                <strong>Demand:</strong> {selectedDemand.english_translation || selectedDemand.description || selectedDemand.original_text} <br/>
+                <strong>Location:</strong> {selectedDemand.location?.address || selectedDemand.location?.district || selectedDemand.address}
               </div>
 
               {status && (
@@ -244,6 +345,7 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
                   <label htmlFor="cameraInput" style={{ display: "inline-block", background: "var(--col-navy)", color: "#fff", padding: "10px 20px", borderRadius: "20px", fontSize: "14px", fontWeight: 600, cursor: "pointer" }}>
                     {photo ? "📸 Retake Photo" : "📸 Open Camera"}
                   </label>
+                  {photo && <div style={{marginTop: "10px", fontSize: "12px", color: "var(--col-green)"}}>✓ {photo.name} ready</div>}
                 </div>
 
                 {/* GPS Capture */}

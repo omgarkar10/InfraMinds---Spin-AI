@@ -413,5 +413,80 @@ Bhashini requires correct serviceIds from its own catalog. The meity-auth endpoi
 
 - **Refactor Database Connections & APIs**: Implemented the 8-point architectural refactoring plan. (1) Fixed token desync in frontend by fetching fresh tokens dynamically. (2) Implemented real Firebase Storage image uploads. (3) Updated DemandSchema Pydantic model with new fields and default vote_count to 0. (4) Sanitized AI fallbacks in runner.py and fixed timeline timestamp formats in demand_service.py. (5) Refactored GET /api/demands to support server-side author_user_id filtering. (6) Denormalized author_name by fetching from users collection. (7) Upgraded staff endpoints (/queue, /assign, /report) with live Firestore logic. (8) Replaced dashboard analytics stubs with direct Firestore aggregations and groupings.
 
-- **Bhashini ASR and Audio Encoding**: Completely resolved the Bhashini 500 Server Error for voice inputs. Implemented a client-side audio transcoder (`src/utils/audioConversion.ts`) that intercepts the raw browser `webm/opus` recording and transcodes it locally into a standard `16kHz PCM WAV` before sending it to the backend. Updated `CreateDemandForm.tsx` to handle this conversion and fixed Bhashini error handling logic so network failures properly reset rather than persist in the UI.
-- **TypeScript Compilation Fixes**: Fixed `vite build` failure by installing `@types/leaflet.heat` for the `HeroSection` map component and suppressing un-typable dist paths using `@ts-expect-error`. Removed unused `voteThreshold` variable in `CitizenPortalHome.tsx`.
+### Added .env.production for Frontend Deployment
+- **Files modified:** Added rontend/dashboard/.env.production 
+- **Description:** Created production environment file pointing VITE_API_URL to the newly deployed AWS Application Load Balancer (spin-api-alb-1642055735.ap-south-1.elb.amazonaws.com).
+- **Rationale:** Ensures the production build of the frontend connects to the live ECS Fargate backend without breaking the local .env configuration.
+
+### Staff Dashboard & Queue System Overhaul
+- **Description**: Replaced hardcoded stubs in the Department Officer dashboard with a live Firestore implementation, enforcing department-scoped isolation and real-time dispatch workflows.
+- **Files Updated**:
+  - ackend/spin_agents/routers/staff_router.py: Completely rewritten with transactional endpoints for dispatch, decision, and filtered queue fetch.
+  - ackend/spin_agents/models.py: Added department field to UserSchema.
+  - rontend/dashboard/src/components/staff/DepartmentOfficerDashboard.tsx: Rewritten to fetch directly from the live API with accurate metrics.
+  - rontend/dashboard/src/components/staff/StaffDashboard.tsx: Cleaned up props.
+- **Rationale**: The UI was purely mock data and lacked the necessary security to isolate demands to the specific logged-in officer's department. The new transactions prevent race conditions during Field Officer assignment.
+-   O v e r h a u l e d   F i e l d   O f f i c e r   D a s h b o a r d   U I   t o   u s e   a   r e s p o n s i v e   s p l i t - p a n e   L e a f l e t   m a p   i n s t e a d   o f   G o o g l e   M a p s .  
+ -   A d d e d   G E T   / a p i / s t a f f / d e m a n d s / a s s i g n e d   e n d p o i n t   t o   f e t c h   a c t u a l   o f f i c e r   a s s i g n m e n t s .  
+ -   U p d a t e d   P O S T   / a p i / s t a f f / i n v e s t i g a t i o n / { i d } / r e p o r t   t o   a c c e p t   m u l t i p a r t   f o r m - d a t a   f o r   c h e c k l i s t   c o n s t r a i n t s .  
+ # #   2 0 2 6 - 0 9 - 3 0 :   W h a t s A p p   W e b h o o k   I m p l e m e n t a t i o n 
+ -   * * D e s c r i p t i o n * * :   A d d e d   G E T   a n d   P O S T   / w e b h o o k / w h a t s a p p   e n d p o i n t s   t o   d e m a n d _ r o u t e r . p y   f o r   M e t a   i n t e g r a t i o n ,   a n d   c r e a t e d   w h a t s a p p - w e b h o o k . m d   s e t u p   g u i d e . 
+ -   * * F i l e s   M o d i f i e d / C r e a t e d * * :   b a c k e n d / s p i n _ a g e n t s / r o u t e r s / d e m a n d _ r o u t e r . p y ,   w h a t s a p p - w e b h o o k . m d  
+ 
+ 
+ # # #   F i x   A b s o l u t e   I m a g e   U R L s   i n   P r o d u c t i o n 
+ -   * * F i l e s   u p d a t e d : * * 
+     -    a c k e n d / s p i n _ a g e n t s / r o u t e r s / d e m a n d _ r o u t e r . p y 
+     -    r o n t e n d / d a s h b o a r d / s r c / c o m p o n e n t s / c i t i z e n / D e m a n d D e t a i l . t s x 
+     -    r o n t e n d / d a s h b o a r d / s r c / c o m p o n e n t s / c i t i z e n / C i t i z e n P o r t a l H o m e . t s x 
+ -   * * D e s c r i p t i o n : * *   U p d a t e d   b a c k e n d   u p l o a d   e n d p o i n t   t o   g e n e r a t e   a   d y n a m i c   b a s e   U R L   b a s e d   o n   t h e   i n c o m i n g   r e q u e s t ,   i n s t e a d   o f   h a r d c o d i n g   \ l o c a l h o s t : 8 0 8 0 \ .   A l s o   a d d e d   l o g i c   i n   t h e   f r o n t e n d   t o   i n t e r c e p t   l e g a c y   \ l o c a l h o s t : 8 0 8 0 \   i m a g e   U R L s   i n   D B   a n d   r e w r i t e   t h e m   u s i n g   t h e   c u r r e n t   d e p l o y e d   h o s t n a m e / A P I   U R L . 
+ -   * * R a t i o n a l e : * *   P r e v e n t s   i m a g e s   f r o m   b r e a k i n g   w h e n   t h e   f r o n t e n d   i s   a c c e s s e d   f r o m   a   r e m o t e   d o m a i n   ( l i k e   \ 
+ i k e t a n d o e s . m e \ )   w h i l e   t h e   b a c k e n d   r u n s   l o c a l l y   o r   o n   a   d i f f e r e n t   d o m a i n . 
+  
+ 
+
+### Fix Query Parameter Routing
+- **Files updated:**
+  - rontend/dashboard/src/App.tsx
+- **Description:** Updated handlePopState and the initial mount logic to parse the ?demand= query parameter. If found, it routes directly to the demand details page and uses history.replaceState to update the URL cleanly.
+- **Rationale:** Ensures that sharing a direct URL with the ?demand=ID parameter correctly opens the demand details rather than defaulting to the landing page.
+
+
+### Fix Department Categories & Staff Portal Visibility
+- **Files updated:**
+  - schemas/data_models.py
+  - ackend/spin_agents/agents/semantic_parsing.py
+  - rontend/dashboard/src/components/citizen/CreateDemandForm.tsx
+  - ackend/scripts/migrate_categories.py (new)
+- **Description:** Synchronized the category taxonomy across the platform to use the 12 exact canonical department strings defined in credentials.md (e.g., Water Supply, Electricity). Updated the AI prompt instructions and heuristics to output these exact values. Updated the frontend UI <select> options. Ran a Firebase migration script to update all existing demands in the database to map legacy lowercase categories (e.g., water, garbage) to the new canonical RBAC departments.
+- **Rationale:** The Staff Portal queries Firestore for demands where category == user.department. Since user.department strings are title-cased canonical names, the lowercase AI output was causing a mismatch, resulting in an empty queue. This ensures seamless Role-Based Access Control and data consistency.
+
+
+### Fix Staff Authentication & Missing Custom Claims
+- **Files updated:**
+  - ackend/spin_agents/auth.py
+- **Description:** Added an enhance_staff_user fallback to automatically parse .gov.in email addresses (e.g., water.supply.officer@gov.in) and extract the appropriate 
+ole (Department Officer) and department (Water Supply) dynamically upon each request.
+- **Rationale:** When logging in via Firebase Auth during development, users were not assigned custom claims (role/department). This caused the backend to default their role to citizen, resulting in a silent 403 Forbidden on the Staff Portal, and user.department was evaluating to None. This elegant fallback guarantees staff can access their respective queues without manually running admin scripts to provision their custom claims.
+
+
+### Fix Frontend Staff JWT Token Fetching
+- **Files updated:**
+  - rontend/dashboard/src/components/staff/DepartmentOfficerDashboard.tsx
+  - rontend/dashboard/src/components/staff/FieldOfficerDashboard.tsx
+- **Description:** Fixed a critical bug where the Staff portals were sending the citizen 	oken instead of staff_token in the Authorization header during etch requests. 
+- **Rationale:** If the citizen 	oken was missing or 
+ull, the backend crashed while trying to decode a malformed/missing JWT. Switching to localStorage.getItem('staff_token') ensures the correct Firebase token is sent for Staff APIs, allowing the Department Officer queue to load successfully.
+
+### Bhashini ASR and Audio Encoding
+- **Files updated:**
+  - src/utils/audioConversion.ts (new)
+  - CreateDemandForm.tsx
+  - bhashiniService.ts
+- **Description:** Completely resolved the Bhashini 500 Server Error for voice inputs. Implemented a client-side audio transcoder that intercepts the raw browser webm/opus recording and transcodes it locally into a standard 16kHz PCM WAV before sending it to the backend. Fixed network error handling logic so failures properly reset rather than persist in the UI.
+
+### TypeScript Compilation Fixes
+- **Files updated:**
+  - HeroSection.tsx
+  - CitizenPortalHome.tsx
+- **Description:** Fixed vite build failure by installing @types/leaflet.heat and suppressing un-typable dist paths using @ts-expect-error. Removed unused voteThreshold variable.

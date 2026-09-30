@@ -85,6 +85,17 @@ function AppInner() {
   // Sync with Browser URL
   useEffect(() => {
     const handlePopState = () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const demandQuery = searchParams.get("demand");
+      
+      if (demandQuery) {
+        setSelectedDemandId(demandQuery);
+        setView("citizen-detail");
+        // Update URL to canonical path without reloading
+        window.history.replaceState({}, "", `/detail/${demandQuery}`);
+        return;
+      }
+
       const path = window.location.pathname.substring(1) || "";
       const parts = path.split("/");
       const urlView = parts[0];
@@ -102,7 +113,7 @@ function AppInner() {
     };
     
     // Initialize view based on current URL on mount
-    if (window.location.pathname !== "/") {
+    if (window.location.pathname !== "/" || window.location.search) {
        handlePopState();
     }
     

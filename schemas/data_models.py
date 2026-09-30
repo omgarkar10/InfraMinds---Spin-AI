@@ -31,12 +31,19 @@ class GrievanceType(str, Enum):
 
 
 class GrievanceCategory(str, Enum):
-    ROADS = "roads"
-    WATER = "water"
-    GARBAGE = "garbage"
-    ELECTRICITY = "electricity"
-    DRAINAGE = "drainage"
-    OTHER = "other"
+    WATER_SUPPLY = "Water Supply"
+    ELECTRICITY = "Electricity"
+    ROADS_TRANSPORT = "Roads & Transport"
+    SANITATION = "Sanitation"
+    PUBLIC_HEALTH = "Public Health"
+    POLICE = "Police / Law & Order"
+    PUBLIC_TRANSPORT = "Public Transport"
+    EDUCATION = "Education"
+    HOUSING = "Housing & Urban Development"
+    ENVIRONMENT = "Environment & Forestry"
+    SOCIAL_WELFARE = "Social Welfare & Pensions"
+    GENERAL = "General Administration"
+    OTHER = "Other"
 
 
 class GrievanceStatus(str, Enum):

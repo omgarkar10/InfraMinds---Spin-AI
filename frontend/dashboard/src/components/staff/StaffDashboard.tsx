@@ -1,28 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import "../../styles/citizen.css";
-import { getStaffDemands } from "../../services/demandService";
-import type { StaffUser, Proposal } from "../../types";
+import type { StaffUser } from "../../types";
 
 import { FieldOfficerDashboard } from "./FieldOfficerDashboard";
 import { DepartmentOfficerDashboard } from "./DepartmentOfficerDashboard";
 
 interface StaffDashboardProps {
   user: StaffUser;
-  onNavigate: (view: string) => void;
+  onNavigate: (view: string, id?: string) => void;
 }
 
 export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate: _onNavigate }) => {
-  const [proposals, setDemands] = useState<Proposal[]>([]);
+  // proposals state removed
 
-  useEffect(() => {
-    // Whenever logged in user changes, reload department-scoped proposals
-    refreshData();
-  }, [user.id, user.department, user.role]);
-
-  const refreshData = () => {
-    const list = getStaffDemands(user);
-    setDemands(list);
-  };
+  // No effect needed for DepartmentOfficerDashboard anymore as it fetches its own data
 
   if (user.role === "Field Inspector" || user.role === "Field Officer") {
     return <FieldOfficerDashboard user={user} />;
@@ -44,8 +35,6 @@ export const StaffDashboard: React.FC<StaffDashboardProps> = ({ user, onNavigate
       <div className="container">
         <DepartmentOfficerDashboard 
           user={user} 
-          demands={proposals} 
-          onRefresh={refreshData} 
         />
       </div>
     </div>
