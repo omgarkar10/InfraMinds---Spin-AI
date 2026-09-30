@@ -18,7 +18,7 @@ interface ExecutionTask {
   allocated_budget?: number;
 }
 
-import type { StaffUser } from "../../types";
+import type { StaffUser } from "../types";
 
 export const PolicyDashboard: React.FC<{ user: StaffUser }> = ({ user }) => {
   const [metrics, setMetrics] = useState({
