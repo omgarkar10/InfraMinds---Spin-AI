@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+
 from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 from pydantic import BaseModel
@@ -177,3 +178,71 @@ async def enact_policy(demand_id: str, payload: EnactPolicyPayload, user: UserSc
         raise HTTPException(status_code=400, detail=result["error"])
         
     return result
+@router.post("/ai-advisor")
+async def get_ai_policy_recommendation(
+    current_user: UserSchema = Depends(require_policymaker)
+):
+    db = get_firestore_db()
+    if not db:
+        return {"recommendation_markdown": "Database not initialized"}
+        
+    district_id = current_user.district_id
+    department_id = current_user.department_id
+    
+    query = db.collection("demands")
+    
+    if district_id and district_id != "all":
+        query = query.where(filter=FieldFilter("district_id", "==", district_id))
+        
+    demands_ref = query.stream()
+    
+    demand_data = []
+    for doc in demands_ref:
+        d = doc.to_dict() or {}
+        status = d.get("status")
+        expected_cat = None
+        if department_id and department_id != 'all':
+            expected_cat = get_category_from_dept_id(department_id)
+            if d.get("category") != expected_cat:
+                continue
+            
+        demand_data.append({
+            "id": doc.id,
+            "title": d.get("english_translation", d.get("original_text", "")),
+            "votes": d.get("vote_count", 0),
+            "feasibility_score": d.get("feasibility_score", "N/A"),
+            "status": status
+        })
+
+    if not demand_data:
+        return {"recommendation_markdown": "Not enough verified data to generate a policy recommendation."}
+
+    from google.cloud import aiplatform
+    from vertexai.generative_models import GenerativeModel
+    import json
+    
+    model = GenerativeModel("gemini-1.5-flash-002")
+    
+    prompt = f"""
+    You are an expert Public Policy Advisor for a municipal government in India. 
+    Analyze the following list of verified, field-inspected public infrastructure demands for the {department_id} department.
+
+    DATA:
+    {json.dumps(demand_data, indent=2)}
+
+    Based on the vote velocity and feasibility scores, generate a brief Executive Policy Brief.
+    Format your response in clean Markdown with the following sections:
+    1. **Primary Immediate Concern:** (Identify the most critical cluster of demands)
+    2. **Estimated Impact:** (What happens if this is resolved vs ignored)
+    3. **Actionable Policy Recommendation:** (A specific, pragmatic directive the policymaker should enact right now, e.g., "Authorize emergency road patching contract for Zone B")
+    4. **Resource Allocation Suggestion:** (How to prioritize the budget across these items)
+    
+    Keep it professional, highly analytical, and concise (under 250 words). Do not invent data. Base it strictly on the provided JSON.
+    """
+
+    try:
+        response = model.generate_content(prompt)
+        return {"recommendation_markdown": response.text}
+    except Exception as e:
+        return {"recommendation_markdown": f"Failed to generate AI brief: {str(e)}"}
+
