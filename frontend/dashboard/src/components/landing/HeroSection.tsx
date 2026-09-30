@@ -16,6 +16,7 @@ function HeatmapLayer({ data }: { data: [number, number, number][] }) {
     (window as any).L = L;
     let heat: any;
 
+    // @ts-expect-error - No types available for specific dist file
     import("leaflet.heat/dist/leaflet-heat.js").then(() => {
       // @ts-ignore - leaflet.heat adds L.heatLayer
       if (!L.heatLayer) return;

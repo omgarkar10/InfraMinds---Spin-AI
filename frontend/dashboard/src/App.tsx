@@ -196,14 +196,14 @@ function AppInner() {
       {(view === "staff-dashboard" || view === "dashboard") && staffUser.id ? (
         <StaffNavbar
           user={staffUser as StaffUser}
-          onViewChange={(v, id) => handleNavigate(v, id)}
+          onViewChange={handleNavigate}
           onLogout={handleStaffLogout}
         />
       ) : isCitizenPortalView ? null : (
         <Navbar
           view={view}
           user={citizenUser.isLoggedIn ? citizenUser : undefined}
-          onViewChange={(v, id) => handleNavigate(v, id)}
+          onViewChange={handleNavigate}
         />
       )}
 
@@ -283,7 +283,7 @@ function AppInner() {
         <DemandDetail
           user={citizenUser}
           DemandId={selectedDemandId}
-          onNavigate={(v, id) => handleNavigate(v, id)}
+          onNavigate={handleNavigate}
         />
       )}
 
@@ -305,7 +305,7 @@ function AppInner() {
       {view === "staff-dashboard" && (
         <StaffDashboard
           user={staffUser}
-          onNavigate={(v, id) => handleNavigate(v, id)}
+          onNavigate={handleNavigate}
         />
       )}
 
@@ -313,13 +313,13 @@ function AppInner() {
       {view === "landing" && (
         <main>
           <HeroSection
-            onViewChange={(v, id) => handleNavigate(v, id)}
+            onViewChange={handleNavigate}
           />
           <WhySpinSection />
           <HowItHelpsSection />
           <WhatYouCanDemandSection />
-          <FinalCtaSection onViewChange={(v, id) => handleNavigate(v, id)} />
-          <Footer onViewChange={(v, id) => handleNavigate(v, id)} />
+          <FinalCtaSection onViewChange={handleNavigate} />
+          <Footer onViewChange={handleNavigate} />
         </main>
       )}
 

@@ -8,6 +8,7 @@ import {
   SubmitRequestPayload,
 } from "../../services/demandService";
 import { translateText, speechToText } from "../../services/bhashiniService";
+import { convertWebmToWav } from "../../utils/audioConversion";
 import type { CitizenUser } from "../../types";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -372,34 +373,31 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
             return;
           }
 
-          // Convert to base64
+          // Convert to valid WAV via AudioContext (forces 16kHz PCM, solves Bhashini 500 errors)
           setIsTranscribing(true);
-          const reader = new FileReader();
-          reader.onloadend = async () => {
-            const base64Audio = (reader.result as string).split(",")[1];
-            try {
-              const result = await speechToText(base64Audio, spokenLanguage, "en");
-              if (result.transcribed_text) {
-                // Show the native-script transcription
-                setSpeechTranscript((prev) =>
-                  prev ? `${prev} ${result.transcribed_text}` : result.transcribed_text
-                );
-                setDetectedLangCode(result.source_language);
-                setDetectedLangName(result.source_language_name);
-                // Show the English translation
-                if (result.translated_text && result.translated_text !== result.transcribed_text) {
-                  setBhashiniTranslatedText(result.translated_text);
-                }
-              } else {
-                setBhashiniError("Could not understand speech. Please speak louder or try again.");
+          try {
+            const base64Audio = await convertWebmToWav(audioBlob);
+            const result = await speechToText(base64Audio, spokenLanguage, "en");
+            
+            if (result.transcribed_text) {
+              // Show the native-script transcription
+              setSpeechTranscript((prev) =>
+                prev ? `${prev} ${result.transcribed_text}` : result.transcribed_text
+              );
+              setDetectedLangCode(result.source_language);
+              setDetectedLangName(result.source_language_name);
+              // Show the English translation
+              if (result.translated_text && result.translated_text !== result.transcribed_text) {
+                setBhashiniTranslatedText(result.translated_text);
               }
-            } catch (err: any) {
-              setBhashiniError(err.message || "Speech recognition failed. Please try again.");
-            } finally {
-              setIsTranscribing(false);
+            } else {
+              setBhashiniError("Could not understand speech. Please speak louder or try again.");
             }
-          };
-          reader.readAsDataURL(audioBlob);
+          } catch (err: any) {
+            setBhashiniError(err.message || "Speech recognition failed. Please try again.");
+          } finally {
+            setIsTranscribing(false);
+          }
         };
 
         mediaRecorderRef.current = recorder;
@@ -415,6 +413,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
   // Category change handler
   const handleCategoryChange = (newCat: string) => {
     setCategory(newCat);
+    setBhashiniError(null); // Clear translation errors on fresh category selection
     if (!newCat) {
       setSpecificIssue("");
       setProposedFacility("");

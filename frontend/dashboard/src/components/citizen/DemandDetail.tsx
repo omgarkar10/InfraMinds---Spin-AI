@@ -124,7 +124,6 @@ export const DemandDetail: React.FC<DemandDetailProps> = ({
     );
   }
 
-  const reqId = proposal.Demand_id || proposal.id;
   const isNewDev = proposal.request_type === "new_development";
   const evidenceList = proposal.evidence_urls || proposal.media_urls || (proposal.evidence?.photos || []);
 

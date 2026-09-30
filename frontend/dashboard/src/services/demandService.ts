@@ -1,5 +1,4 @@
-import { auth, storage } from "../config/firebase";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { auth } from "../config/firebase";
 
 const API_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8080/api`;
 

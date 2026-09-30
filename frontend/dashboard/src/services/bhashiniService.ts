@@ -23,11 +23,12 @@ export async function detectAndTranslate(
   text: string,
   targetLanguage = "en"
 ): Promise<DetectAndTranslateResult> {
-  const response = await fetch(`${API_BASE}/bhashini/detect-and-translate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text, target_language: targetLanguage }),
-  });
+  try {
+    const response = await fetch(`${API_BASE}/bhashini/detect-and-translate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, target_language: targetLanguage }),
+    });
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
@@ -35,6 +36,12 @@ export async function detectAndTranslate(
   }
 
   return response.json();
+} catch (e: any) {
+  if (e.message === "Failed to fetch" || e.name === "TypeError") {
+    throw new Error("Cannot connect to translation service. Please check your internet connection.");
+  }
+  throw e;
+}
 }
 
 /**
@@ -45,15 +52,16 @@ export async function translateText(
   sourceLanguage: string,
   targetLanguage = "en"
 ): Promise<{ translated_text: string; source_language: string }> {
-  const response = await fetch(`${API_BASE}/bhashini/translate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      text,
-      source_language: sourceLanguage,
-      target_language: targetLanguage,
-    }),
-  });
+  try {
+    const response = await fetch(`${API_BASE}/bhashini/translate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text,
+        source_language: sourceLanguage,
+        target_language: targetLanguage,
+      }),
+    });
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
@@ -61,6 +69,12 @@ export async function translateText(
   }
 
   return response.json();
+} catch (e: any) {
+  if (e.message === "Failed to fetch" || e.name === "TypeError") {
+    throw new Error("Cannot connect to translation service. Please check your internet connection.");
+  }
+  throw e;
+}
 }
 
 /**
@@ -91,15 +105,16 @@ export async function speechToText(
   target_language: string;
   provider: string;
 }> {
-  const response = await fetch(`${API_BASE}/bhashini/asr-translate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      audio_content: audioBase64,
-      source_language: sourceLanguage,
-      target_language: targetLanguage,
-    }),
-  });
+  try {
+    const response = await fetch(`${API_BASE}/bhashini/asr-translate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        audio_content: audioBase64,
+        source_language: sourceLanguage,
+        target_language: targetLanguage,
+      }),
+    });
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
@@ -107,4 +122,10 @@ export async function speechToText(
   }
 
   return response.json();
+} catch (e: any) {
+  if (e.message === "Failed to fetch" || e.name === "TypeError") {
+    throw new Error("Cannot connect to translation service. Please check your internet connection.");
+  }
+  throw e;
+}
 }

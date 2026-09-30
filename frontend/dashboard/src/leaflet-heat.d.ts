@@ -1,5 +1,7 @@
 import * as L from 'leaflet';
 
+declare module "leaflet.heat/dist/leaflet-heat.js";
+
 declare module 'leaflet' {
     interface HeatLayerOptions {
         minOpacity?: number;

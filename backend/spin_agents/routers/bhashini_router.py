@@ -1,4 +1,4 @@
-﻿"""Bhashini ULCA pipeline endpoints; all secrets remain on the backend.
+"""Bhashini ULCA pipeline endpoints; all secrets remain on the backend.
 
 Exposes:
   POST /api/bhashini/detect-and-translate
@@ -70,6 +70,8 @@ class ASRTranslateRequest(BaseModel):
     audio_content: str = Field(..., description="Base64 encoded audio data")
     source_language: str = Field(default="hi")
     target_language: str = Field(default="en")
+    audio_format: str = Field(default="wav", description="Audio format: wav, flac, mp3, webm")
+    sample_rate: int = Field(default=16000, description="Audio sample rate in Hz")
 
 
 def _inference_headers() -> dict:
@@ -86,13 +88,18 @@ def _ulca_headers() -> dict:
     }
 
 
-async def _call_inference(payload: dict) -> dict:
-    async with httpx.AsyncClient(timeout=30.0) as client:
+async def _call_inference(payload: dict, timeout: float = 30.0) -> dict:
+    async with httpx.AsyncClient(timeout=timeout) as client:
         resp = await client.post(BHASHINI_INFERENCE_URL, headers=_inference_headers(), json=payload)
         if not resp.is_success:
             body = resp.text[:600]
             logger.error("Bhashini inference %s: %s | payload: %s", resp.status_code, body, str(payload)[:300])
-            resp.raise_for_status()
+            # Raise with the actual error text so callers can surface it
+            raise httpx.HTTPStatusError(
+                f"Bhashini API error {resp.status_code}: {body}",
+                request=resp.request,
+                response=resp,
+            )
         return resp.json()
 
 
@@ -185,9 +192,10 @@ async def _nmt_translate(text: str, source_lang: str, target_lang: str) -> str:
 
 
 async def _get_asr_service_id(source_lang: str) -> str:
-    env_id = CONFIG.bhashini_asr_service_id or ""
-    if env_id:
-        return env_id
+    # ASR service IDs are model/language-specific. Reusing one value from
+    # BHASHINI_ASR_SERVICE_ID for every language causes Dhruva's generic 500
+    # errors for languages not supported by that particular model.
+    # Resolve the model for the selected language through the config API.
     try:
         cfg = await _get_pipeline_config([{
             "taskType": "asr",
@@ -241,11 +249,27 @@ async def asr_and_translate(body: ASRTranslateRequest) -> dict:
     # Step 1: Get ASR serviceId dynamically from Bhashini
     asr_service_id = await _get_asr_service_id(src)
 
+    if not asr_service_id:
+        # Sending an ASR request without a matching service ID makes Bhashini
+        # return an opaque 500. Give the user an actionable response instead.
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"Bhashini ASR is not available for {src_name} ({src}) in the "
+                "configured pipeline. Please type the request or select a "
+                "language with an available Bhashini ASR model."
+            ),
+        )
     # Step 2: Build ASR payload
+    # Bhashini Dhruva ASR supports: wav, flac, mp3, pcm; webm/opus may not be supported
+    # by all language models. Default to wav for best compatibility.
+    audio_fmt = body.audio_format if hasattr(body, "audio_format") else "wav"
+    sample_rate = body.sample_rate if hasattr(body, "sample_rate") else 16000
+
     asr_config: dict = {
         "language": {"sourceLanguage": src},
-        "audioFormat": "webm",
-        "samplingRate": 16000,
+        "audioFormat": audio_fmt,
+        "samplingRate": sample_rate,
     }
     if asr_service_id:
         asr_config["serviceId"] = asr_service_id
@@ -255,7 +279,8 @@ async def asr_and_translate(body: ASRTranslateRequest) -> dict:
         "inputData": {"audio": [{"audioContent": body.audio_content}]},
     }
 
-    # Step 3: Call ASR
+    # Step 3: Call ASR (with fallback on format mismatch)
+    transcribed = ""
     try:
         asr_data = await _call_inference(asr_payload)
         transcribed = (
@@ -263,9 +288,37 @@ async def asr_and_translate(body: ASRTranslateRequest) -> dict:
             .get("output", [{}])[0]
             .get("source", "")
         )
+    except httpx.HTTPStatusError as exc:
+        # If Bhashini returns 500 with webm, retry with wav (browser conversion)
+        if exc.response.status_code == 500 and audio_fmt == "webm":
+            logger.warning("Bhashini ASR 500 with webm, retrying with wav format")
+            asr_config["audioFormat"] = "wav"
+            asr_payload["pipelineTasks"][0]["config"] = asr_config
+            try:
+                asr_data = await _call_inference(asr_payload)
+                transcribed = (
+                    asr_data.get("pipelineResponse", [{}])[0]
+                    .get("output", [{}])[0]
+                    .get("source", "")
+                )
+            except Exception as retry_exc:
+                logger.error("Bhashini ASR retry also failed: %s", retry_exc)
+                raise HTTPException(
+                    status_code=502,
+                    detail=f"Bhashini ASR is temporarily unavailable for {src_name}. Please type your request instead.",
+                )
+        else:
+            logger.error("Bhashini ASR failed (%s): %s", exc.response.status_code, exc)
+            raise HTTPException(
+                status_code=502,
+                detail=f"Bhashini ASR is temporarily unavailable for {src_name}. Please type your request instead.",
+            )
     except Exception as exc:
-        logger.error("Bhashini ASR failed: %s", exc)
-        raise HTTPException(status_code=502, detail=f"Bhashini ASR failed: {exc}")
+        logger.error("Bhashini ASR network error: %s", exc)
+        raise HTTPException(
+            status_code=502,
+            detail=f"Could not reach Bhashini ASR service. Please check your connection or type your request.",
+        )
 
     if not transcribed or not transcribed.strip():
         return {"transcribed_text": "", "translated_text": "", "source_language": src,
