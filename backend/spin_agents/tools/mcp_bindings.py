@@ -209,7 +209,7 @@ def vertex_ai_vision_cross_check(
         from vertexai.generative_models import GenerativeModel, Part
 
         vertexai.init(project=CONFIG.gcp_project, location=CONFIG.gcp_location)
-        model = GenerativeModel("gemini-1.5-flash")
+        model = GenerativeModel(CONFIG.gemini_model)
         prompt = (
             f"Analyze this civic infrastructure photo. The citizen claims category '{claimed_category}'. "
             f"Classify observed category into: roads, water, garbage, electricity, drainage, other. "

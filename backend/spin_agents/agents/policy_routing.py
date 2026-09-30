@@ -32,7 +32,7 @@ from spin_agents.tools.mcp_bindings import (
     register_recent_ticket,
 )
 
-GEMINI_MODEL = "gemini-1.5-flash"
+GEMINI_MODEL = CONFIG.gemini_model
 
 
 POLICY_ROUTER_INSTRUCTION = """

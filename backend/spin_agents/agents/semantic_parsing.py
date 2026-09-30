@@ -36,7 +36,7 @@ from spin_agents.tools.mcp_bindings import (
 )
 
 # Standard Vertex AI production identifier
-GEMINI_MODEL = "gemini-1.5-flash"
+GEMINI_MODEL = CONFIG.gemini_model
 
 
 SEMANTIC_PARSER_INSTRUCTION = """

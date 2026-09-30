@@ -65,7 +65,7 @@ def _jwt_secret() -> str:
 
 @dataclass(frozen=True)
 class SpinConfig:
-    gemini_model: str = field(default_factory=lambda: _clean_env("GEMINI_MODEL", "gemini-2.5-flash"))
+    gemini_model: str = field(default_factory=lambda: _clean_env("GEMINI_MODEL", "gemini-3.8-flash"))
     gcp_project: str = field(default_factory=lambda: _clean_env("GOOGLE_CLOUD_PROJECT", ""))
     gcp_location: str = field(default_factory=lambda: _clean_env("GOOGLE_CLOUD_LOCATION", "us-central1"))
     bigquery_dataset: str = field(default_factory=lambda: _clean_env("SPIN_BQ_DATASET", "spin_grievances"))

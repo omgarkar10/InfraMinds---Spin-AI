@@ -30,9 +30,10 @@ from schemas.data_models import (
     SemanticParsingOutput,
     VerificationQuestionItem,
 )
+from spin_agents.config import CONFIG
 from spin_agents.tools.mcp_bindings import cloud_translate_text
 
-GEMINI_MODEL = "gemini-1.5-flash"
+GEMINI_MODEL = CONFIG.gemini_model
 
 
 DYNAMIC_VERIFIER_INSTRUCTION = """
