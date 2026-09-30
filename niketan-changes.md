@@ -478,6 +478,14 @@ ole (Department Officer) and department (Water Supply) dynamically upon each req
 - **Rationale:** If the citizen 	oken was missing or 
 ull, the backend crashed while trying to decode a malformed/missing JWT. Switching to localStorage.getItem('staff_token') ensures the correct Firebase token is sent for Staff APIs, allowing the Department Officer queue to load successfully.
 
+### Update `.gitignore` and `README.md` Before Branch Switch
+- **Files updated:**
+  - `.gitignore`
+  - `README.md`
+- **Description:** Added `task-def.json` and `.firebase/` to `.gitignore`. Added a "New Features" section to the `README.md` outlining the Public Demand Measurement Platform, Bhashini Integration, Role-Based Dashboards, Firebase Infrastructure, and Interactive Geospatial Feed.
+- **Rationale:** The user wanted to stage and commit necessary files, add missing items to `.gitignore`, and document new features in the README before switching to the `main` branch so another person could commit their changes.
+
+
 ### Bhashini ASR and Audio Encoding
 - **Files updated:**
   - src/utils/audioConversion.ts (new)

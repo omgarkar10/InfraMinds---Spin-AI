@@ -21,11 +21,11 @@
 * **Policymaker**: `water.supply.policy@gov.in`
 
 ### ⚡ Electricity
-* **Department Officer**: ``
+* **Department Officer**: `electricity.officer@gov.in`
 * **Field Inspector**: `electricity.field@gov.in`
 * **Policymaker**: `electricity.policy@gov.in`
 
-### 🛣️ Roads & Transportelectricity.officer@gov.in
+### 🛣️ Roads & Transport
 * **Department Officer**: `roads.transport.officer@gov.in`
 * **Field Inspector**: `roads.transport.field@gov.in`
 * **Policymaker**: `roads.transport.policy@gov.in`
