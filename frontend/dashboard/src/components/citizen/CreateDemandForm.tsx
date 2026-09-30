@@ -8,7 +8,7 @@ import {
   SubmitRequestPayload,
 } from "../../services/demandService";
 import { translateText, speechToText } from "../../services/bhashiniService";
-import { convertWebmToWav } from "../../utils/audioConversion";
+import { convertWebmToWav, pickRecorderMimeType, SilentRecordingError } from "../../utils/audioConversion";
 import type { CitizenUser } from "../../types";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -22,6 +22,68 @@ function LocationMarker({ position, onLocationChange }: { position: any, onLocat
   return position === null ? null : (
     <Marker position={position}></Marker>
   );
+}
+
+const BROWSER_SPEECH_LANG: Record<string, string> = {
+  as: "as-IN",
+  bn: "bn-IN",
+  en: "en-IN",
+  gu: "gu-IN",
+  hi: "hi-IN",
+  kn: "kn-IN",
+  ml: "ml-IN",
+  mr: "mr-IN",
+  or: "or-IN",
+  pa: "pa-IN",
+  ta: "ta-IN",
+  te: "te-IN",
+  ur: "ur-IN",
+};
+
+const ASR_FILLER_WORDS = new Set([
+  "you", "the", "a", "uh", "um", "ah", "hmm", "ya", "yeah", "ok", "okay", "mm",
+]);
+
+function isWeakTranscript(text: string): boolean {
+  const cleaned = text.trim().toLowerCase().replace(/[.,!?]/g, "");
+  if (!cleaned) return true;
+  const words = cleaned.split(/\s+/).filter(Boolean);
+  if (words.length <= 2 && words.every((word) => ASR_FILLER_WORDS.has(word))) return true;
+  return cleaned.length < 3;
+}
+
+function startBrowserSpeechCapture(
+  langCode: string,
+  onUpdate: (text: string) => void
+): any | null {
+  const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+  if (!SpeechRecognition) return null;
+  const rec = new SpeechRecognition();
+  rec.continuous = true;
+  rec.interimResults = true;
+  rec.lang = BROWSER_SPEECH_LANG[langCode] || `${langCode}-IN`;
+  rec.onresult = (event: any) => {
+    let finalText = "";
+    let interimText = "";
+    for (let i = 0; i < event.results.length; i++) {
+      const piece = event.results[i][0]?.transcript || "";
+      if (event.results[i].isFinal) {
+        finalText += `${piece} `;
+      } else {
+        interimText += piece;
+      }
+    }
+    onUpdate(`${finalText}${interimText}`.trim());
+  };
+  rec.onerror = () => {
+    /* Bhashini remains the primary path; browser speech is a live fallback. */
+  };
+  try {
+    rec.start();
+    return rec;
+  } catch {
+    return null;
+  }
 }
 
 interface CreateDemandFormProps {
@@ -253,6 +315,9 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
   const [spokenLanguage, setSpokenLanguage] = useState<string>("mr"); // Bhashini language code
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const browserSpeechRef = useRef<any>(null);
+  const browserTranscriptRef = useRef<string>("");
+  const recordingStartedAtRef = useRef<number>(0);
 
   // Bhashini translation state
   const [detectedLangCode, setDetectedLangCode] = useState<string>("");
@@ -309,7 +374,13 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
 
   // Re-translate when user manually edits the transcript text
   const runBhashiniTranslate = useCallback(async (text: string, langCode: string) => {
-    if (!text || text.trim().length < 3) return;
+    if (!text || text.trim().length < 3 || isWeakTranscript(text)) return;
+    if (langCode === "en") {
+      setDetectedLangCode("en");
+      setDetectedLangName("English");
+      setBhashiniTranslatedText(text);
+      return;
+    }
     setIsBhashiniLoading(true);
     setBhashiniError(null);
     try {
@@ -327,82 +398,166 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
 
   // Debounce — re-translate when the user manually edits the transcript
   useEffect(() => {
+    if (isRecording || isTranscribing) return;
     const timer = setTimeout(() => {
       if (speechTranscript.trim().length >= 3) {
         runBhashiniTranslate(speechTranscript, spokenLanguage);
       }
     }, 1000);
     return () => clearTimeout(timer);
-  }, [speechTranscript, runBhashiniTranslate, spokenLanguage]);
+  }, [speechTranscript, runBhashiniTranslate, spokenLanguage, isRecording, isTranscribing]);
 
-  // ── Bhashini ASR: Record audio → send to server → get transcription ────
+  // ── Voice capture: MediaRecorder (Bhashini) + live browser speech fallback ─
   const toggleRecording = async () => {
     if (isRecording) {
-      // ── STOP recording ────────────────────────────────────────────────
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-        mediaRecorderRef.current.stop();
+      if (recordingStartedAtRef.current && Date.now() - recordingStartedAtRef.current < 900) {
+        setBhashiniError("Please speak for at least one second before stopping.");
       }
-      // The onstop handler below will process the audio
-    } else {
-      // ── START recording ───────────────────────────────────────────────
-      try {
-        setBhashiniError(null);
-        setAiMessage(null);
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const recorder = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" });
-        audioChunksRef.current = [];
+      const recorder = mediaRecorderRef.current;
+      if (recorder && recorder.state !== "inactive") {
+        try {
+          recorder.requestData();
+        } catch {
+          /* not all browsers implement requestData */
+        }
+        recorder.stop();
+      }
+      return;
+    }
 
-        recorder.ondataavailable = (event: BlobEvent) => {
-          if (event.data.size > 0) {
-            audioChunksRef.current.push(event.data);
+    try {
+      setBhashiniError(null);
+      setAiMessage(null);
+      setSpeechTranscript("");
+      setBhashiniTranslatedText("");
+      audioChunksRef.current = [];
+      browserTranscriptRef.current = "";
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: 1,
+        },
+      });
+
+      const mimeType = pickRecorderMimeType();
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
+
+      recorder.ondataavailable = (event: BlobEvent) => {
+        if (event.data && event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onerror = () => {
+        stream.getTracks().forEach((track) => track.stop());
+        setIsRecording(false);
+        setBhashiniError("Recording failed. Please try again or type your request.");
+      };
+
+      recorder.onstop = async () => {
+        setIsRecording(false);
+        setIsTranscribing(true);
+
+        // Give the browser speech engine a moment to flush the last phrase.
+        await new Promise((resolve) => setTimeout(resolve, 400));
+        try {
+          browserSpeechRef.current?.stop();
+        } catch {
+          /* already stopped */
+        }
+        browserSpeechRef.current = null;
+        stream.getTracks().forEach((track) => track.stop());
+
+        const blobType = recorder.mimeType || mimeType || "audio/webm";
+        const audioBlob = new Blob(audioChunksRef.current, { type: blobType });
+        const browserText = browserTranscriptRef.current.trim();
+
+        if (audioBlob.size < 1000 && isWeakTranscript(browserText)) {
+          setIsTranscribing(false);
+          setBhashiniError("Recording too short. Please speak for at least 1-2 seconds.");
+          return;
+        }
+
+        try {
+          let transcribed = "";
+          let translated = "";
+          let sourceLang = spokenLanguage;
+          let sourceName = "";
+
+          if (audioBlob.size >= 1000) {
+            try {
+              const base64Audio = await convertWebmToWav(audioBlob);
+              const result = await speechToText(base64Audio, spokenLanguage, "en");
+              transcribed = (result.transcribed_text || "").trim();
+              translated = (result.translated_text || "").trim();
+              sourceLang = result.source_language || spokenLanguage;
+              sourceName = result.source_language_name || "";
+            } catch (err: any) {
+              if (err instanceof SilentRecordingError && !browserText) {
+                throw err;
+              }
+              if (!browserText) {
+                throw err;
+              }
+            }
           }
-        };
 
-        recorder.onstop = async () => {
-          // Release microphone
-          stream.getTracks().forEach((track) => track.stop());
-          setIsRecording(false);
+          if (isWeakTranscript(transcribed) && !isWeakTranscript(browserText)) {
+            transcribed = browserText;
+            translated = spokenLanguage === "en" ? browserText : translated;
+          } else if (
+            spokenLanguage === "en" &&
+            !isWeakTranscript(browserText) &&
+            browserText.split(/\s+/).length > transcribed.split(/\s+/).length
+          ) {
+            transcribed = browserText;
+            translated = browserText;
+          }
 
-          const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-          if (audioBlob.size < 1000) {
-            setBhashiniError("Recording too short. Please speak for at least 1-2 seconds.");
+          if (isWeakTranscript(transcribed)) {
+            setBhashiniError("Could not understand speech. Please speak clearly for a few seconds and try again.");
             return;
           }
 
-          // Convert to valid WAV via AudioContext (forces 16kHz PCM, solves Bhashini 500 errors)
-          setIsTranscribing(true);
-          try {
-            const base64Audio = await convertWebmToWav(audioBlob);
-            const result = await speechToText(base64Audio, spokenLanguage, "en");
-            
-            if (result.transcribed_text) {
-              // Show the native-script transcription
-              setSpeechTranscript((prev) =>
-                prev ? `${prev} ${result.transcribed_text}` : result.transcribed_text
-              );
-              setDetectedLangCode(result.source_language);
-              setDetectedLangName(result.source_language_name);
-              // Show the English translation
-              if (result.translated_text && result.translated_text !== result.transcribed_text) {
-                setBhashiniTranslatedText(result.translated_text);
-              }
-            } else {
-              setBhashiniError("Could not understand speech. Please speak louder or try again.");
-            }
-          } catch (err: any) {
-            setBhashiniError(err.message || "Speech recognition failed. Please try again.");
-          } finally {
-            setIsTranscribing(false);
+          setSpeechTranscript(transcribed);
+          setDetectedLangCode(sourceLang);
+          if (sourceName) setDetectedLangName(sourceName);
+          if (translated && translated !== transcribed) {
+            setBhashiniTranslatedText(translated);
+          } else if (spokenLanguage === "en") {
+            setBhashiniTranslatedText(transcribed);
           }
-        };
+        } catch (err: any) {
+          if (!isWeakTranscript(browserTranscriptRef.current)) {
+            const recovered = browserTranscriptRef.current.trim();
+            setSpeechTranscript(recovered);
+            if (spokenLanguage === "en") setBhashiniTranslatedText(recovered);
+          } else {
+            setBhashiniError(err.message || "Speech recognition failed. Please try again.");
+          }
+        } finally {
+          setIsTranscribing(false);
+        }
+      };
 
-        mediaRecorderRef.current = recorder;
-        recorder.start();
-        setIsRecording(true);
-      } catch (err: any) {
-        setBhashiniError("Could not access microphone. Please allow microphone access and try again.");
-        setIsRecording(false);
-      }
+      mediaRecorderRef.current = recorder;
+      recordingStartedAtRef.current = Date.now();
+      recorder.start(250);
+      setIsRecording(true);
+
+      const rec = startBrowserSpeechCapture(spokenLanguage, (text) => {
+        browserTranscriptRef.current = text;
+        setSpeechTranscript(text);
+      });
+      browserSpeechRef.current = rec;
+    } catch (err: any) {
+      setBhashiniError("Could not access microphone. Please allow microphone access and try again.");
+      setIsRecording(false);
     }
   };
 
@@ -999,7 +1154,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                       : isRecording
                       ? "🔴 Recording... Speak clearly, then click Stop when done."
                       : speechSupported
-                      ? "Select your language, then click to record. Bhashini will transcribe in the correct script."
+                      ? "Select your language so it matches what you will speak, then record. Words appear live; Bhashini then confirms the transcript."
                       : "Microphone unavailable in this browser; please type in the box below."}
                   </div>
 

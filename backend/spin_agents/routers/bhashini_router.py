@@ -88,7 +88,7 @@ def _ulca_headers() -> dict:
     }
 
 
-async def _call_inference(payload: dict, timeout: float = 30.0) -> dict:
+async def _call_inference(payload: dict, timeout: float = 60.0) -> dict:
     async with httpx.AsyncClient(timeout=timeout) as client:
         resp = await client.post(BHASHINI_INFERENCE_URL, headers=_inference_headers(), json=payload)
         if not resp.is_success:
@@ -114,6 +114,18 @@ async def _get_pipeline_config(pipeline_tasks: list) -> dict:
             logger.error("Bhashini pipeline config %s: %s", resp.status_code, resp.text[:400])
             resp.raise_for_status()
         return resp.json()
+
+
+def _extract_asr_text(asr_data: dict) -> str:
+    for task in asr_data.get("pipelineResponse") or []:
+        for item in task.get("output") or []:
+            if not isinstance(item, dict):
+                continue
+            for key in ("source", "target", "transcript"):
+                val = item.get(key)
+                if isinstance(val, str) and val.strip():
+                    return val.strip()
+    return ""
 
 
 def _extract_service_id(config_data: dict, task_type: str) -> str:
@@ -274,20 +286,22 @@ async def asr_and_translate(body: ASRTranslateRequest) -> dict:
     if asr_service_id:
         asr_config["serviceId"] = asr_service_id
 
+    audio_content = body.audio_content.strip()
+    if audio_content.startswith("data:") and "," in audio_content:
+        audio_content = audio_content.split(",", 1)[1]
+    audio_content = "".join(audio_content.split())
+
     asr_payload = {
         "pipelineTasks": [{"taskType": "asr", "config": asr_config}],
-        "inputData": {"audio": [{"audioContent": body.audio_content}]},
+        "inputData": {"audio": [{"audioContent": audio_content}]},
     }
 
     # Step 3: Call ASR (with fallback on format mismatch)
     transcribed = ""
     try:
         asr_data = await _call_inference(asr_payload)
-        transcribed = (
-            asr_data.get("pipelineResponse", [{}])[0]
-            .get("output", [{}])[0]
-            .get("source", "")
-        )
+        transcribed = _extract_asr_text(asr_data)
+        logger.info("Bhashini ASR '%s' transcript (%s chars): %s", src, len(transcribed), transcribed[:120])
     except httpx.HTTPStatusError as exc:
         # If Bhashini returns 500 with webm, retry with wav (browser conversion)
         if exc.response.status_code == 500 and audio_fmt == "webm":
@@ -296,11 +310,7 @@ async def asr_and_translate(body: ASRTranslateRequest) -> dict:
             asr_payload["pipelineTasks"][0]["config"] = asr_config
             try:
                 asr_data = await _call_inference(asr_payload)
-                transcribed = (
-                    asr_data.get("pipelineResponse", [{}])[0]
-                    .get("output", [{}])[0]
-                    .get("source", "")
-                )
+                transcribed = _extract_asr_text(asr_data)
             except Exception as retry_exc:
                 logger.error("Bhashini ASR retry also failed: %s", retry_exc)
                 raise HTTPException(

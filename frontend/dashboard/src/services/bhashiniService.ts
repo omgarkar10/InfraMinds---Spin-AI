@@ -113,9 +113,11 @@ export async function speechToText(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        audio_content: audioBase64,
+        audio_content: audioBase64.replace(/\s/g, ""),
         source_language: sourceLanguage,
         target_language: targetLanguage,
+        audio_format: "wav",
+        sample_rate: 16000,
       }),
     });
     if (!response.ok) {
