@@ -250,7 +250,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
   const [isTranscribing, setIsTranscribing] = useState<boolean>(false);
   const [speechTranscript, setSpeechTranscript] = useState<string>("");
   const [speechSupported, setSpeechSupported] = useState<boolean>(true);
-  const [spokenLanguage, setSpokenLanguage] = useState<string>("mr"); // Bhashini language code
+  const [spokenLanguage, setSpokenLanguage] = useState<string>(""); // No default — user must choose
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
@@ -943,6 +943,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                       disabled={isRecording || isTranscribing}
                       style={{ width: "auto", fontSize: "13px", padding: "8px 12px", borderRadius: "8px" }}
                     >
+                      <option value="" disabled>— Select your language first —</option>
                       <option value="as">Assamese (অসমীয়া)</option>
                       <option value="bn">Bengali (বাংলা)</option>
                       <option value="brx">Bodo (बड़ो)</option>
@@ -973,10 +974,10 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                     <button
                       type="button"
                       onClick={toggleRecording}
-                      disabled={isTranscribing}
+                      disabled={isTranscribing || !spokenLanguage}
                       className="btn-primary"
                       style={{
-                        background: isTranscribing ? "#9ca3af" : isRecording ? "#dc2626" : "var(--col-orange)",
+                        background: isTranscribing || !spokenLanguage ? "#9ca3af" : isRecording ? "#dc2626" : "var(--col-orange)",
                         padding: "10px 24px",
                         fontSize: "14px",
                         fontWeight: 700,
@@ -1000,8 +1001,10 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                       ? "Processing your audio with Bhashini ASR... Please wait."
                       : isRecording
                       ? "🔴 Recording... Speak clearly, then click Stop when done."
+                      : !spokenLanguage
+                      ? "👆 Please select your language from the dropdown above before recording."
                       : speechSupported
-                      ? "Select your language, then click to record. Bhashini will transcribe in the correct script."
+                      ? "Language selected! Click 'Start Speaking' to begin recording."
                       : "Microphone unavailable in this browser; please type in the box below."}
                   </div>
 

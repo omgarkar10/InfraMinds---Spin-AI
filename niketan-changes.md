@@ -498,3 +498,9 @@ ull, the backend crashed while trying to decode a malformed/missing JWT. Switchi
   - HeroSection.tsx
   - CitizenPortalHome.tsx
 - **Description:** Fixed vite build failure by installing @types/leaflet.heat and suppressing un-typable dist paths using @ts-expect-error. Removed unused voteThreshold variable.
+
+### Require Language Selection Before Voice Recording
+- **Files updated:**
+  - CreateDemandForm.tsx
+- **Description:** Changed the default spokenLanguage state from "mr" to "" (empty). Added a disabled placeholder option ("Select your language first") to the language dropdown. The "Start Speaking" button is now grayed out and disabled until a language is explicitly chosen. The hint text below the button also updates to prompt users to select a language.
+- **Rationale:** Previously, "Marathi" was pre-selected by default, allowing users to start recording immediately without consciously choosing their language. This caused confusion for non-Marathi speakers who might not notice the dropdown. Now the flow enforces: Select Language ? then Record.
