@@ -3,8 +3,11 @@ from typing import List, Optional
 from spin_agents.auth import get_current_user
 from spin_agents.models import UserSchema
 from spin_agents.rbac import has_min_role
+import os
 import firebase_admin
 from firebase_admin import firestore
+
+STAFF_DEFAULT_PASSWORD = os.environ.get("STAFF_DEFAULT_PASSWORD", "securespin26")
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 db = firestore.client()
@@ -44,7 +47,7 @@ async def invite_district_staff(payload: dict, user: UserSchema = Depends(requir
     try:
         new_user = auth.create_user(
             email=email,
-            password="securespin26", # Default password for invited staff
+            password=STAFF_DEFAULT_PASSWORD,
             display_name=f"Invited {target_role.replace('_', ' ').title()}"
         )
         custom_claims = {
@@ -136,7 +139,7 @@ async def provision_district(payload: dict, user: UserSchema = Depends(require_a
     try:
         new_user = auth.create_user(
             email=email,
-            password="securespin26",
+            password=STAFF_DEFAULT_PASSWORD,
             display_name=f"{district_name.title()} District Admin"
         )
         custom_claims = {
