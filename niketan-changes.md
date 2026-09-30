@@ -485,6 +485,12 @@ ull, the backend crashed while trying to decode a malformed/missing JWT. Switchi
 - **Description:** Added `task-def.json` and `.firebase/` to `.gitignore`. Added a "New Features" section to the `README.md` outlining the Public Demand Measurement Platform, Bhashini Integration, Role-Based Dashboards, Firebase Infrastructure, and Interactive Geospatial Feed.
 - **Rationale:** The user wanted to stage and commit necessary files, add missing items to `.gitignore`, and document new features in the README before switching to the `main` branch so another person could commit their changes.
 
+### Fix Production 500 Error for /api/auth/sync-profile
+- **Files updated:**
+  - `.github/workflows/aws-production-deploy.yml`
+- **Description:** Added a step to inject the GCP Service Account JSON into `backend/service-account.json` using a GitHub secret (`GCP_SERVICE_ACCOUNT`) before the Docker image build.
+- **Rationale:** Because `service-account.json` was correctly removed from Git tracking earlier, the AWS ECS production deployment was missing the file. This caused `firebase_admin` to fall back to anonymous credentials, resulting in a silent Firestore failure that triggered a `500 Internal Server Error` during the `sync-profile` POST request on the production app. Injecting it via GitHub Secrets securely restores Firestore functionality in the production image.
+
 
 ### Bhashini ASR and Audio Encoding
 - **Files updated:**

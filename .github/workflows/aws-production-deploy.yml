@@ -20,6 +20,13 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
+      # ── Inject Firebase Credentials ─────────────────────────────────────────
+      - name: Create Service Account JSON
+        run: |
+          cat << 'EOF' > backend/service-account.json
+          ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          EOF
+
       # ── Docker Layer Cache ──────────────────────────────────────────────────
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
