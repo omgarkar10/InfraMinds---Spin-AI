@@ -273,7 +273,11 @@ export const DemandDetail: React.FC<DemandDetailProps> = ({
                 {evidenceList && evidenceList.length > 0 ? (
                   <div className="media-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: "8px" }}>
                     {evidenceList.map((url: string, idx: number) => {
-                      const absoluteUrl = url.startsWith("http") ? url : `http://${window.location.hostname}:8080${url}`;
+                      const baseOrigin = (import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8080/api`).replace("/api", "");
+                      let absoluteUrl = url.startsWith("http") ? url : `${baseOrigin}${url.startsWith("/") ? "" : "/"}${url}`;
+                      if (absoluteUrl.includes("localhost:8080") && window.location.hostname !== "localhost") {
+                        absoluteUrl = absoluteUrl.replace("http://localhost:8080", baseOrigin);
+                      }
                       return (
                         <a key={idx} href={absoluteUrl} target="_blank" rel="noreferrer">
                           <img src={absoluteUrl} alt={`Evidence ${idx + 1}`} style={{ width: "100%", height: "100px", objectFit: "cover", borderRadius: "6px", border: "1px solid var(--col-border)" }} />

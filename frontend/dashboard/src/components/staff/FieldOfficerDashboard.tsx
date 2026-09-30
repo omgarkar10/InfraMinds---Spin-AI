@@ -60,7 +60,7 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
     setLoading(true);
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/staff/demands/assigned`, {
-        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        headers: { "Authorization": `Bearer ${localStorage.getItem("staff_token")}` }
       });
       if (res.ok) {
         const data = await res.json();
@@ -121,7 +121,7 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
       const res = await fetch(`${import.meta.env.VITE_API_URL}/staff/investigation/${selectedDemand.id}/report`, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${localStorage.getItem("token")}`
+          "Authorization": `Bearer ${localStorage.getItem("staff_token")}`
         },
         body: formData
       });

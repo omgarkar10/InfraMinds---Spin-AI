@@ -433,3 +433,47 @@ Bhashini requires correct serviceIds from its own catalog. The meity-auth endpoi
  -   * * D e s c r i p t i o n * * :   A d d e d   G E T   a n d   P O S T   / w e b h o o k / w h a t s a p p   e n d p o i n t s   t o   d e m a n d _ r o u t e r . p y   f o r   M e t a   i n t e g r a t i o n ,   a n d   c r e a t e d   w h a t s a p p - w e b h o o k . m d   s e t u p   g u i d e . 
  -   * * F i l e s   M o d i f i e d / C r e a t e d * * :   b a c k e n d / s p i n _ a g e n t s / r o u t e r s / d e m a n d _ r o u t e r . p y ,   w h a t s a p p - w e b h o o k . m d  
  
+ 
+ # # #   F i x   A b s o l u t e   I m a g e   U R L s   i n   P r o d u c t i o n 
+ -   * * F i l e s   u p d a t e d : * * 
+     -    a c k e n d / s p i n _ a g e n t s / r o u t e r s / d e m a n d _ r o u t e r . p y 
+     -    r o n t e n d / d a s h b o a r d / s r c / c o m p o n e n t s / c i t i z e n / D e m a n d D e t a i l . t s x 
+     -    r o n t e n d / d a s h b o a r d / s r c / c o m p o n e n t s / c i t i z e n / C i t i z e n P o r t a l H o m e . t s x 
+ -   * * D e s c r i p t i o n : * *   U p d a t e d   b a c k e n d   u p l o a d   e n d p o i n t   t o   g e n e r a t e   a   d y n a m i c   b a s e   U R L   b a s e d   o n   t h e   i n c o m i n g   r e q u e s t ,   i n s t e a d   o f   h a r d c o d i n g   \ l o c a l h o s t : 8 0 8 0 \ .   A l s o   a d d e d   l o g i c   i n   t h e   f r o n t e n d   t o   i n t e r c e p t   l e g a c y   \ l o c a l h o s t : 8 0 8 0 \   i m a g e   U R L s   i n   D B   a n d   r e w r i t e   t h e m   u s i n g   t h e   c u r r e n t   d e p l o y e d   h o s t n a m e / A P I   U R L . 
+ -   * * R a t i o n a l e : * *   P r e v e n t s   i m a g e s   f r o m   b r e a k i n g   w h e n   t h e   f r o n t e n d   i s   a c c e s s e d   f r o m   a   r e m o t e   d o m a i n   ( l i k e   \ 
+ i k e t a n d o e s . m e \ )   w h i l e   t h e   b a c k e n d   r u n s   l o c a l l y   o r   o n   a   d i f f e r e n t   d o m a i n . 
+  
+ 
+
+### Fix Query Parameter Routing
+- **Files updated:**
+  - rontend/dashboard/src/App.tsx
+- **Description:** Updated handlePopState and the initial mount logic to parse the ?demand= query parameter. If found, it routes directly to the demand details page and uses history.replaceState to update the URL cleanly.
+- **Rationale:** Ensures that sharing a direct URL with the ?demand=ID parameter correctly opens the demand details rather than defaulting to the landing page.
+
+
+### Fix Department Categories & Staff Portal Visibility
+- **Files updated:**
+  - schemas/data_models.py
+  - ackend/spin_agents/agents/semantic_parsing.py
+  - rontend/dashboard/src/components/citizen/CreateDemandForm.tsx
+  - ackend/scripts/migrate_categories.py (new)
+- **Description:** Synchronized the category taxonomy across the platform to use the 12 exact canonical department strings defined in credentials.md (e.g., Water Supply, Electricity). Updated the AI prompt instructions and heuristics to output these exact values. Updated the frontend UI <select> options. Ran a Firebase migration script to update all existing demands in the database to map legacy lowercase categories (e.g., water, garbage) to the new canonical RBAC departments.
+- **Rationale:** The Staff Portal queries Firestore for demands where category == user.department. Since user.department strings are title-cased canonical names, the lowercase AI output was causing a mismatch, resulting in an empty queue. This ensures seamless Role-Based Access Control and data consistency.
+
+
+### Fix Staff Authentication & Missing Custom Claims
+- **Files updated:**
+  - ackend/spin_agents/auth.py
+- **Description:** Added an enhance_staff_user fallback to automatically parse .gov.in email addresses (e.g., water.supply.officer@gov.in) and extract the appropriate 
+ole (Department Officer) and department (Water Supply) dynamically upon each request.
+- **Rationale:** When logging in via Firebase Auth during development, users were not assigned custom claims (role/department). This caused the backend to default their role to citizen, resulting in a silent 403 Forbidden on the Staff Portal, and user.department was evaluating to None. This elegant fallback guarantees staff can access their respective queues without manually running admin scripts to provision their custom claims.
+
+
+### Fix Frontend Staff JWT Token Fetching
+- **Files updated:**
+  - rontend/dashboard/src/components/staff/DepartmentOfficerDashboard.tsx
+  - rontend/dashboard/src/components/staff/FieldOfficerDashboard.tsx
+- **Description:** Fixed a critical bug where the Staff portals were sending the citizen 	oken instead of staff_token in the Authorization header during etch requests. 
+- **Rationale:** If the citizen 	oken was missing or 
+ull, the backend crashed while trying to decode a malformed/missing JWT. Switching to localStorage.getItem('staff_token') ensures the correct Firebase token is sent for Staff APIs, allowing the Department Officer queue to load successfully.

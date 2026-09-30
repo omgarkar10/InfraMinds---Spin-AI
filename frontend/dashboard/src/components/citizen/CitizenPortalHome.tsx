@@ -61,16 +61,23 @@ const ImageGrid = ({ images }: { images: string[] }) => {
   
   return (
     <div style={{ display: "grid", gridTemplateColumns, gap: "8px", marginTop: "12px", marginBottom: "12px" }}>
-      {displayImages.map((img, idx) => (
+      {displayImages.map((img, idx) => {
+        const baseOrigin = (import.meta.env.VITE_API_URL || `http://${window.location.hostname}:8080/api`).replace("/api", "");
+        let absoluteUrl = img.startsWith("http") ? img : `${baseOrigin}${img.startsWith("/") ? "" : "/"}${img}`;
+        if (absoluteUrl.includes("localhost:8080") && window.location.hostname !== "localhost") {
+          absoluteUrl = absoluteUrl.replace("http://localhost:8080", baseOrigin);
+        }
+        return (
         <div key={idx} style={{ position: "relative", height: images.length === 1 ? "200px" : "120px", borderRadius: "8px", overflow: "hidden", border: "1px solid #e2e8f0" }}>
-          <img src={img} alt="Attachment" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img src={absoluteUrl} alt="Attachment" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           {idx === 3 && extraCount > 0 && (
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "bold", fontSize: "20px" }}>
               +{extraCount}
             </div>
           )}
         </div>
-      ))}
+      );
+    })}
     </div>
   );
 };

@@ -121,6 +121,7 @@ async def my_votes(
 
 @router.post("/api/upload")
 async def upload_file(
+    request: Request,
     file: UploadFile = File(...),
     current_user: UserSchema = Depends(get_current_user)
 ):
@@ -134,8 +135,7 @@ async def upload_file(
         with open(local_path, "wb") as f:
             f.write(file.file.read())
             
-        # Return a localhost URL that will be served by the StaticFiles mount in api.py
-        # Ensure it works in dev server by pointing to the uvicorn host
-        return {"url": f"http://localhost:8080/{local_path}", "filename": file.filename}
+        # Return a dynamically constructed URL based on the request's host
+        return {"url": f"{request.base_url}{local_path}", "filename": file.filename}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -11,6 +11,46 @@ security = HTTPBearer(auto_error=False)
 
 STAFF_ROLES = {"staff", "admin", "department officer", "policymaker"}
 
+def enhance_staff_user(user: UserSchema, email: str) -> UserSchema:
+    if not email or not email.endswith("@gov.in"):
+        return user
+        
+    if "officer" in email:
+        user.role = "Department Officer"
+    elif "field" in email:
+        user.role = "Field Inspector"
+    elif "policy" in email:
+        user.role = "Policymaker"
+    elif "admin" in email:
+        user.role = "admin"
+        
+    if "water.supply" in email:
+        user.department = "Water Supply"
+    elif "electricity" in email:
+        user.department = "Electricity"
+    elif "roads.transport" in email:
+        user.department = "Roads & Transport"
+    elif "sanitation" in email:
+        user.department = "Sanitation"
+    elif "public.health" in email:
+        user.department = "Public Health"
+    elif "police.law" in email:
+        user.department = "Police / Law & Order"
+    elif "public.transport" in email:
+        user.department = "Public Transport"
+    elif "education" in email:
+        user.department = "Education"
+    elif "housing.urban" in email:
+        user.department = "Housing & Urban Development"
+    elif "environment.forestry" in email:
+        user.department = "Environment & Forestry"
+    elif "social.welfare" in email:
+        user.department = "Social Welfare & Pensions"
+    elif "general.administration" in email or "admin@" in email:
+        user.department = "General Administration"
+        
+    return user
+
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> UserSchema:
@@ -31,22 +71,24 @@ async def get_current_user(
             is_verified_resident=True,
             role=role
         )
-        return user
+        return enhance_staff_user(user, decoded_token.get("email", ""))
     except Exception as e:
+        print(f"Firebase token verification failed: {e}")
         # Fallback for local dev when backend Firebase Admin lacks credentials
         import jwt
         try:
-            unverified = jwt.decode(token, options={"verify_signature": False})
+            unverified = jwt.decode(token, options={"verify_signature": False}, algorithms=["RS256"])
             user = UserSchema(
                 id=unverified.get("user_id") or unverified.get("uid") or "demo-user",
                 is_verified_resident=True,
                 role=unverified.get("role", "citizen")
             )
-            return user
-        except Exception:
+            return enhance_staff_user(user, unverified.get("email", ""))
+        except Exception as inner_e:
+            print(f"JWT decode failed: {inner_e}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Invalid or expired token. {e}",
+                detail=f"Invalid or expired token. {e} | {inner_e}",
                 headers={"WWW-Authenticate": "Bearer"},
             )
 

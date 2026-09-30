@@ -39,7 +39,7 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
   const fetchQueue = async () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/staff/demands/queue`, {
-        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        headers: { "Authorization": `Bearer ${localStorage.getItem("staff_token")}` }
       });
       if (res.ok) {
         const data = await res.json();
@@ -55,7 +55,7 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
   const fetchOfficers = async () => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/staff/field-officers`, {
-        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        headers: { "Authorization": `Bearer ${localStorage.getItem("staff_token")}` }
       });
       if (res.ok) {
         setOfficers(await res.json());
@@ -72,7 +72,7 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("token")}` 
+          "Authorization": `Bearer ${localStorage.getItem("staff_token")}` 
         },
         body: JSON.stringify({ action, reason: staffNote || "No notes provided." })
       });
@@ -95,7 +95,7 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("token")}` 
+          "Authorization": `Bearer ${localStorage.getItem("staff_token")}` 
         },
         body: JSON.stringify({ 
           field_officer_id: officerId, 
