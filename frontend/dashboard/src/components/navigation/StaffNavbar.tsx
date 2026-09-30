@@ -69,8 +69,16 @@ export function StaffNavbar({ user, onViewChange, onLogout }: StaffNavbarProps) 
                 Analytics Map
               </button>
             )}
-            <button className="navbar-link active" onClick={() => onViewChange("staff-dashboard")}>
-              {(user.role === "Field Inspector" || user.role === "Field Officer") ? "My Investigations" : "Demand Queue"}
+            <button className="navbar-link active" onClick={() => {
+              if (user.role === "state_admin") onViewChange("/admin/state");
+              else if (user.role === "platform_admin") onViewChange("/admin/platform");
+              else if (user.role === "district_admin") onViewChange("/admin/district");
+              else onViewChange("/staff-dashboard");
+            }}>
+              {user.role === "state_admin" ? "State Overview" :
+               user.role === "platform_admin" ? "Platform Overview" :
+               user.role === "district_admin" ? "District Overview" :
+               (user.role === "Field Inspector" || user.role === "Field Officer") ? "My Investigations" : "Demand Queue"}
             </button>
           </div>
 

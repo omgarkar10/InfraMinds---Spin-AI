@@ -9,45 +9,33 @@ from spin_agents.db import db
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 security = HTTPBearer(auto_error=False)
 
-STAFF_ROLES = {"staff", "admin", "department officer", "policymaker"}
+STAFF_ROLES = {"staff", "admin", "department officer", "policymaker", "field_officer", "district_admin", "state_admin", "platform_admin"}
 
 def enhance_staff_user(user: UserSchema, email: str) -> UserSchema:
     if not email or not email.endswith("@gov.in"):
         return user
         
     if "officer" in email:
-        user.role = "Department Officer"
+        user.role = "department_officer"
     elif "field" in email:
-        user.role = "Field Inspector"
+        user.role = "field_officer"
     elif "policy" in email:
-        user.role = "Policymaker"
+        user.role = "policymaker"
     elif "admin" in email:
-        user.role = "admin"
+        user.role = "district_admin"
         
     if "water.supply" in email:
-        user.department = "Water Supply"
+        user.department_id = "water"
     elif "electricity" in email:
-        user.department = "Electricity"
+        user.department_id = "electricity"
     elif "roads.transport" in email:
-        user.department = "Roads & Transport"
+        user.department_id = "roads"
     elif "sanitation" in email:
-        user.department = "Sanitation"
-    elif "public.health" in email:
-        user.department = "Public Health"
-    elif "police.law" in email:
-        user.department = "Police / Law & Order"
-    elif "public.transport" in email:
-        user.department = "Public Transport"
-    elif "education" in email:
-        user.department = "Education"
-    elif "housing.urban" in email:
-        user.department = "Housing & Urban Development"
-    elif "environment.forestry" in email:
-        user.department = "Environment & Forestry"
-    elif "social.welfare" in email:
-        user.department = "Social Welfare & Pensions"
-    elif "general.administration" in email or "admin@" in email:
-        user.department = "General Administration"
+        user.department_id = "garbage"
+    elif "drainage" in email:
+        user.department_id = "drainage"
+    else:
+        user.department_id = "other"
         
     return user
 
@@ -71,7 +59,19 @@ async def get_current_user(
             is_verified_resident=True,
             role=role
         )
-        return enhance_staff_user(user, decoded_token.get("email", ""))
+        user = enhance_staff_user(user, decoded_token.get("email", ""))
+        
+        # Override with Firestore authoritative data if available
+        user_doc = db.collection("users").document(user_id).get()
+        if user_doc.exists:
+            data = user_doc.to_dict()
+            user.role = data.get("role", user.role)
+            user.department_id = data.get("department_id", user.department_id)
+            user.state_id = data.get("state_id")
+            user.district_id = data.get("district_id")
+            user.assigned_wards = data.get("assigned_wards", [])
+            
+        return user
     except Exception as e:
         print(f"Firebase token verification failed: {e}")
         # Fallback for local dev when backend Firebase Admin lacks credentials
@@ -83,7 +83,19 @@ async def get_current_user(
                 is_verified_resident=True,
                 role=unverified.get("role", "citizen")
             )
-            return enhance_staff_user(user, unverified.get("email", ""))
+            user = enhance_staff_user(user, unverified.get("email", ""))
+            
+            # Override with Firestore authoritative data if available
+            user_doc = db.collection("users").document(user.id).get()
+            if user_doc.exists:
+                data = user_doc.to_dict()
+                user.role = data.get("role", user.role)
+                user.department_id = data.get("department_id", user.department_id)
+                user.state_id = data.get("state_id")
+                user.district_id = data.get("district_id")
+                user.assigned_wards = data.get("assigned_wards", [])
+                
+            return user
         except Exception as inner_e:
             print(f"JWT decode failed: {inner_e}")
             raise HTTPException(

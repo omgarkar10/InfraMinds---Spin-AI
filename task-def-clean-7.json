@@ -1,0 +1,137 @@
+{
+  "containerDefinitions": [
+    {
+      "name": "spin-api",
+      "image": "541259832110.dkr.ecr.ap-south-1.amazonaws.com/spin-api:9303cf0040840cc7df1a6601763eac7ed63aa144",
+      "cpu": 0,
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "hostPort": 8080,
+          "protocol": "tcp",
+          "name": "spin-api-8080-tcp",
+          "appProtocol": "http"
+        }
+      ],
+      "essential": true,
+      "environment": [
+        {
+          "name": "BHASHINI_USER_ID",
+          "value": "5503fb47c928461bafbfd2c425fd39fe"
+        },
+        {
+          "name": "SPIN_BQ_DATASET",
+          "value": "spin_grievances"
+        },
+        {
+          "name": "GOOGLE_CLOUD_PROJECT",
+          "value": "lateral-ceiling-506309-b4"
+        },
+        {
+          "name": "GEMINI_API_KEY",
+          "value": "AQ.Ab8RN6JYO15DL0EvKP_fpw-hMxBKczTqCo5uBF6zFyirwl5TkA"
+        },
+        {
+          "name": "GOOGLE_CLOUD_LOCATION",
+          "value": "us-central1"
+        },
+        {
+          "name": "BHASHINI_INFERENCE_API_KEY",
+          "value": "WR-8CY2d_-4OVrkI2hWVPa85lWINDcj8-iQZ9ZW1XuuwNTH4MuPXYmRhQnqhATf5"
+        },
+        {
+          "name": "SPIN_BQ_TABLE",
+          "value": "citizen_complaints"
+        },
+        {
+          "name": "SPIN_USE_REMOTE_AGENTS",
+          "value": "false"
+        },
+        {
+          "name": "BHASHINI_DAILY_CALL_LIMIT",
+          "value": "450"
+        },
+        {
+          "name": "CORS_ORIGINS",
+          "value": "https://spin-portal-hack-106.web.app,http://localhost:5173,https://niketandoes.me"
+        },
+        {
+          "name": "GOOGLE_APPLICATION_CREDENTIALS",
+          "value": "/app/backend/service-account.json"
+        },
+        {
+          "name": "GOOGLE_GENAI_USE_VERTEXAI",
+          "value": "true"
+        },
+        {
+          "name": "GATI_SHAKTI_API_URL",
+          "value": "https://api.gati.gov.in/v1/layers/query"
+        },
+        {
+          "name": "JWT_SECRET",
+          "value": "c4ccb587092100872393bfd4dd62b66c11977a758308d6ef60c69328777709d40b6dcf1cc12bd4a31023f347a5f7343b250d4880eb0286710f3d4f80f9d6dba9"
+        },
+        {
+          "name": "GOOGLE_MAPS_API_KEY",
+          "value": "AIzaSyDRGQeq9q5CqlMQCsMgflb6q2tZ3-JPNqA"
+        },
+        {
+          "name": "BHASHINI_ULCA_API_KEY",
+          "value": "28307ba5e3-0dba-4305-bfd6-67d34b5f2b70"
+        },
+        {
+          "name": "BHASHINI_API_URL",
+          "value": "https://dhruva-api.bhashini.gov.in/services/inference/pipeline"
+        },
+        {
+          "name": "FIREBASE_STORAGE_BUCKET",
+          "value": "spin-portal-hack-106.firebasestorage.app"
+        },
+        {
+          "name": "GEMINI_MODEL",
+          "value": "gemini-3.8-flash"
+        },
+        {
+          "name": "BHASHINI_CACHE_TTL_SECONDS",
+          "value": "86400"
+        },
+        {
+          "name": "FIREBASE_PROJECT_ID",
+          "value": "spin-portal-hack-106"
+        },
+        {
+          "name": "WHATSAPP_VERIFY_TOKEN",
+          "value": "spin_webhook_2026"
+        }
+      ],
+      "mountPoints": [],
+      "volumesFrom": [],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/spin-api",
+          "awslogs-create-group": "true",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "systemControls": []
+    }
+  ],
+  "family": "spin-api",
+  "taskRoleArn": "arn:aws:iam::541259832110:role/ElasticContainerServiceTask",
+  "executionRoleArn": "arn:aws:iam::541259832110:role/ecsTaskExecutionRole",
+  "networkMode": "awsvpc",
+  "volumes": [],
+  "placementConstraints": [],
+  "runtimePlatform": {
+    "cpuArchitecture": "X86_64",
+    "operatingSystemFamily": "LINUX"
+  },
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "cpu": "1024",
+  "memory": "2048",
+  "enableFaultInjection": false
+}

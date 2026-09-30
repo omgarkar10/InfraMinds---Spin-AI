@@ -41,6 +41,7 @@ from spin_agents.routers.demand_router import router as demand_router
 from spin_agents.routers.dashboard_router import router as dashboard_router
 from spin_agents.routers.staff_router import router as staff_router
 from spin_agents.routers.bhashini_router import router as bhashini_router
+from spin_agents.routers.admin_router import router as admin_router
 from spin_agents.schemas import CitizenMessage, PipelineRequest, TranslateRequest
 from spin_agents.services.demand_service import process_citizen_webhook
 from spin_agents.tools.mcp_bindings import cloud_translate_text
@@ -106,6 +107,7 @@ app.include_router(demand_router)
 app.include_router(dashboard_router)
 app.include_router(staff_router)
 app.include_router(bhashini_router)
+app.include_router(admin_router)
 
 # ── Standalone & Backward-Compatible Endpoints ────────────────────────────────
 

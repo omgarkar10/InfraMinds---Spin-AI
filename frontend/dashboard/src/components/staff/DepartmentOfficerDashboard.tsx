@@ -27,6 +27,7 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
   const [officers, setOfficers] = useState<Officer[]>([]);
   const [selectedDemand, setSelectedDemand] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<"queue" | "review" | "dispatch">("queue");
+  const [queueTab, setQueueTab] = useState<"threshold" | "emerging">("threshold");
   const [staffNote, setStaffNote] = useState("");
   const [authError, setAuthError] = useState("");
   // isLoading removed
@@ -116,6 +117,16 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
   const activeDemands = demands.filter(d => d.status === "gathering_support" || d.status === "under_review");
   const underReviewDemands = demands.filter(d => d.status === "field_survey" || d.status === "feasibility_reported");
 
+  const VOTE_THRESHOLD = 50;
+  const thresholdDemands = activeDemands.filter(d => (d.vote_count || 0) >= VOTE_THRESHOLD);
+  const emergingDemands = activeDemands.filter(d => (d.vote_count || 0) < VOTE_THRESHOLD).sort((a, b) => {
+    const aDays = Math.max(1, (Date.now() - new Date(a.created_at || Date.now()).getTime()) / 86400000);
+    const bDays = Math.max(1, (Date.now() - new Date(b.created_at || Date.now()).getTime()) / 86400000);
+    return ((b.vote_count || 0) / bDays) - ((a.vote_count || 0) / aDays);
+  });
+
+  const displayedQueue = queueTab === "threshold" ? thresholdDemands : emergingDemands;
+
   return (
     <div style={{ paddingTop: "20px" }}>
       {authError && (
@@ -131,8 +142,21 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
           
           <div className="panel" style={{ marginTop: "24px" }}>
             <div className="panel-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h2 className="panel-title">Threshold Trigger Queue</h2>
-              <span className="panel-badge" style={{ background: "var(--col-red)", color: "#fff" }}>{metrics?.pending_action || activeDemands.length} Requires Action</span>
+              <div style={{ display: "flex", gap: "20px" }}>
+                <button 
+                  onClick={() => setQueueTab("threshold")}
+                  style={{ background: "none", border: "none", borderBottom: queueTab === "threshold" ? "3px solid var(--col-navy)" : "3px solid transparent", fontSize: "20px", fontWeight: 700, paddingBottom: "8px", cursor: "pointer", color: queueTab === "threshold" ? "var(--col-navy)" : "var(--col-text-muted)" }}
+                >
+                  Threshold Trigger Queue
+                </button>
+                <button 
+                  onClick={() => setQueueTab("emerging")}
+                  style={{ background: "none", border: "none", borderBottom: queueTab === "emerging" ? "3px solid var(--col-navy)" : "3px solid transparent", fontSize: "20px", fontWeight: 700, paddingBottom: "8px", cursor: "pointer", color: queueTab === "emerging" ? "var(--col-navy)" : "var(--col-text-muted)" }}
+                >
+                  Emerging Queue
+                </button>
+              </div>
+              <span className="panel-badge" style={{ background: "var(--col-red)", color: "#fff" }}>{queueTab === "threshold" ? thresholdDemands.length : emergingDemands.length} Requires Action</span>
             </div>
             
             <div className="table-responsive">
@@ -148,16 +172,16 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
                   </tr>
                 </thead>
                 <tbody>
-                  {activeDemands.length === 0 ? (
+                  {displayedQueue.length === 0 ? (
                     <tr>
                       <td colSpan={6} style={{ textAlign: "center", padding: "40px" }}>
                         <div style={{ fontSize: "24px", marginBottom: "10px" }}>📥</div>
                         <div style={{ fontWeight: 600, color: "var(--col-navy)" }}>No Pending Demands</div>
-                        <div style={{ fontSize: "12px", color: "var(--col-text-muted)" }}>All demands that reached the threshold have been dispatched.</div>
+                        <div style={{ fontSize: "12px", color: "var(--col-text-muted)" }}>{queueTab === "threshold" ? "All demands that reached the threshold have been dispatched." : "No emerging demands right now."}</div>
                       </td>
                     </tr>
                   ) : (
-                    activeDemands.map(d => (
+                    displayedQueue.map(d => (
                       <tr key={d.id}>
                         <td style={{ fontWeight: 600, color: "var(--col-navy)" }}>{d.id.substring(0, 8)}</td>
                         <td>{d.category || d.domain}</td>

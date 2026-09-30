@@ -4,10 +4,12 @@ Multilingual AI Public Demand & Community Needs platform for [Code for Communiti
 
 ## New Features
 - **Public Demand Measurement Platform**: Evolved from grievance reporting to a proactive community voting and infrastructure request ecosystem.
+- **Hierarchical Multi-Tenant RBAC**: Complex role hierarchy (`Platform Admin > State Admin > District Admin > Policymaker > Dept Officer > Field Officer`) ensuring strict district-scoped multi-tenancy.
+- **JIT Citizen Voting**: Frictionless voting experience utilizing deep-links and Just-In-Time (JIT) authentication logic.
 - **Multilingual Bhashini Integration**: Submit voice demands in 23 Scheduled Indian Languages with native ASR translation capabilities.
-- **Robust Role-Based Staff Dashboards**: Dedicated operational dashboards for Field Officers (PWA/Geotagging), Department Officers, and Policymakers.
-- **Firebase Infrastructure**: End-to-end Firebase Authentication, Firestore NoSQL DB, and Cloud Storage for performance and scalability.
-- **Interactive Geospatial Feed**: Real-time Leaflet heatmap synchronization with live community demands.
+- **Robust Role-Based Staff Dashboards**: Dedicated operational workspaces tailored to every RBAC tier with split-screen reviews, dispatch boards, and geospatial heatmaps.
+- **Firebase Infrastructure**: End-to-end Firebase Authentication, Firestore NoSQL DB (with composite indexing), and Cloud Storage for performance and scalability.
+- **Interactive Geospatial Feed**: Real-time Leaflet heatmap synchronization with live community demands and geotagged field reports.
 
 ## Architecture
 
@@ -27,9 +29,13 @@ Citizen Edge (WhatsApp/Telegram/Voice/PWA)
 │                                │ Policy_Routing_Agent │ │
 │                                └──────────────────────┘ │
 └─────────────────────────────────────────────────────────┘
-        │
+        │ (District-Scoped Queue Routing via Firestore)
         ▼
-Policymaker Dashboard (React + Google Maps heat layer)
+Multi-Tenant Staff Portals (React + Leaflet + Google Maps)
+  ├─ Platform/State/District Admins (Provisioning & Health)
+  ├─ Policymaker Dashboards (Budget Allocation & Trends)
+  ├─ Department Officers (Dispatch & Feasibility Review)
+  └─ Field Officers (Geotagged PWA Surveys)
 ```
 
 ## Quick Start & Environment Setup

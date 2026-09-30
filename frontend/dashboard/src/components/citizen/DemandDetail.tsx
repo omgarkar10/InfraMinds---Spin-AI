@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import "../../styles/citizen.css";
 import { getRequestDetailFromBackend, getDemandById, castVote } from "../../services/demandService";
 import type { CitizenUser } from "../../types";
@@ -21,15 +22,15 @@ const getCategoryEmoji = (cat?: string) => {
 
 interface DemandDetailProps {
   user: CitizenUser;
-  DemandId: string;
-  onNavigate: (view: string, id?: string) => void;
 }
 
 export const DemandDetail: React.FC<DemandDetailProps> = ({
   user,
-  DemandId,
-  onNavigate,
 }) => {
+  const { demand_id } = useParams<{ demand_id: string }>();
+  const navigate = useNavigate();
+  const DemandId = demand_id || "";
+
   const [proposal, setDemand] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -74,7 +75,7 @@ export const DemandDetail: React.FC<DemandDetailProps> = ({
   const handleUpvoteClick = async () => {
     if (!user.isLoggedIn) {
       localStorage.setItem("pending_vote_demand_id", DemandId);
-      onNavigate("citizen-login");
+      navigate(`/login?redirect=${encodeURIComponent(`/demand/${DemandId}`)}`);
       return;
     }
     try {
@@ -115,7 +116,7 @@ export const DemandDetail: React.FC<DemandDetailProps> = ({
             <p className="portal-subtext" style={{ margin: "12px 0 20px 0" }}>
               {error || `No verified request found matching ID: ${DemandId}`}
             </p>
-            <button className="service-card-btn" onClick={() => onNavigate("citizen-track")}>
+            <button className="service-card-btn" onClick={() => navigate("/track")}>
               ← Back to My Requests
             </button>
           </div>
@@ -133,7 +134,7 @@ export const DemandDetail: React.FC<DemandDetailProps> = ({
       <div className="container" style={{ maxWidth: "900px" }}>
         {/* Navigation Breadcrumb */}
         <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <button className="btn-outline" style={{ fontSize: "12px" }} onClick={() => onNavigate("citizen-track")}>
+          <button className="btn-outline" style={{ fontSize: "12px" }} onClick={() => navigate("/track")}>
             ← Back to My Requests
           </button>
           <span className="label-eyebrow">OFFICIAL GOVERNMENT RECORD</span>
@@ -355,7 +356,7 @@ export const DemandDetail: React.FC<DemandDetailProps> = ({
               <button
                 type="button"
                 className="btn-outline"
-                onClick={() => onNavigate("citizen-track")}
+                onClick={() => navigate("/track")}
               >
                 ← Go Back to My Requests
               </button>

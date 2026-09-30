@@ -1,3 +1,21 @@
+def get_category_from_dept_id(dept_id: str) -> str:
+    mapping = {
+        'water': 'Water Supply',
+        'electricity': 'Electricity',
+        'roads': 'Roads & Transport',
+        'garbage': 'Sanitation',
+        'health': 'Public Health',
+        'police': 'Police / Law & Order',
+        'transport': 'Public Transport',
+        'education': 'Education',
+        'housing': 'Housing & Urban Development',
+        'environment': 'Environment & Forestry',
+        'welfare': 'Social Welfare & Pensions',
+        'other': 'General Administration',
+        'all': 'all'
+    }
+    return mapping.get(dept_id, dept_id)
+
 from fastapi import APIRouter, Depends, UploadFile, File
 from google.cloud import firestore
 from pydantic import BaseModel
@@ -29,8 +47,9 @@ async def get_demand_queue(user: UserSchema = Depends(require_staff)):
     query = db.collection("demands")
     
     # Department scoped filtering
-    if user.department:
-        query = query.where("category", "==", user.department)
+    if user.department_id and user.department_id != 'all':
+        expected_cat = get_category_from_dept_id(user.department_id)
+        query = query.where('category', '==', expected_cat)
         
     docs = query.stream()
     
@@ -73,12 +92,13 @@ async def get_field_officers(user: UserSchema = Depends(require_staff)):
         return []
         
     # We query roles that can do field surveys
-    docs = db.collection("users").where("role", "in", ["Field Officer", "staff"]).stream()
+    docs = db.collection("users").where("role", "in", ["field_officer", "staff"]).stream()
     officers = []
     for d in docs:
         data = d.to_dict()
-        if user.department and data.get("department") and data.get("department") != user.department:
-            continue # Ensure we only get officers in the same department
+        if user.department_id and user.department_id != 'all':
+            if data.get('department') and data.get('department') != user.department_id:
+                continue # Ensure we only get officers in the same department
         officers.append({
             "id": d.id,
             "name": data.get("name", "Unknown Officer"),
@@ -90,7 +110,7 @@ async def get_field_officers(user: UserSchema = Depends(require_staff)):
 @router.post("/investigation/{demand_id}/assign")
 async def assign_investigation(demand_id: str, payload: AssignInvestigationPayload, user: UserSchema = Depends(require_staff)):
     """Assigns a demand to a Field Officer."""
-    if user.role != "Department Officer":
+    if user.role != "department_officer":
         return {"error": "Unauthorized"}
         
     db = get_firestore_db()
@@ -106,8 +126,10 @@ async def assign_investigation(demand_id: str, payload: AssignInvestigationPaylo
             return {"error": "Demand not found"}
             
         demand_data = snapshot.to_dict()
-        if demand_data.get("category") != user.department and user.department:
-            return {"error": "Unauthorized: Department mismatch"}
+        if user.department_id and user.department_id != 'all':
+            expected_cat = get_category_from_dept_id(user.department_id)
+            if demand_data.get('category') != expected_cat:
+                return {"error": "Unauthorized: Department mismatch"}
             
         transaction.update(ref, {
             "status": "field_survey",
@@ -129,7 +151,7 @@ async def assign_investigation(demand_id: str, payload: AssignInvestigationPaylo
 @router.post("/investigation/{demand_id}/decision")
 async def investigation_decision(demand_id: str, payload: DecisionPayload, user: UserSchema = Depends(require_staff)):
     """Department Officer decides whether to forward to policy, re-survey, or reject."""
-    if user.role != "Department Officer":
+    if user.role != "department_officer":
         return {"error": "Unauthorized"}
         
     db = get_firestore_db()
@@ -145,8 +167,10 @@ async def investigation_decision(demand_id: str, payload: DecisionPayload, user:
             return {"error": "Demand not found"}
             
         demand_data = snapshot.to_dict()
-        if demand_data.get("category") != user.department and user.department:
-            return {"error": "Unauthorized: Department mismatch"}
+        if user.department_id and user.department_id != 'all':
+            expected_cat = get_category_from_dept_id(user.department_id)
+            if demand_data.get('category') != expected_cat:
+                return {"error": "Unauthorized: Department mismatch"}
             
         target_status = "feasibility_reported"
         title = ""
@@ -209,7 +233,7 @@ async def submit_feasibility_report(
     user: UserSchema = Depends(require_staff)
 ):
     """Field Officer offline-capable photo sync."""
-    if user.role not in ["Field Officer", "Field Inspector", "staff"]:
+    if user.role not in ["field_officer", "staff"]:
         return {"error": "Unauthorized"}
         
     file_bytes = await file.read()
@@ -243,6 +267,9 @@ async def submit_feasibility_report(
 @router.get("/analytics/heatmaps")
 async def get_heatmaps(user: UserSchema = Depends(require_staff)):
     """Policymaker strategic dashboard."""
-    if user.role != "Policymaker":
+    if user.role != "policymaker":
         return {"error": "Unauthorized"}
     return {"data": "heatmap_data"}
+
+
+

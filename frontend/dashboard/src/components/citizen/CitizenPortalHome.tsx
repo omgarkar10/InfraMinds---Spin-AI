@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import "../../styles/citizen.css";
 import type { CitizenUser } from "../../types";
 import { fetchDemands, castVote, fetchMyVotes } from "../../services/demandService";
+import { DEPARTMENT_LABELS, STATUS_LABELS } from "../../utils/departmentLabels";
 import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from 'leaflet';
@@ -39,14 +40,18 @@ function timeAgo(dateString: string) {
 }
 
 function formatStatus(status: string) {
-  if (!status) return { label: "Gathering Support", color: "var(--col-orange)" };
-  switch (status.toLowerCase()) {
-    case "gathering_support": return { label: "Gathering Support", color: "var(--col-orange)" };
-    case "verification": return { label: "Verification", color: "#3b82f6" };
-    case "in_progress": return { label: "In Progress", color: "#3b82f6" };
-    case "resolved": return { label: "Resolved", color: "#22c55e" };
-    case "rejected": return { label: "Rejected", color: "#ef4444" };
-    default: return { label: status.replace("_", " "), color: "#6b7280" };
+  if (!status) return { label: STATUS_LABELS["gathering_support"], color: "var(--col-orange)" };
+  const s = status.toLowerCase();
+  const label = STATUS_LABELS[s] || s.replace("_", " ").replace(/\b\w/g, l => l.toUpperCase());
+  switch (s) {
+    case "gathering_support": return { label, color: "var(--col-orange)" };
+    case "under_review": return { label, color: "#3b82f6" };
+    case "field_survey": return { label, color: "#8b5cf6" };
+    case "approved_for_budget": return { label, color: "#10b981" };
+    case "fulfilled": 
+    case "resolved": return { label, color: "#22c55e" };
+    case "rejected": return { label, color: "#ef4444" };
+    default: return { label, color: "#6b7280" };
   }
 }
 
@@ -75,12 +80,14 @@ const ImageGrid = ({ images }: { images: string[] }) => {
   );
 };
 
+import { useNavigate } from "react-router-dom";
+
 interface CitizenPortalHomeProps {
   user: CitizenUser;
-  onNavigate: (view: string, id?: string) => void;
 }
 
-export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNavigate }) => {
+export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user }) => {
+  const navigate = useNavigate();
   const [demands, setDemands] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("Trending");
@@ -97,7 +104,7 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
 
     if (!user.isLoggedIn) {
       localStorage.setItem("pending_vote_demand_id", demandId);
-      onNavigate("citizen-login");
+      navigate(`/login?redirect=${encodeURIComponent(`/demand/${demandId}`)}`);
       return;
     }
 
@@ -171,7 +178,7 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
       <div className="portal-header-bar">
         <div className="container portal-header-inner" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
            <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
-             <button className="navbar-logo" onClick={() => onNavigate("landing")} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
+             <button className="navbar-logo" onClick={() => navigate("/")} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
                <span className="navbar-wordmark notranslate" style={{ fontSize: "28px", color: "var(--col-brand-blue)", fontWeight: 900, letterSpacing: "-1px" }}>SPIN</span>
              </button>
              <div className="portal-title-group" style={{ borderLeft: "1px solid #ddd", paddingLeft: "24px" }}>
@@ -198,19 +205,19 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
                {/* Note: Full 23 languages omitted for brevity but UI is ready */}
              </select>
 
-             <button className="service-card-btn service-card-btn-orange" onClick={() => onNavigate("citizen-raise")}>
+             <button className="service-card-btn service-card-btn-orange" onClick={() => navigate("/propose")}>
                + Propose New Demand
              </button>
 
              {user?.isLoggedIn && (
                <>
-                 <button className="btn-outline" onClick={() => onNavigate("citizen-track")} style={{ padding: "6px 12px", fontSize: "12px", background: "white" }}>
+                 <button className="btn-outline" onClick={() => navigate("/track")} style={{ padding: "6px 12px", fontSize: "12px", background: "white" }}>
                    📝 Track Demands
                  </button>
-                 <button className="btn-outline" onClick={() => onNavigate("citizen-profile")} style={{ padding: "6px 12px", fontSize: "12px", background: "white" }}>
+                 <button className="btn-outline" onClick={() => navigate("/profile")} style={{ padding: "6px 12px", fontSize: "12px", background: "white" }}>
                    👤 My Profile
                  </button>
-                 <button className="btn-outline" onClick={() => onNavigate("citizen-logout")} style={{ padding: "6px 12px", fontSize: "12px", background: "white" }}>
+                 <button className="btn-outline" onClick={() => navigate("/login")} style={{ padding: "6px 12px", fontSize: "12px", background: "white" }}>
                    Log Out
                  </button>
                </>
@@ -260,7 +267,7 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
             ) : demands.length === 0 ? (
               <div style={{ padding: "40px", textAlign: "center", background: "#f9f9f9", borderRadius: "8px" }}>
                  <p>No active demands found for this location.</p>
-                 <button className="btn-outline" style={{ marginTop: "12px" }} onClick={() => onNavigate("citizen-raise")}>Submit the first one</button>
+                 <button className="btn-outline" style={{ marginTop: "12px" }} onClick={() => navigate("/propose")}>Submit the first one</button>
               </div>
             ) : (
               [...demands].sort((a, b) => {
@@ -308,24 +315,36 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
                       transition: "all 0.2s",
                       background: "white"
                     }} 
-                    onClick={() => onNavigate("citizen-detail", id)}
+                    onClick={() => navigate("/demand/" + id)}
                     onMouseEnter={() => setHoveredCardId(id)}
                     onMouseLeave={() => setHoveredCardId(null)}
                   >
                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
-                       <h3 style={{ margin: 0, fontSize: "16px", color: "var(--col-navy)", fontWeight: 700 }}>
-                         {demand.title || demand.specific_issue || (demand.original_text?.match(/Issue:\s*(.+)/)?.[1]?.trim()) || demand.category}
+                       <h3 style={{ margin: 0, fontSize: "16px", color: "var(--col-navy)", fontWeight: 700, display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                         {demand.title || (demand.english_translation ? demand.english_translation : null) || demand.category}
                        </h3>
-                       <span style={{ 
-                         backgroundColor: `${statusInfo.color}15`, 
-                         color: statusInfo.color, 
-                         padding: "4px 10px", 
-                         borderRadius: "12px", 
-                         fontSize: "11px", 
-                         fontWeight: 700 
-                       }}>
-                         {statusInfo.label}
-                       </span>
+                       <div style={{ display: "flex", gap: "6px" }}>
+                         <span style={{ 
+                           backgroundColor: `#f1f5f9`, 
+                           color: `#475569`, 
+                           padding: "4px 10px", 
+                           borderRadius: "12px", 
+                           fontSize: "11px", 
+                           fontWeight: 700 
+                         }}>
+                           {DEPARTMENT_LABELS[demand.category] || demand.category}
+                         </span>
+                         <span style={{ 
+                           backgroundColor: `${statusInfo.color}15`, 
+                           color: statusInfo.color, 
+                           padding: "4px 10px", 
+                           borderRadius: "12px", 
+                           fontSize: "11px", 
+                           fontWeight: 700 
+                         }}>
+                           {statusInfo.label}
+                         </span>
+                       </div>
                      </div>
                      
                      <div style={{ display: "flex", gap: "12px", fontSize: "12px", color: "#64748b", marginBottom: "12px" }}>
@@ -394,8 +413,24 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
                              transition: "all 0.2s ease",
                            }}
                          >
-                           {votedIds.has(id) ? "✓ Voted" : "▲ Vote"}
+                           {votedIds.has(id) ? "✓ Supported" : "▲ Back This"}
                           </button>
+                        </div>
+                      </div>
+
+                      {/* Vote Progress Bar */}
+                      <div style={{ marginTop: "12px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#64748b", marginBottom: "4px" }}>
+                          <span>Progress to Threshold</span>
+                          <span>{Math.min(100, Math.round((voteCount / 100) * 100))}%</span>
+                        </div>
+                        <div style={{ width: "100%", height: "6px", backgroundColor: "#e2e8f0", borderRadius: "3px", overflow: "hidden" }}>
+                          <div style={{ 
+                            width: `${Math.min(100, (voteCount / 100) * 100)}%`, 
+                            height: "100%", 
+                            backgroundColor: "var(--col-orange)",
+                            transition: "width 0.5s ease"
+                          }}></div>
                         </div>
                       </div>
                     </div>
@@ -452,7 +487,7 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user, onNa
                       <strong>{demand.title || demand.category}</strong><br/>
                       <span style={{ fontSize: "11px", color: statusInfo.color }}>{statusInfo.label}</span><br/>
                       {demand.votes || 0} Votes<br/>
-                      <button onClick={() => onNavigate("citizen-detail", id)} style={{ marginTop: "4px", padding: "2px 8px", fontSize: "11px", cursor: "pointer", background: "var(--col-navy)", color: "white", border: "none", borderRadius: "4px" }}>View Details</button>
+                      <button onClick={() => navigate("/demand/" + id)} style={{ marginTop: "4px", padding: "2px 8px", fontSize: "11px", cursor: "pointer", background: "var(--col-navy)", color: "white", border: "none", borderRadius: "4px" }}>View Details</button>
                     </Popup>
                   </CircleMarker>
                 )

@@ -114,20 +114,13 @@ def get_demands_list(limit: int = 50, author_user_id: Optional[str] = None) -> d
     
     demands_ref = db.collection("demands")
     if author_user_id:
-        demands_ref = demands_ref.where("author_user_id", "==", author_user_id)
+        demands_ref = demands_ref.where("author_user_id", "==", author_user_id).order_by("created_at", direction=firestore.Query.DESCENDING).limit(limit)
         docs = demands_ref.stream()
         demands = []
         for doc in docs:
             data = doc.to_dict()
             data["id"] = doc.id
             demands.append(data)
-        
-        # Sort in python to avoid requiring a composite index in Firestore
-        demands.sort(
-            key=lambda x: x.get("created_at").timestamp() if hasattr(x.get("created_at"), 'timestamp') else 0,
-            reverse=True
-        )
-        demands = demands[:limit]
     else:
         demands_ref = demands_ref.order_by("created_at", direction=firestore.Query.DESCENDING).limit(limit)
         docs = demands_ref.stream()

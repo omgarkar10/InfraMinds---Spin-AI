@@ -1519,7 +1519,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                       <button
                         type="button"
                         className="btn-outline"
-                        onClick={handleAnalyzeWithGemini}
+                        onClick={() => handleAnalyzeWithGemini()}
                         disabled={isAiLoading || description.trim().length < 5}
                         style={{
                           fontSize: "12px",

@@ -125,17 +125,20 @@ async def upload_file(
     file: UploadFile = File(...),
     current_user: UserSchema = Depends(get_current_user)
 ):
-    """Upload evidence to local storage for hackathon demo."""
-    import os
+    """Upload evidence to Firebase storage."""
     try:
-        os.makedirs("uploads", exist_ok=True)
-        local_path = f"uploads/{int(time.time())}_{file.filename.replace(' ', '_')}"
+        bucket = storage.bucket()
+        timestamp = int(time.time())
+        filename = file.filename.replace(' ', '_')
+        blob_path = f"demands/{current_user.id}/{timestamp}_{filename}"
         
+        blob = bucket.blob(blob_path)
         file.file.seek(0)
-        with open(local_path, "wb") as f:
-            f.write(file.file.read())
-            
-        # Return a dynamically constructed URL based on the request's host
-        return {"url": f"{request.base_url}{local_path}", "filename": file.filename}
+        blob.upload_from_file(file.file, content_type=file.content_type)
+        
+        # Make the blob publicly viewable
+        blob.make_public()
+        
+        return {"url": blob.public_url, "filename": filename}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

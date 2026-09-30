@@ -1,6 +1,6 @@
 import os
 import firebase_admin
-from firebase_admin import credentials, auth
+from firebase_admin import credentials, auth, firestore
 
 # Initialize Firebase Admin SDK
 if os.path.exists("secrets/service-account.json"):
@@ -13,6 +13,8 @@ elif os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
     default_app = firebase_admin.initialize_app()
 else:
     raise RuntimeError("No service-account.json found in secrets/ or backend/, nor GOOGLE_APPLICATION_CREDENTIALS set.")
+
+db = firestore.client()
 
 SHARED_PASSWORD = "securespin26"
 
@@ -31,7 +33,7 @@ STAFF_ACCOUNTS = [
     ("general.administration", "General Administration"),
 ]
 
-def create_or_update_user(email: str, password: str, display_name: str, role: str, department: str):
+def create_or_update_user(email: str, password: str, display_name: str, role: str, department: str, district_id: str = None):
     try:
         user = auth.get_user_by_email(email)
         # Update existing user
@@ -59,40 +61,83 @@ def create_or_update_user(email: str, password: str, display_name: str, role: st
         "role": role,
         "department": department
     }
+    if district_id:
+        custom_claims["district_id"] = district_id
     try:
         auth.set_custom_user_claims(user.uid, custom_claims)
         print(f"   |-- Set Claims: {custom_claims}")
     except Exception as e:
         print(f"   |-- [ERROR] Failed to set claims: {e}")
 
+    try:
+        db.collection("users").document(user.uid).set({
+            "uid": user.uid,
+            "email": email,
+            "name": display_name,
+            "role": role,
+            "department_id": department,
+            "district_id": district_id,
+            "is_verified_resident": True,
+            "status": "active"
+        }, merge=True)
+        print(f"   |-- Written to Firestore users/{user.uid}")
+    except Exception as e:
+        print(f"   |-- [ERROR] Failed to write to Firestore: {e}")
+
+
+def get_dept_id(dept_name: str) -> str:
+    mapping = {
+        "Water Supply": "water",
+        "Electricity": "electricity",
+        "Roads & Transport": "roads",
+        "Sanitation": "garbage",
+        "Public Health": "health",
+        "Police / Law & Order": "police",
+        "Public Transport": "transport",
+        "Education": "education",
+        "Housing & Urban Development": "housing",
+        "Environment & Forestry": "environment",
+        "Social Welfare & Pensions": "welfare",
+        "General Administration": "other",
+        "Ministry of Housing & Urban Affairs (MoHUA)": "all"
+    }
+    return mapping.get(dept_name, "other")
 
 def seed_accounts():
     print("Seeding Administrators...")
-    create_or_update_user("admin@gov.in", SHARED_PASSWORD, "System Administrator", "Administrator", "General Administration")
-    create_or_update_user("ministry@nic.in", SHARED_PASSWORD, "Dr. R. K. Sharma", "Policymaker", "Ministry of Housing & Urban Affairs (MoHUA)")
+    create_or_update_user("platform.admin@gov.in", SHARED_PASSWORD, "Platform Administrator", "platform_admin", "all")
+    create_or_update_user("admin.maharashtra@gov.in", SHARED_PASSWORD, "Maharashtra State Admin", "state_admin", "all")
+    create_or_update_user("admin.pune@gov.in", SHARED_PASSWORD, "Pune District Admin", "district_admin", "all", "Pune")
+    create_or_update_user("admin@gov.in", SHARED_PASSWORD, "Legacy Admin", "platform_admin", "all")
+    create_or_update_user("ministry@nic.in", SHARED_PASSWORD, "Dr. R. K. Sharma", "policymaker", "all")
 
     print("\nSeeding Departmental Staff...")
     for email_prefix, department in STAFF_ACCOUNTS:
+        dept_id = get_dept_id(department)
+        
         create_or_update_user(
             f"{email_prefix}.officer@gov.in", 
             SHARED_PASSWORD, 
             f"{department} Officer", 
-            "Department Officer", 
-            department
+            "department_officer", 
+            dept_id,
+            "Pune"
         )
         create_or_update_user(
             f"{email_prefix}.field@gov.in", 
             SHARED_PASSWORD, 
             f"{department} Field Inspector", 
-            "Field Inspector", 
-            department
+            "field_officer", 
+            dept_id,
+            "Pune"
         )
         create_or_update_user(
             f"{email_prefix}.policy@gov.in", 
             SHARED_PASSWORD, 
             f"{department} Policymaker", 
-            "Policymaker", 
-            department
+            "policymaker", 
+            dept_id,
+            "Pune"
         )
 
 if __name__ == "__main__":

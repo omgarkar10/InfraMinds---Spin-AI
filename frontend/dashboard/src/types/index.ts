@@ -157,8 +157,13 @@ export interface StaffUser {
   employeeId: string;
   email: string;
   department: string;
-  role: "Staff" | "Department Officer" | "Policymaker" | "Administrator" | "Field Officer" | "Field Inspector";
+  role: string;
   isLoggedIn: boolean;
+  state_id?: string;
+  district_id?: string;
+  department_id?: string;
+  assigned_wards?: string[];
+  status?: string;
 }
 
 export type DemandStatus = GrievanceStatus;

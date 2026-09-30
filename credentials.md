@@ -4,12 +4,13 @@
 
 ---
 
-## 👑 1. System Administration & Ministry Accounts
+## 👑 1. Multi-Tenant Hierarchical Administration Accounts
 
-| Role / Title | Email Address | Assigned Department | Default Password |
+| Role / Tier | Email Address | Jurisdiction | Default Password |
 | :--- | :--- | :--- | :--- |
-| **System Administrator** | `admin@gov.in` | General Administration | `securespin26` |
-| **Ministry Joint Secretary** | `ministry@nic.in` | Ministry of Housing & Urban Affairs (MoHUA) | `securespin26` |
+| **Platform Administrator** | `platform.admin@gov.in` | Entire Platform (All States) | `securespin26` |
+| **State Administrator** | `admin.maharashtra@gov.in` | Maharashtra State | `securespin26` |
+| **District Administrator** | `admin.pune@gov.in` | Pune District | `securespin26` |
 
 ---
 
@@ -79,6 +80,7 @@
 
 ## 📊 Summary of Account Roles
 
-* **Total Seeded Accounts:** 38
+* **Total Seeded Accounts:** 40+
 * **Shared Password:** `securespin26`
 * **Authentication Provider:** Firebase Auth & SPIN Backend Database Sync
+* **Hierarchical RBAC Levels:** `platform_admin` > `state_admin` > `district_admin` > `policymaker` > `department_officer` > `field_officer`

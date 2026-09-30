@@ -32,3 +32,50 @@ WHATSAPP_PHONE_NUMBER_ID="1234567890 (From Meta Dashboard)"
 - **Parsing**: The backend extracts the phone number and the text (or audio voice note ID).
 - **Processing**: It passes the message to `process_citizen_webhook()` in the SPIN pipeline.
 - **Reply**: Once processed, the backend uses the `WHATSAPP_API_TOKEN` to send a POST request to the Meta Graph API to message the user back with their grievance tracking ID.
+
+
+
+```json
+curl -X POST "https://api.niketandoes.me/webhook/whatsapp" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "object": "whatsapp_business_account",
+        "entry": [
+          {
+            "id": "WHATSAPP_BUSINESS_ACCOUNT_ID",
+            "changes": [
+              {
+                "value": {
+                  "messaging_product": "whatsapp",
+                  "metadata": {
+                    "display_phone_number": "16505551111",
+                    "phone_number_id": "123456123"
+                  },
+                  "contacts": [
+                    {
+                      "profile": {
+                        "name": "Citizen User"
+                      },
+                      "wa_id": "919876543210"
+                    }
+                  ],
+                  "messages": [
+                    {
+                      "from": "919876543210",
+                      "id": "wamid.HBgLOTE5ODc2NTQzMjEw",
+                      "timestamp": "1727690000",
+                      "text": {
+                        "body": "There is a massive pothole in Sector 14 near the public library that is causing accidents. Please fix it."
+                      },
+                      "type": "text"
+                    }
+                  ]
+                },
+                "field": "messages"
+              }
+            ]
+          }
+        ]
+      }'
+
+```
