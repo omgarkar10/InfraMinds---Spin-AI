@@ -71,3 +71,5 @@ global-bundle.pem
 # Local Uploads & Media
 uploads/
 **/uploads/
+task-def.json
+.firebase/

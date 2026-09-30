@@ -2,6 +2,13 @@
 
 Multilingual AI Public Demand & Community Needs platform for [Code for Communities 2](https://hack2skill.com/event/codeforcommunities2/) hackathon.
 
+## New Features
+- **Public Demand Measurement Platform**: Evolved from grievance reporting to a proactive community voting and infrastructure request ecosystem.
+- **Multilingual Bhashini Integration**: Submit voice demands in 23 Scheduled Indian Languages with native ASR translation capabilities.
+- **Robust Role-Based Staff Dashboards**: Dedicated operational dashboards for Field Officers (PWA/Geotagging), Department Officers, and Policymakers.
+- **Firebase Infrastructure**: End-to-end Firebase Authentication, Firestore NoSQL DB, and Cloud Storage for performance and scalability.
+- **Interactive Geospatial Feed**: Real-time Leaflet heatmap synchronization with live community demands.
+
 ## Architecture
 
 ```
