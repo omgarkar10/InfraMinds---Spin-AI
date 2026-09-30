@@ -504,3 +504,11 @@ ull, the backend crashed while trying to decode a malformed/missing JWT. Switchi
   - HeroSection.tsx
   - CitizenPortalHome.tsx
 - **Description:** Fixed vite build failure by installing @types/leaflet.heat and suppressing un-typable dist paths using @ts-expect-error. Removed unused voteThreshold variable.
+
+ # # #   R e s o l v i n g   F i r e b a s e   5 0 0   E r r o r   ( M a n u a l   A W S   E C S   D e p l o y m e n t ) 
+ -   * * D e s c r i p t i o n : * *   F i x e d   p e r s i s t e n t   \ 5 0 0   I n t e r n a l   S e r v e r   E r r o r \   o n   \ / a p i / a u t h / m e \   a n d   \ / a p i / a u t h / s y n c - p r o f i l e \   c a u s e d   b y   m i s s i n g   F i r e b a s e   c r e d e n t i a l s   i n   t h e   E C S   t a s k . 
+ -   * * F i l e s   u p d a t e d : * *   N o n e   i n   c o d e b a s e   ( o n l y   g i t   c a c h e   a n d   u n t r a c k e d   f i l e s ) . 
+ -   * * R a t i o n a l e : * *   T h e   G i t H u b   A c t i o n s   w o r k f l o w   f a i l e d   p r e v i o u s l y ,   c a u s i n g   A W S   E C S   t o   r o l l b a c k   t o   a   b r o k e n   T a s k   D e f i n i t i o n   ( \ s p i n - a p i : 6 \ )   r u n n i n g   a n   o l d   D o c k e r   i m a g e   w i t h o u t   \ s e r v i c e - a c c o u n t . j s o n \ .   B u i l t   a n d   p u s h e d   a   n e w   D o c k e r   i m a g e   c o n t a i n i n g   t h e   c r e d e n t i a l s   m a n u a l l y   f r o m   t h e   l o c a l   m a c h i n e ,   d o w n l o a d e d   t h e   l a t e s t   A W S   T a s k   D e f i n i t i o n ,   a n d   f o r c e f u l l y   u p d a t e d   t h e   E C S   S e r v i c e   ( \ s p i n - a p i - s e r v i c e - v 2 \ )   t o   u s e   t h e   c o r r e c t   T a s k   D e f i n i t i o n   ( \ s p i n - a p i : 7 \ ) . 
+ -   * * C l e a n u p s : * *   R e m o v e d   a c c i d e n t a l l y   t r a c k e d   \ . f i r e b a s e / \   c a c h e   f i l e s   f r o m   t h e   g i t   i n d e x   t o   a v o i d   c l u t t e r . 
+  
+ 
