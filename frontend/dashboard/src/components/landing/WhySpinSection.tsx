@@ -28,7 +28,7 @@ export function WhySpinSection() {
   }, []);
 
   return (
-    <section className="workflow-section" id="workflow" ref={sectionRef}>
+    <section className="workflow-section" id="why-spin" ref={sectionRef}>
       <div className="container">
         <div className="workflow-grid">
           

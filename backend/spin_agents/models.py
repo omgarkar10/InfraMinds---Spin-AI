@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Literal
 
 class UserSchema(BaseModel):
     id: str
@@ -12,7 +12,7 @@ class UserSchema(BaseModel):
     age_bracket: Optional[str] = None
     is_verified_resident: bool = False
     role: str = "citizen"
-    department_id: Optional[str] = None
+    department_id: Optional[Literal["water", "electricity", "roads", "garbage", "drainage", "other", "all"]] = None
     state_id: Optional[str] = None
     district_id: Optional[str] = None
     district_display_name: Optional[str] = None

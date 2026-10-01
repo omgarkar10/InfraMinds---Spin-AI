@@ -249,7 +249,10 @@ export async function staffLogin(identifier: string, password: string) {
         email: userCredential.user.email,
         employeeId: "EMP-" + userCredential.user.uid.substring(0,5).toUpperCase(),
         department: department,
-        role: role
+        department_id: tokenResult.claims.department,
+        role: role,
+        district_id: tokenResult.claims.district_id as string,
+        state_id: tokenResult.claims.state_id as string
       },
       access_token: token
     };

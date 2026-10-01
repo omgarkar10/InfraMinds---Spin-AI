@@ -60,9 +60,9 @@ export function StaffNavbar({ user, onViewChange, onLogout }: StaffNavbarProps) 
             <div className="navbar-title-group" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <span className="navbar-descriptor" style={{ color: "var(--col-navy)" }}>STAFF WORKSPACE</span>
               
-              {user.district_display_name ? (
+              {(user.district_display_name || user.district_id) ? (
                 <span style={{ background: "var(--col-blue)", color: "white", padding: "2px 8px", borderRadius: "12px", fontSize: "10px", fontWeight: 600, display: "flex", alignItems: "center", gap: "4px" }}>
-                  📍 {user.district_display_name} District
+                  📍 {(user.district_display_name || user.district_id)?.toUpperCase()} DISTRICT
                 </span>
               ) : (user.role === 'state_admin' || user.role === 'platform_admin') ? (
                 <span style={{ background: "var(--col-green)", color: "white", padding: "2px 8px", borderRadius: "12px", fontSize: "10px", fontWeight: 600, display: "flex", alignItems: "center", gap: "4px" }}>
@@ -107,7 +107,7 @@ export function StaffNavbar({ user, onViewChange, onLogout }: StaffNavbarProps) 
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", marginRight: "8px" }}>
                   <span className="navbar-profile-name" style={{ color: "var(--col-navy)" }}>{user.name}</span>
                   <span style={{ fontSize: "10px", color: getRoleBadgeColor(), fontWeight: 700 }}>
-                    {user.district_display_name || 'Global'} • {user.role.toUpperCase()}
+                    {(user.district_display_name || user.district_id || 'Global').toUpperCase()} • {user.role.toUpperCase()}
                   </span>
                 </div>
                 <span className="navbar-profile-icon" aria-hidden="true" style={{ background: "var(--col-border)" }}>🏢</span>

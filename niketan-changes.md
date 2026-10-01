@@ -426,29 +426,29 @@ Bhashini requires correct serviceIds from its own catalog. The meity-auth endpoi
   - rontend/dashboard/src/components/staff/DepartmentOfficerDashboard.tsx: Rewritten to fetch directly from the live API with accurate metrics.
   - rontend/dashboard/src/components/staff/StaffDashboard.tsx: Cleaned up props.
 - **Rationale**: The UI was purely mock data and lacked the necessary security to isolate demands to the specific logged-in officer's department. The new transactions prevent race conditions during Field Officer assignment.
--   O v e r h a u l e d   F i e l d   O f f i c e r   D a s h b o a r d   U I   t o   u s e   a   r e s p o n s i v e   s p l i t - p a n e   L e a f l e t   m a p   i n s t e a d   o f   G o o g l e   M a p s . 
- 
- -   A d d e d   G E T   / a p i / s t a f f / d e m a n d s / a s s i g n e d   e n d p o i n t   t o   f e t c h   a c t u a l   o f f i c e r   a s s i g n m e n t s . 
- 
- -   U p d a t e d   P O S T   / a p i / s t a f f / i n v e s t i g a t i o n / { i d } / r e p o r t   t o   a c c e p t   m u l t i p a r t   f o r m - d a t a   f o r   c h e c k l i s t   c o n s t r a i n t s . 
- 
- # #   2 0 2 6 - 0 9 - 3 0 :   W h a t s A p p   W e b h o o k   I m p l e m e n t a t i o n 
- -   * * D e s c r i p t i o n * * :   A d d e d   G E T   a n d   P O S T   / w e b h o o k / w h a t s a p p   e n d p o i n t s   t o   d e m a n d _ r o u t e r . p y   f o r   M e t a   i n t e g r a t i o n ,   a n d   c r e a t e d   w h a t s a p p - w e b h o o k . m d   s e t u p   g u i d e . 
- -   * * F i l e s   M o d i f i e d / C r e a t e d * * :   b a c k e n d / s p i n _ a g e n t s / r o u t e r s / d e m a n d _ r o u t e r . p y ,   w h a t s a p p - w e b h o o k . m d 
- 
- 
- 
- # # #   F i x   A b s o l u t e   I m a g e   U R L s   i n   P r o d u c t i o n 
- -   * * F i l e s   u p d a t e d : * * 
-     -    a c k e n d / s p i n _ a g e n t s / r o u t e r s / d e m a n d _ r o u t e r . p y 
-     -    r o n t e n d / d a s h b o a r d / s r c / c o m p o n e n t s / c i t i z e n / D e m a n d D e t a i l . t s x 
-     -    r o n t e n d / d a s h b o a r d / s r c / c o m p o n e n t s / c i t i z e n / C i t i z e n P o r t a l H o m e . t s x 
- -   * * D e s c r i p t i o n : * *   U p d a t e d   b a c k e n d   u p l o a d   e n d p o i n t   t o   g e n e r a t e   a   d y n a m i c   b a s e   U R L   b a s e d   o n   t h e   i n c o m i n g   r e q u e s t ,   i n s t e a d   o f   h a r d c o d i n g   \ l o c a l h o s t : 8 0 8 0 \ .   A l s o   a d d e d   l o g i c   i n   t h e   f r o n t e n d   t o   i n t e r c e p t   l e g a c y   \ l o c a l h o s t : 8 0 8 0 \   i m a g e   U R L s   i n   D B   a n d   r e w r i t e   t h e m   u s i n g   t h e   c u r r e n t   d e p l o y e d   h o s t n a m e / A P I   U R L . 
- -   * * R a t i o n a l e : * *   P r e v e n t s   i m a g e s   f r o m   b r e a k i n g   w h e n   t h e   f r o n t e n d   i s   a c c e s s e d   f r o m   a   r e m o t e   d o m a i n   ( l i k e   \ 
- i k e t a n d o e s . m e \ )   w h i l e   t h e   b a c k e n d   r u n s   l o c a l l y   o r   o n   a   d i f f e r e n t   d o m a i n . 
- 
- 
- 
+- Overhauled Field Officer Dashboard UI to use a responsive split-pane Leaflet map instead of Google Maps.
+
+- Added GET /api/staff/demands/assigned endpoint to fetch actual officer assignments.
+
+- Updated POST /api/staff/investigation/{id}/report to accept multipart form-data for checklist constraints.
+
+## 2026-09-30: WhatsApp Webhook Implementation
+- **Description**: Added GET and POST /webhook/whatsapp endpoints to demand_router.py for Meta integration, and created whatsapp-webhook.md setup guide.
+- **Files Modified/Created**: backend/spin_agents/routers/demand_router.py, whatsapp-webhook.md
+
+
+
+### Fix Absolute Image URLs in Production
+- **Files updated:**
+  - ackend/spin_agents/routers/demand_router.py
+  - rontend/dashboard/src/components/citizen/DemandDetail.tsx
+  - rontend/dashboard/src/components/citizen/CitizenPortalHome.tsx
+- **Description:** Updated backend upload endpoint to generate a dynamic base URL based on the incoming request, instead of hardcoding \localhost:8080\. Also added logic in the frontend to intercept legacy \localhost:8080\ image URLs in DB and rewrite them using the current deployed hostname/API URL.
+- **Rationale:** Prevents images from breaking when the frontend is accessed from a remote domain (like \
+iketandoes.me\) while the backend runs locally or on a different domain.
+
+
+
 
 ### Fix Query Parameter Routing
 - **Files updated:**
@@ -542,44 +542,44 @@ ull, the backend crashed while trying to decode a malformed/missing JWT. Switchi
 esponse was undefined after a network failure and all three API functions (detectAndTranslate, translateText, speechToText) were broken. Rewrote audioConversion.ts to first decode at the browser native sample rate, then resample to 16kHz mono via OfflineAudioContext instead of forcing sampleRate in the constructor (which caused decodeAudioData to throw in Chrome/Edge).
 
 
- # # #   A W S   E C S   C o n f i g u r a t i o n   U p d a t e 
- -   * * D e s c r i p t i o n : * *   A d d e d   \ W H A T S A P P _ V E R I F Y _ T O K E N \   t o   t h e   A W S   E C S   e n v i r o n m e n t   c o n f i g u r a t i o n . 
- -   * * F i l e s   u p d a t e d : * *   N o n e   l o c a l l y   ( A W S   c o n f i g u r a t i o n   o n l y ) . 
- -   * * R a t i o n a l e : * *   C o n f i g u r e d   t h e   W h a t s A p p   v e r i f i c a t i o n   t o k e n   a s   r e q u e s t e d   b y   t h e   u s e r ,   u p d a t i n g   t h e   a c t i v e   T a s k   D e f i n i t i o n   t o   r e v i s i o n   9   a n d   a p p l y i n g   i t   t o   t h e   s e r v i c e . 
- 
- 
- 
- # # #   A W S   E C S   C o n f i g u r a t i o n   U p d a t e 
- -   * * D e s c r i p t i o n : * *   A d d e d   \ W H A T S A P P _ V E R I F Y _ T O K E N \   t o   t h e   A W S   E C S   e n v i r o n m e n t   c o n f i g u r a t i o n . 
- -   * * F i l e s   u p d a t e d : * *   N o n e   l o c a l l y   ( A W S   c o n f i g u r a t i o n   o n l y ) . 
- -   * * R a t i o n a l e : * *   C o n f i g u r e d   t h e   W h a t s A p p   v e r i f i c a t i o n   t o k e n   a s   r e q u e s t e d   b y   t h e   u s e r ,   u p d a t i n g   t h e   a c t i v e   T a s k   D e f i n i t i o n   t o   r e v i s i o n   9   a n d   a p p l y i n g   i t   t o   t h e   s e r v i c e . 
- 
- 
- 
- # # #   P h a s e   1   &   2   R e f a c t o r   I m p l e m e n t a t i o n 
- -   * * D e s c r i p t i o n : * *   I m p l e m e n t e d   B a c k e n d   S c h e m a   u p d a t e s ,   R B A C   E x p a n s i o n ,   a n d   F r o n t e n d   R e a c t   R o u t e r   M i g r a t i o n . 
- -   * * F i l e s   U p d a t e d : * *   
-     -   \  a c k e n d / s p i n _ a g e n t s / m o d e l s . p y \ :   A d d e d   \ d e p a r t m e n t _ i d \ ,   \ s t a t e _ i d \ ,   \ d i s t r i c t _ i d \ ,   \  s s i g n e d _ w a r d s \   t o   \ U s e r S c h e m a \ . 
-     -   \  a c k e n d / s p i n _ a g e n t s / a u t h . p y \ :   R e f a c t o r e d   \ e n h a n c e _ s t a f f _ u s e r \   t o   m a p   t o   c a n o n i c a l   s n a k e _ c a s e   e n u m s   a n d   a d d e d   n e w   r o l e s   t o   \ S T A F F _ R O L E S \ . 
-     -   \  a c k e n d / s p i n _ a g e n t s / r o u t e r s / d e m a n d _ r o u t e r . p y \ :   M i g r a t e d   \ / a p i / u p l o a d \   t o   u p l o a d   d i r e c t l y   t o   F i r e b a s e   S t o r a g e   a n d   r e t u r n   t h e   p u b l i c   U R L . 
-     -   \  a c k e n d / s p i n _ a g e n t s / s e r v i c e s / d e m a n d _ s e r v i c e . p y \ :   R e f a c t o r e d   \ g e t _ d e m a n d s _ l i s t \   t o   u s e   n a t i v e   F i r e s t o r e   \ o r d e r _ b y \   q u e r y i n g . 
-     -   \  r o n t e n d / d a s h b o a r d / s r c / A p p . t s x \ :   C o m p l e t e l y   r e w r o t e   t h e   A p p   c o m p o n e n t   t o   u s e   \ 
- e a c t - r o u t e r - d o m \   i n s t e a d   o f   c u s t o m   s t a t e - b a s e d   r o u t i n g . 
-     -   \  r o n t e n d / d a s h b o a r d / s r c / c o m p o n e n t s / c i t i z e n / C i t i z e n P o r t a l H o m e . t s x \   &   \ D e m a n d D e t a i l . t s x \ :   U p d a t e d   n a v i g a t i o n   l o g i c   t o   u s e   \ u s e N a v i g a t e \   a n d   \ u s e P a r a m s \   f r o m   \ 
- e a c t - r o u t e r - d o m \ ,   r e t a i n i n g   J I T   V o t i n g   l o g i c   t h a t   p r e s e r v e s   s t a t e   i n   \ l o c a l S t o r a g e \ . 
- -   * * R a t i o n a l e : * *   I m p l e m e n t i n g   P h a s e   1   &   2   o f   t h e   C o m p r e h e n s i v e   S P I N   A r c h i t e c t u r e   &   U I   R e f a c t o r   p l a n .   E n s u r e s   t h e   b a c k e n d   a d h e r e s   t o   s t r i c t   t a x o n o m y   e n u m s ,   s e c u r e l y   h a n d l e s   f i l e   u p l o a d s ,   a n d   s t a n d a r d i z e s   R B A C .   T h e   f r o n t e n d   n o w   h a s   s t a n d a r d   U R L - b a s e d   n a v i g a t i o n ,   f i x i n g   d e e p   l i n k i n g ,   b a c k - b u t t o n   b e h a v i o r ,   a n d   t h e   r o u t i n g   b u g s   w i t h   J I T   v o t i n g . 
- 
- 
- C h a n g e s   m a d e :   P h a s e   3   ( U I / U X )   &   P h a s e   4   ( R B A C ) 
- 
- -   P h a s e   3   ( U I / U X )   -   U p d a t e d   C i t i z e n P o r t a l H o m e . t s x ,   T r a c k D e m a n d s . t s x ,   a n d   D e m a n d D e t a i l . t s x   t o   a d d   v o t e   p r o g r e s s   b a r s ,   W h a t s A p p   s h a r e   b u t t o n s ,   a n d   s t r i c t   r o u t i n g . 
- -   P h a s e   4   ( R B A C )   -   A d d e d   b a c k e n d   r b a c . p y   a n d   a d m i n _ r o u t e r . p y .   C r e a t e d   f r o n t e n d   A d m i n   D a s h b o a r d s   ( D i s t r i c t ,   S t a t e ,   P l a t f o r m )   a n d   m a p p e d   t o   A p p . t s x 
- 
- -   P h a s e   5   ( O f f i c e r   W o r k s p a c e s )   -   U p d a t e d   S t a f f D a s h b o a r d . t s x   t o   r o u t e   t o   c o r r e c t   d a s h b o a r d   p e r   u s e r . r o l e .   D e p a r t m e n t O f f i c e r D a s h b o a r d . t s x   n o w   f e a t u r e s   a   q u e u e   t a b   d i v i s i o n   ( T h r e s h o l d   v s .   E m e r g i n g   q u e u e   b a s e d   o n   v o t e   c o u n t   &   v e l o c i t y ) ,   a s   w e l l   a s   s p l i t - s c r e e n   r e v i e w s .   F i e l d O f f i c e r D a s h b o a r d . t s x   i s   c o r r e c t l y   c o n f i g u r e d   w i t h   r e s p o n s i v e   s p l i t   m a p   l a y o u t s   a n d   s u r v e y   d r a w e r s . 
- 
- -   P h a s e   6   ( I n d e x e s   &   D e p l o y )   -   C r e a t e d   f i r e s t o r e . i n d e x e s . j s o n   w i t h   c o m p o s i t e   i n d e x e s   f o r   d i s t r i c t s ,   a u t h o r _ u s e r _ i d ,   a n d   a s s i g n e d _ o f f i c e r _ i d   q u e r i e s .   U p d a t e d   S t a f f U s e r   t y p e   d e f i n i t i o n   w i t h   R B A C   f i e l d s .   A w a i t i n g   a p p r o v a l   f o r   E C S   d e p l o y m e n t . 
- 
- 
+### AWS ECS Configuration Update
+- **Description:** Added \WHATSAPP_VERIFY_TOKEN\ to the AWS ECS environment configuration.
+- **Files updated:** None locally (AWS configuration only).
+- **Rationale:** Configured the WhatsApp verification token as requested by the user, updating the active Task Definition to revision 9 and applying it to the service.
+
+
+
+### AWS ECS Configuration Update
+- **Description:** Added \WHATSAPP_VERIFY_TOKEN\ to the AWS ECS environment configuration.
+- **Files updated:** None locally (AWS configuration only).
+- **Rationale:** Configured the WhatsApp verification token as requested by the user, updating the active Task Definition to revision 9 and applying it to the service.
+
+
+
+### Phase 1 & 2 Refactor Implementation
+- **Description:** Implemented Backend Schema updates, RBAC Expansion, and Frontend React Router Migration.
+- **Files Updated:** 
+  - \ackend/spin_agents/models.py\: Added \department_id\, \state_id\, \district_id\, \ssigned_wards\ to \UserSchema\.
+  - \ackend/spin_agents/auth.py\: Refactored \enhance_staff_user\ to map to canonical snake_case enums and added new roles to \STAFF_ROLES\.
+  - \ackend/spin_agents/routers/demand_router.py\: Migrated \/api/upload\ to upload directly to Firebase Storage and return the public URL.
+  - \ackend/spin_agents/services/demand_service.py\: Refactored \get_demands_list\ to use native Firestore \order_by\ querying.
+  - \rontend/dashboard/src/App.tsx\: Completely rewrote the App component to use \
+eact-router-dom\ instead of custom state-based routing.
+  - \rontend/dashboard/src/components/citizen/CitizenPortalHome.tsx\ & \DemandDetail.tsx\: Updated navigation logic to use \useNavigate\ and \useParams\ from \
+eact-router-dom\, retaining JIT Voting logic that preserves state in \localStorage\.
+- **Rationale:** Implementing Phase 1 & 2 of the Comprehensive SPIN Architecture & UI Refactor plan. Ensures the backend adheres to strict taxonomy enums, securely handles file uploads, and standardizes RBAC. The frontend now has standard URL-based navigation, fixing deep linking, back-button behavior, and the routing bugs with JIT voting.
+
+
+Changes made: Phase 3 (UI/UX) & Phase 4 (RBAC)
+
+- Phase 3 (UI/UX) - Updated CitizenPortalHome.tsx, TrackDemands.tsx, and DemandDetail.tsx to add vote progress bars, WhatsApp share buttons, and strict routing.
+- Phase 4 (RBAC) - Added backend rbac.py and admin_router.py. Created frontend Admin Dashboards (District, State, Platform) and mapped to App.tsx
+
+- Phase 5 (Officer Workspaces) - Updated StaffDashboard.tsx to route to correct dashboard per user.role. DepartmentOfficerDashboard.tsx now features a queue tab division (Threshold vs. Emerging queue based on vote count & velocity), as well as split-screen reviews. FieldOfficerDashboard.tsx is correctly configured with responsive split map layouts and survey drawers.
+
+- Phase 6 (Indexes & Deploy) - Created firestore.indexes.json with composite indexes for districts, author_user_id, and assigned_officer_id queries. Updated StaffUser type definition with RBAC fields. Awaiting approval for ECS deployment.
+
+
 
 ## September 30, 2026: Fixed Navbar Rendering on Citizen Views
 - **Description**: Resolved a regression where the landing page Navbar was appearing on all citizen portals (e.g. /feed, /track, /profile) after a merge. Updated App.tsx conditionally render Navbar exclusively when isLanding === true, delegating header responsibilities to native components (e.g., portal-header-bar) in the respective citizen views. Also fixed lingering TypeScript prop errors in App.tsx routing.
@@ -596,25 +596,25 @@ esponse was undefined after a network failure and all three API functions (detec
 ## September 30, 2026: Refactored District Administrator Dashboard
 - **Description**: Rebuilt the `DistrictAdminDashboard` frontend, stripping out legacy navigation and wiring it into `StaffLayout`. Refactored KPI metrics to pull live data from `GET /api/admin/district/stats`. Hardened the Staff Invitation form to use strict role enums (`policymaker`, `department_officer`, `field_officer`) and exact database canonical department enums (`water`, `electricity`, `roads`, `garbage`, `drainage`, `other`). Rewrote `admin_router.py` to support `POST /api/admin/district/invite`, strictly sandboxing invites to the invoking user's `state_id` and `district_id`. Implemented a toggle suspend action for staff members via `POST /api/admin/district/staff/{uid}/suspend`.
 - **Files Updated**: `DistrictAdminDashboard.tsx`, `admin_router.py`
--   R e f a c t o r e d   D e p a r t m e n t   O f f i c e r   D a s h b o a r d   ( f r o n t e n d   &   b a c k e n d )   t o   i m p l e m e n t   s t r i c t   R B A C   i s o l a t i o n ,   q u e u e   s e g m e n t a t i o n   ( t h r e s h o l d / e m e r g i n g / r e v i e w ) ,   a n d   w i r e   d i s p a t c h   &   r e v i e w   w o r k f l o w s . 
- 
- -   R e f a c t o r e d   F i e l d   O f f i c e r   D a s h b o a r d   ( f r o n t e n d   &   b a c k e n d ) :   I m p l e m e n t e d   r e s p o n s i v e   C S S   m a p   t o g g l e ,   a u t h - b o u n d   q u e u e   e n d p o i n t   ( / f i e l d / t a s k s ) ,   m a p   g e o - c e n t e r i n g ,   f e a s i b i l i t y   s u b m i s s i o n   f l o w ,   a n d   b a c k e n d   a n t i - s p o o f i n g   s e c u r i t y   c h e c k s . 
- 
- -   F i x e d   J W T   v a l i d a t i o n   c l o c k - s k e w   e r r o r   ( T o k e n   u s e d   t o o   e a r l y )   i n   a u t h . p y   b y   a d d i n g   c l o c k _ s k e w _ s e c o n d s = 6 0   t o   F i r e b a s e   v e r i f y _ i d _ t o k e n . 
- 
- -   S u p p r e s s e d   U s e r W a r n i n g   a b o u t   p o s i t i o n a l   f i l t e r s   i n   s t a f f _ r o u t e r . p y   b y   c o n v e r t i n g   t h e m   t o   f i r e s t o r e . F i e l d F i l t e r   k e y w o r d   a r g u m e n t s . 
- 
- -   O v e r h a u l e d   P o l i c y m a k e r   D a s h b o a r d   ( f r o n t e n d   &   b a c k e n d ) :   S t r i p p e d   l e g a c y   g e n e r i c   s l i d e r s .   I m p l e m e n t e d   E x e c u t i v e   P r o j e c t   E x e c u t i o n   Q u e u e ,   l i v e   d y n a m i c   h e a t m a p   s c o p i n g   t o   j u r i s d i c t i o n ,   a n d   b a c k e n d   b u d g e t   e n a c t m e n t   A P I   w i t h   e x e c u t i o n   n o t e s   r e c o r d i n g . 
- 
- -   F i x e d   4 0 3   F o r b i d d e n   e r r o r   f o r   D e p a r t m e n t   O f f i c e r s   o n   s t a f f - d a s h b o a r d .   C o r r e c t e d   S T A F F _ R O L E S   e n u m   m i s m a t c h   ( ' d e p a r t m e n t   o f f i c e r '   t o   ' d e p a r t m e n t _ o f f i c e r ' )   i n   a u t h . p y . 
- 
- -   E x e c u t e d   o n e - o f f   d a t a   m i g r a t i o n   s c r i p t   t o   b a c k f i l l   d i s t r i c t _ i d = ' p u n e '   o n   2 2   l e g a c y   F i r e s t o r e   d o c u m e n t s   t o   a l i g n   w i t h   s t r i c t   R B A C   b a c k e n d   q u e r y   s c h e m a s . 
- 
- -   I m p l e m e n t e d   M u l t i - T e n a n t   J u r i s d i c t i o n   U I   C o n t e x t :   A d d e d   d i s t r i c t   m a p p i n g   i n   a u t h   t o k e n   p a r s i n g ,   i n j e c t e d   d y n a m i c   j u r i s d i c t i o n   b a d g e s   i n   S t a f f N a v b a r ,   u p d a t e d   d a s h b o a r d   h e a d e r s   ( P o l i c y ,   D i s t r i c t   A d m i n ,   D e p a r t m e n t / F i e l d   O f f i c e r )   t o   s t r i c t l y   s u r f a c e   g e o g r a p h i c   s c o p e s ,   a n d   i m p l e m e n t e d   a   H a r d   L o c k   b a r r i e r   i n   S t a f f L a y o u t   t o   b l o c k   o p e r a t i o n a l   s t a f f   l a c k i n g   a n   e x p l i c i t   d i s t r i c t   a s s i g n m e n t . 
- 
- -   I m p l e m e n t e d   D y n a m i c   S w i t c h   f o r   S t a t e   A d m i n s :   A d d e d   D i s t r i c t   S e l e c t o r   d r o p d o w n   t o   S t a t e A d m i n D a s h b o a r d . t s x ,   i n t r o d u c e d   / a p i / a d m i n / s t a t e / d e m a n d s   e n d p o i n t   i n   F a s t A P I   w i t h   d i s t r i c t   f i l t e r i n g ,   a n d   e n f o r c e d   c r o s s - t e n a n t   a u t h o r i z a t i o n   g a t e   f o r   s t a t e - l e v e l   A P I   a c c e s s . 
- 
- 
+- Refactored Department Officer Dashboard (frontend & backend) to implement strict RBAC isolation, queue segmentation (threshold/emerging/review), and wire dispatch & review workflows.
+
+- Refactored Field Officer Dashboard (frontend & backend): Implemented responsive CSS map toggle, auth-bound queue endpoint (/field/tasks), map geo-centering, feasibility submission flow, and backend anti-spoofing security checks.
+
+- Fixed JWT validation clock-skew error (Token used too early) in auth.py by adding clock_skew_seconds=60 to Firebase verify_id_token.
+
+- Suppressed UserWarning about positional filters in staff_router.py by converting them to firestore.FieldFilter keyword arguments.
+
+- Overhauled Policymaker Dashboard (frontend & backend): Stripped legacy generic sliders. Implemented Executive Project Execution Queue, live dynamic heatmap scoping to jurisdiction, and backend budget enactment API with execution notes recording.
+
+- Fixed 403 Forbidden error for Department Officers on staff-dashboard. Corrected STAFF_ROLES enum mismatch ('department officer' to 'department_officer') in auth.py.
+
+- Executed one-off data migration script to backfill district_id='pune' on 22 legacy Firestore documents to align with strict RBAC backend query schemas.
+
+- Implemented Multi-Tenant Jurisdiction UI Context: Added district mapping in auth token parsing, injected dynamic jurisdiction badges in StaffNavbar, updated dashboard headers (Policy, District Admin, Department/Field Officer) to strictly surface geographic scopes, and implemented a Hard Lock barrier in StaffLayout to block operational staff lacking an explicit district assignment.
+
+- Implemented Dynamic Switch for State Admins: Added District Selector dropdown to StateAdminDashboard.tsx, introduced /api/admin/state/demands endpoint in FastAPI with district filtering, and enforced cross-tenant authorization gate for state-level API access.
+
+
 
 ## 2026-10-01: Frontend TypeScript Build Fixes
 - **Description**: Resolved 12 TypeScript compiler errors blocking the Vite production build. Fixed unused imports, incorrect typing for Leaflet LatLng bounds, duplicate CSS style props in React, and strict JSX namespace checks in App.tsx routing elements.
@@ -623,3 +623,27 @@ esponse was undefined after a network failure and all three API functions (detec
   - frontend/dashboard/src/components/admin/DistrictAdminDashboard.tsx
   - frontend/dashboard/src/components/staff/FieldOfficerDashboard.tsx
 - **Rationale**: The production build (	sc -b && vite build) enforces strict mode. Fixing these type constraints was required for Firebase Hosting deployment to succeed.
+
+
+### Document Formatting: Credentials
+
+**Description of Change:**
+Re-formatted `credentials.md` to add subheadings for each district (Pune, Thane, Mumbai) and further subdivided the lists by department (Water, Electricity, Roads, Garbage, Drainage, Other).
+
+**Files Updated:**
+- `credentials.md`: Splitting large generic tables into specific contextual tables.
+
+**Rationale:**
+To make the credentials document visually easier to read and quickly scannable for specific roles.
+
+## Fix: Leaflet MapContainer Blank on PolicyDashboard & FieldOfficerDashboard (2026-10-01)
+
+**Description of Change:**
+Reverted MapContainer from Tailwind className sizing back to inline style={{ height: '100%', width: '100%' }}. Leaflet requires the style prop for explicit dimensions at init time. Kept tap={false} for mobile scroll fix.
+
+**Files Updated:**
+- frontend/dashboard/src/components/PolicyDashboard.tsx
+- frontend/dashboard/src/components/staff/FieldOfficerDashboard.tsx
+
+**Rationale:**
+React-Leaflet passes style directly to the Leaflet div during L.Map constructor. Tailwind classes via className resolve too late, so Leaflet reads offsetHeight === 0 and never renders tiles.

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -47,11 +48,9 @@ function ChangeMapView({ center, zoom }: { center: [number, number]; zoom: numbe
   return null;
 }
 
-interface HeroSectionProps {
-  onViewChange?: (view: "landing" | "dashboard" | "citizen" | "citizen-raise" | "citizen-track") => void;
-}
 
-export function HeroSection({ onViewChange }: HeroSectionProps) {
+export function HeroSection() {
+  const navigate = useNavigate();
   const [heatData, setHeatData] = useState<[number, number, number][]>([]);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
 
@@ -104,10 +103,10 @@ export function HeroSection({ onViewChange }: HeroSectionProps) {
 
           {/* Primary Action Buttons for Citizens */}
           <div className="hero-actions">
-            <button className="hero-btn-primary" onClick={() => onViewChange?.("citizen-raise")}>
+            <button className="hero-btn-primary" onClick={() => navigate("/propose")}>
               Start a Public Demand →
             </button>
-            <button className="hero-btn-secondary" onClick={() => onViewChange?.("citizen-track")}>
+            <button className="hero-btn-secondary" onClick={() => navigate("/feed")}>
               Vote on Local Demands
             </button>
 

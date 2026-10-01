@@ -99,7 +99,7 @@ export const TrackDemands: React.FC<TrackDemandsProps> = ({ user }) => {
 
       <div className="container">
         {/* Real Summary Cards (0 for new user, no fake seed numbers) */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", marginBottom: "24px" }}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="stat-card">
             <span className="stat-label">TOTAL REQUESTS</span>
             <span className="stat-value">{loading ? "..." : totalCount}</span>
@@ -116,7 +116,7 @@ export const TrackDemands: React.FC<TrackDemandsProps> = ({ user }) => {
 
         {/* Filter Controls Bar */}
         <div className="form-card" style={{ padding: "16px", marginBottom: "24px" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: "12px" }}>
+          <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_1fr] gap-3">
             <div className="form-group">
               <label className="form-label" style={{ fontSize: "12px" }}>Search Request ID</label>
               <input

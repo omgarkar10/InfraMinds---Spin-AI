@@ -25,7 +25,7 @@ export async function fetchMyVotes() {
 }
 
 export async function voteForDemand(demandId: string) {
-  const token = await auth.currentUser?.getIdToken();
+  const token = (auth.currentUser ? await auth.currentUser.getIdToken() : null) || localStorage.getItem("staff_token");
   const response = await fetch(`${API_URL}/demands/${demandId}/vote`, {
     method: 'POST',
     headers: {

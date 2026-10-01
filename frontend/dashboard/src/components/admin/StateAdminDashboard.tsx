@@ -23,7 +23,7 @@ export const StateAdminDashboard: React.FC = () => {
 
   const fetchDemands = async () => {
     try {
-      const token = await auth.currentUser?.getIdToken();
+      const token = (auth.currentUser ? await auth.currentUser.getIdToken() : null) || localStorage.getItem("staff_token");
       let url = `${API_BASE}/admin/state/demands`;
       if (selectedDistrict !== "all") {
         url += `?district_id=${selectedDistrict}`;
@@ -41,7 +41,7 @@ export const StateAdminDashboard: React.FC = () => {
 
   const fetchRoster = async () => {
     try {
-      const token = await auth.currentUser?.getIdToken();
+      const token = (auth.currentUser ? await auth.currentUser.getIdToken() : null) || localStorage.getItem("staff_token");
       const res = await fetch(`${API_BASE}/admin/districts`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
@@ -57,7 +57,7 @@ export const StateAdminDashboard: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const token = await auth.currentUser?.getIdToken();
+      const token = (auth.currentUser ? await auth.currentUser.getIdToken() : null) || localStorage.getItem("staff_token");
       const res = await fetch(`${API_BASE}/admin/provision-district`, {
         method: "POST",
         headers: {

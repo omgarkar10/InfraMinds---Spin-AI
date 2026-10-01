@@ -148,13 +148,17 @@ function AppInner() {
 
       <Routes>
         <Route path="/" element={
-          <main className="landing-main">
+          <main className="landing-main pb-24 md:pb-8 flex-1 w-full">
             <HeroSection />
             <WhySpinSection />
             <HowItHelpsSection />
             <WhatYouCanDemandSection />
             <FinalCtaSection onViewChange={(v) => navigate(v === 'citizen-raise' ? '/propose' : '/feed')} />
-            <Footer onViewChange={(v) => navigate(v === 'citizen' ? '/feed' : '/')} />
+            <Footer onViewChange={(v) => {
+              if (v === 'citizen-raise') navigate('/propose');
+              else if (v === 'citizen' || v === 'citizen-track') navigate('/feed');
+              else navigate('/');
+            }} />
             <ChatbotWidget />
           </main>
         } />

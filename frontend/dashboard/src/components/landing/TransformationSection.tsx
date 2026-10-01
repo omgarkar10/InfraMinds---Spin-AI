@@ -162,11 +162,11 @@ export function TransformationSection() {
 
         {/* Processing Details Modal */}
         {showDetailsModal && (
-          <div className="transform-modal-backdrop" onClick={() => setShowDetailsModal(false)}>
-            <div className="transform-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h3>SPIN System Trace & Processing Specifications</h3>
-                <button className="modal-close" onClick={() => setShowDetailsModal(false)}>✕</button>
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50" onClick={() => setShowDetailsModal(false)}>
+            <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-xl shadow-2xl relative" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header border-b border-gray-200 p-4 relative">
+                <h3 className="pr-8">SPIN System Trace & Processing Specifications</h3>
+                <button className="absolute top-4 right-4 z-[10000] p-2 bg-gray-100 rounded-full hover:bg-gray-200 text-gray-700" onClick={() => setShowDetailsModal(false)}>✕</button>
               </div>
               <div className="modal-body">
                 <div className="spec-section">

@@ -33,7 +33,7 @@ export const DistrictAdminDashboard: React.FC<{ user: StaffUser }> = ({ user }) 
 
   const loadMetrics = async () => {
     try {
-      const token = await auth.currentUser?.getIdToken();
+      const token = (auth.currentUser ? await auth.currentUser.getIdToken() : null) || localStorage.getItem("staff_token");
       const res = await fetch(`${API_BASE}/admin/district/stats`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
@@ -48,7 +48,7 @@ export const DistrictAdminDashboard: React.FC<{ user: StaffUser }> = ({ user }) 
   const loadStaff = async () => {
     setLoading(true);
     try {
-      const token = await auth.currentUser?.getIdToken();
+      const token = (auth.currentUser ? await auth.currentUser.getIdToken() : null) || localStorage.getItem("staff_token");
       const res = await fetch(`${API_BASE}/admin/district/staff`, {
         headers: { "Authorization": `Bearer ${token}` }
       });
@@ -70,7 +70,7 @@ export const DistrictAdminDashboard: React.FC<{ user: StaffUser }> = ({ user }) 
     const department_id = (form.elements.namedItem("department_id") as HTMLSelectElement).value;
     
     try {
-      const token = await auth.currentUser?.getIdToken();
+      const token = (auth.currentUser ? await auth.currentUser.getIdToken() : null) || localStorage.getItem("staff_token");
       const res = await fetch(`${API_BASE}/admin/district/invite`, {
         method: "POST",
         headers: {
@@ -95,7 +95,7 @@ export const DistrictAdminDashboard: React.FC<{ user: StaffUser }> = ({ user }) 
     const action = currentStatus === "suspended" ? "restore" : "suspend";
     if (!window.confirm(`Are you sure you want to ${action} this officer?`)) return;
     try {
-      const token = await auth.currentUser?.getIdToken();
+      const token = (auth.currentUser ? await auth.currentUser.getIdToken() : null) || localStorage.getItem("staff_token");
       const res = await fetch(`${API_BASE}/admin/district/staff/${uid}/suspend`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` }

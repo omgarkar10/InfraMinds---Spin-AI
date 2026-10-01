@@ -186,5 +186,9 @@ async def get_my_profile(
         phone=data.get("phone"),
         dob=data.get("dob"),
         role=data.get("role", "citizen"),
-        is_verified_resident=data.get("is_verified_resident", False)
+        is_verified_resident=data.get("is_verified_resident", False),
+        department_id=data.get("department_id"),
+        district_id=data.get("district_id"),
+        state_id=data.get("state_id"),
+        status=data.get("status", "active")
     )

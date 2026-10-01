@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import List, Optional
 from spin_agents.auth import get_current_user
 from spin_agents.models import UserSchema
@@ -34,7 +34,6 @@ async def list_district_staff(user: UserSchema = Depends(require_admin("district
 @router.post("/district/invite")
 async def invite_district_staff(payload: dict, user: UserSchema = Depends(require_admin("district_admin"))):
     target_role = payload.get("role")
-    email = payload.get("email")
     dept_id = payload.get("department_id")
     
     if target_role not in ["policymaker", "department_officer", "field_officer"]:
@@ -43,12 +42,42 @@ async def invite_district_staff(payload: dict, user: UserSchema = Depends(requir
     if dept_id not in ["water", "electricity", "roads", "garbage", "drainage", "other", "all"]:
         raise HTTPException(status_code=400, detail="Invalid canonical department enum.")
     
+    role_map = {
+        "policymaker": "pm",
+        "department_officer": "do",
+        "field_officer": "fo",
+        "district_admin": "da"
+    }
+    
+    dept_map = {
+        "water": "wat",
+        "electricity": "ele",
+        "roads": "rds",
+        "garbage": "gbg",
+        "drainage": "drn",
+        "other": "oth",
+        "all": "all"
+    }
+    
+    district_str = (user.district_id or "oth").lower().replace(" ", "")
+    district_code = district_str[:3] if len(district_str) >= 3 else district_str.ljust(3, "x")
+    
+    role_code = role_map.get(target_role, "oth")
+    dept_code = dept_map.get(dept_id, "oth")
+    
+    # Query to find count
+    docs = db.collection("users").where("role", "==", target_role).where("department_id", "==", dept_id).where("district_id", "==", user.district_id).stream()
+    count = sum(1 for _ in docs)
+    unique_id = f"{count + 1:02d}"
+    
+    email = f"{role_code}.{dept_code}.{district_code}.{unique_id}@spin.gov.in"
+    
     from firebase_admin import auth
     try:
         new_user = auth.create_user(
             email=email,
             password=STAFF_DEFAULT_PASSWORD,
-            display_name=f"Invited {target_role.replace('_', ' ').title()}"
+            display_name=f"{target_role.replace('_', ' ').title()} ({dept_id.title()})"
         )
         custom_claims = {
             "role": target_role,
@@ -61,7 +90,7 @@ async def invite_district_staff(payload: dict, user: UserSchema = Depends(requir
         db.collection("users").document(new_user.uid).set({
             "uid": new_user.uid,
             "email": email,
-            "name": f"Invited {target_role.replace('_', ' ').title()}",
+            "name": f"{target_role.replace('_', ' ').title()} ({dept_id.title()})",
             "role": target_role,
             "department_id": dept_id,
             "district_id": user.district_id,

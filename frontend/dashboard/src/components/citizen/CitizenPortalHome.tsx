@@ -174,7 +174,7 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user }) =>
   }, [user.isLoggedIn]);
 
   return (
-    <div className="citizen-portal-container">
+    <div className="citizen-portal-container pb-24 md:pb-8 flex-1 w-full">
       <div className="portal-header-bar">
         <div className="container portal-header-inner" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
            <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>

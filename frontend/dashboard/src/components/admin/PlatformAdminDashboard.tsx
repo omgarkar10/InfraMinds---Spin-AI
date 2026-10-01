@@ -17,7 +17,7 @@ export const PlatformAdminDashboard: React.FC = () => {
 
   const loadHealth = async () => {
     try {
-      const token = await auth.currentUser?.getIdToken();
+      const token = (auth.currentUser ? await auth.currentUser.getIdToken() : null) || localStorage.getItem("staff_token");
       const res = await fetch(`${API_BASE}/admin/system/health`, {
         headers: { "Authorization": `Bearer ${token}` }
       });

@@ -40,7 +40,7 @@ class DecisionPayload(BaseModel):
 async def get_department_stats(user: UserSchema = Depends(require_staff)):
     """Returns aggregated KPI stats for a department officer."""
     if user.role != "department_officer":
-        return {"error": "Unauthorized"}
+        raise HTTPException(status_code=403, detail="Unauthorized. Department officer role required.")
         
     db = get_firestore_db()
     if not db:

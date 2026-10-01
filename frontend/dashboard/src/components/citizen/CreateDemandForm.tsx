@@ -1037,7 +1037,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                   Select your preferred way to provide details. Both paths lead to the same official SPIN request registry.
                 </p>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", maxWidth: "740px", margin: "0 auto" }}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-[20px] max-w-[740px] mx-auto">
                   {/* OPTION A: Describe by Voice */}
                   <div
                     onClick={() => {
@@ -1329,7 +1329,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                       </p>
                     )}
 
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div>
                         <label className="form-label" style={{ fontSize: "12px" }}>Request Type:</label>
                         <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
@@ -1459,7 +1459,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                   <label className="form-label" style={{ fontWeight: 700 }}>
                     What type of infrastructure need are you reporting? <span style={{ color: "#e53e3e" }}>*</span>
                   </label>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "8px" }}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
                     <button
                       type="button"
                       onClick={() => {
@@ -1585,7 +1585,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                 )}
 
                 {/* Category and Proposed Improvement / Proposed Facility Selection */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div className="form-group">
                     <label className="form-label" htmlFor="category">
                       Infrastructure Category <span style={{ color: "#e53e3e" }}>*</span>
@@ -1659,7 +1659,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
 
                 {/* Conditional Type A Fields (Current Need Only) */}
                 {requestType === "existing_problem" && (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div className="form-group">
                       <label className="form-label" htmlFor="startDate">
                         When did this need arise? (Optional)
@@ -1695,7 +1695,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
 
                 {/* Conditional Type B Fields (New Development Only) */}
                 {requestType === "new_development" && (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div className="form-group">
                       <label className="form-label" htmlFor="reason">
                         Civic Justification / Need for Proposal
@@ -1802,7 +1802,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
             </div>
 
             {/* Nationwide State & District Dropdowns */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div className="form-group">
                 <label className="form-label" htmlFor="state">
                   State / Union Territory <span style={{ color: "#e53e3e" }}>*</span>
@@ -1951,7 +1951,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "20px" }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
               <div className="form-group">
                 <label className="form-label" htmlFor="landmark">
                   Nearest Landmark (Optional)
@@ -2122,7 +2122,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                 </button>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", fontSize: "13px", marginBottom: "12px" }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-[13px] mb-3">
                 <div><strong>Submitting Citizen:</strong> {user.name || "Authenticated Citizen"} {user.phone ? `(${user.phone})` : ""}</div>
                 <div><strong>Submission Type:</strong> {requestType === "existing_problem" ? "Current Infrastructure Need" : "New Infrastructure Development"}</div>
                 <div><strong>Category:</strong> {category}</div>
@@ -2163,7 +2163,7 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
                 </button>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", fontSize: "13px" }}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 text-[13px]">
                 <div><strong>State / UT:</strong> {state}</div>
                 <div><strong>District:</strong> {district}</div>
                 <div><strong>Address:</strong> {address}</div>
@@ -2214,13 +2214,13 @@ export const CreateDemandForm: React.FC<CreateDemandFormProps> = ({ user, onNavi
               </label>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: "20px" }}>
-              <button type="button" className="btn-outline" onClick={handleBack} disabled={isSubmitting}>
+            <div className="fixed bottom-0 left-0 w-full z-50 bg-white shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] p-4 md:relative md:shadow-none md:p-0 flex justify-between mt-0 md:mt-5">
+              <button type="button" className="btn-outline min-h-[44px] md:min-h-[48px] p-3 md:p-4" onClick={handleBack} disabled={isSubmitting}>
                 ← Back
               </button>
               <button
                 type="button"
-                className="service-card-btn service-card-btn-orange"
+                className="service-card-btn service-card-btn-orange min-h-[44px] md:min-h-[48px] p-3 md:p-4"
                 onClick={handleSubmitFinal}
                 disabled={isSubmitting || !declaration}
                 style={{ opacity: isSubmitting || !declaration ? 0.6 : 1 }}

@@ -142,7 +142,7 @@ export const CitizenProfile: React.FC<CitizenProfileProps> = ({ user, onNavigate
         </div>
       </div>
 
-      <div className="container" style={{ marginTop: "32px", display: "grid", gridTemplateColumns: "300px 1fr", gap: "24px" }}>
+      <div className="container grid grid-cols-1 md:grid-cols-[300px_1fr] gap-6 mt-8">
         {/* Profile Sidebar */}
         <div className="form-card" style={{ padding: "24px", height: "fit-content" }}>
           <div style={{ textAlign: "center", marginBottom: "24px" }}>

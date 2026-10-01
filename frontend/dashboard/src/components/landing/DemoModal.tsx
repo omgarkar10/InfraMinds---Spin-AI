@@ -172,17 +172,17 @@ export function DemoModal({ isOpen, onClose, onOpenDashboard }: DemoModalProps) 
   if (!isOpen) return null;
 
   return (
-    <div className="demo-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="demo-modal-title">
-      <div className="demo-modal-container" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="demo-modal-title">
+      <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-xl shadow-2xl relative flex flex-col" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="demo-modal-header">
+        <div className="demo-modal-header border-b border-gray-200">
           <div className="demo-modal-header-left">
             <span className="demo-presentation-badge">HACKATHON PRESENTATION MODE</span>
             <h2 id="demo-modal-title" className="demo-modal-heading">
               SPIN in 30 Seconds: End-to-End Walkthrough
             </h2>
           </div>
-          <button className="demo-modal-close" onClick={onClose} aria-label="Close presentation">
+          <button className="absolute top-4 right-4 z-[10000] p-2 bg-gray-100 rounded-full hover:bg-gray-200 text-gray-700" onClick={onClose} aria-label="Close presentation">
             ✕
           </button>
         </div>

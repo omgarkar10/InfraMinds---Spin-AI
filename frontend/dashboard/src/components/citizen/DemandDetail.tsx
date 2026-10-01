@@ -195,7 +195,7 @@ export const DemandDetail: React.FC<DemandDetailProps> = ({
         </div>
 
         {/* Two-Column Detail Grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: "20px", marginBottom: "24px" }}>
+        <div className="grid grid-cols-1 md:grid-cols-[1.6fr_1fr] gap-5 mb-6">
           {/* Left Column: Full Particulars */}
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             <div className="form-card">
@@ -355,7 +355,7 @@ export const DemandDetail: React.FC<DemandDetailProps> = ({
             <div style={{ marginTop: "32px", textAlign: "center" }}>
               <button
                 type="button"
-                className="btn-outline"
+                className="btn-outline min-h-[44px] md:min-h-[48px] p-3 md:p-4 w-full md:w-auto"
                 onClick={() => navigate("/track")}
               >
                 ← Go Back to My Requests

@@ -111,7 +111,7 @@ export function Navbar({ view, user, onViewChange }: NavbarProps) {
 
           <div className="gov-top-bar-right">
             {/* Language / Country Selector */}
-            <div className="navbar-lang-wrapper">
+            <div className="navbar-lang-wrapper notranslate">
               <button
                 className="navbar-lang-btn"
                 onClick={() => { setLangOpen(!langOpen); setMenuOpen(false); }}
