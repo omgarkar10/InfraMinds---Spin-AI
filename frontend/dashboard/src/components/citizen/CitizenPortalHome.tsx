@@ -1,13 +1,14 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import "../../styles/citizen.css";
 import type { CitizenUser } from "../../types";
 import { fetchDemands, castVote, fetchMyVotes } from "../../services/demandService";
 import { DEPARTMENT_LABELS, STATUS_LABELS } from "../../utils/departmentLabels";
-import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMap, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import { HeatmapLayer } from "../map/HeatmapLayer";
 
 let DefaultIcon = L.icon({
     iconUrl: icon,
@@ -20,6 +21,72 @@ function ChangeMapView({ center, zoom }: { center: [number, number]; zoom: numbe
   const map = useMap();
   map.setView(center, zoom);
   return null;
+}
+
+function getDemandCoordinates(demand: any): [number, number] | null {
+  const rawLatitude = demand.latitude ?? demand.lat ?? demand.location?.lat;
+  const rawLongitude = demand.longitude ?? demand.lng ?? demand.location?.lng;
+  if (rawLatitude == null || rawLongitude == null) return null;
+
+  const latitude = Number(rawLatitude);
+  const longitude = Number(rawLongitude);
+  return Number.isFinite(latitude) && Number.isFinite(longitude)
+    ? [latitude, longitude]
+    : null;
+}
+
+function MapOverlays({ demands, hoveredCardId, setHoveredCardId, scrollToCard }: any) {
+  const map = useMapEvents({
+    zoomend: () => {
+      setZoomLevel(map.getZoom());
+    }
+  });
+  const [zoomLevel, setZoomLevel] = useState(map.getZoom());
+
+  const heatPoints = useMemo(() => demands.flatMap((demand: any) => {
+    const coordinates = getDemandCoordinates(demand);
+    if (!coordinates) return [];
+    const voteCount = demand.vote_count ?? demand.votes;
+    return [[coordinates[0], coordinates[1], Math.min((voteCount || 1) / 10, 1)] as [number, number, number]];
+  }), [demands]);
+
+  return (
+    <>
+      <HeatmapLayer points={heatPoints} />
+      {zoomLevel > 14 && demands.map((demand: any) => {
+        const coordinates = getDemandCoordinates(demand);
+        if (!coordinates) return null;
+        const id = demand.id || demand.Demand_id;
+        const isHovered = hoveredCardId === id;
+        const statusInfo = formatStatus(demand.status);
+        return (
+          <CircleMarker
+            key={id}
+            center={coordinates}
+            radius={isHovered ? 12 : 8}
+            pathOptions={{
+              fillColor: statusInfo.color,
+              color: isHovered ? "white" : statusInfo.color,
+              weight: isHovered ? 3 : 1,
+              fillOpacity: isHovered ? 1 : 0.7
+            }}
+            eventHandlers={{
+              click: () => scrollToCard(id),
+              mouseover: () => setHoveredCardId(id),
+              mouseout: () => setHoveredCardId(null)
+            }}
+          >
+            <Popup>
+              <strong>{demand.title || demand.category}</strong><br/>
+              <span style={{ fontSize: "11px", color: statusInfo.color }}>{statusInfo.label}</span><br/>
+              {demand.vote_count || demand.votes || 0} Votes<br/>
+              <a href={`/demand/${id}`} style={{ display: "inline-block", marginTop: "4px", padding: "2px 8px", fontSize: "11px", cursor: "pointer", background: "var(--col-navy)", color: "white", textDecoration: "none", borderRadius: "4px" }}>View Details</a>
+            </Popup>
+          </CircleMarker>
+        )
+      })}
+    </>
+  );
 }
 
 function timeAgo(dateString: string) {
@@ -442,8 +509,8 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user }) =>
 
           {/* Feed Map */}
           <div className="feed-map" style={{ borderRadius: "12px", overflow: "hidden", border: "1px solid #e2e8f0" }}>
-            <MapContainer center={userLocation || [22.5937, 78.9629]} zoom={userLocation ? 13 : 4} style={{ height: "100%", width: "100%" }}>
-              <ChangeMapView center={userLocation || [22.5937, 78.9629]} zoom={userLocation ? 13 : 4} />
+            <MapContainer center={userLocation || [18.5204, 73.8567]} zoom={userLocation ? 13 : 11} style={{ height: "100%", width: "100%" }}>
+              <ChangeMapView center={userLocation || [18.5204, 73.8567]} zoom={userLocation ? 13 : 11} />
               <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
               
               {userLocation && (
@@ -460,38 +527,12 @@ export const CitizenPortalHome: React.FC<CitizenPortalHomeProps> = ({ user }) =>
                 </Marker>
               )}
 
-              {demands.map(demand => {
-                if (!demand.lat || !demand.lng) return null;
-                const id = demand.id || demand.Demand_id;
-                const isHovered = hoveredCardId === id;
-                const statusInfo = formatStatus(demand.status);
-                
-                return (
-                  <CircleMarker 
-                    key={id} 
-                    center={[demand.lat, demand.lng]}
-                    radius={isHovered ? 12 : 8}
-                    pathOptions={{ 
-                      fillColor: statusInfo.color, 
-                      color: isHovered ? "white" : statusInfo.color,
-                      weight: isHovered ? 3 : 1,
-                      fillOpacity: isHovered ? 1 : 0.7 
-                    }}
-                    eventHandlers={{
-                      click: () => scrollToCard(id),
-                      mouseover: () => setHoveredCardId(id),
-                      mouseout: () => setHoveredCardId(null)
-                    }}
-                  >
-                    <Popup>
-                      <strong>{demand.title || demand.category}</strong><br/>
-                      <span style={{ fontSize: "11px", color: statusInfo.color }}>{statusInfo.label}</span><br/>
-                      {demand.votes || 0} Votes<br/>
-                      <button onClick={() => navigate("/demand/" + id)} style={{ marginTop: "4px", padding: "2px 8px", fontSize: "11px", cursor: "pointer", background: "var(--col-navy)", color: "white", border: "none", borderRadius: "4px" }}>View Details</button>
-                    </Popup>
-                  </CircleMarker>
-                )
-              })}
+              <MapOverlays
+                demands={demands}
+                hoveredCardId={hoveredCardId}
+                setHoveredCardId={setHoveredCardId}
+                scrollToCard={scrollToCard}
+              />
             </MapContainer>
           </div>
 

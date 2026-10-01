@@ -150,8 +150,8 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
     <div style={{ paddingTop: "20px" }}>
       {authError && (
         <div style={{ background: "#ffe6e6", border: "1px solid red", color: "red", padding: "10px 14px", borderRadius: "6px", marginBottom: "16px", fontSize: "13px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span>ðŸš« {authError}</span>
-          <button style={{ border: "none", background: "transparent", color: "red", cursor: "pointer", fontWeight: "bold" }} onClick={() => setAuthError("")}>âœ•</button>
+          <span>🚫 {authError}</span>
+          <button aria-label="Dismiss error" style={{ border: "none", background: "transparent", color: "red", cursor: "pointer", fontWeight: "bold" }} onClick={() => setAuthError("")}>×</button>
         </div>
       )}
 
@@ -160,19 +160,19 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
           <DemandKPIBar metrics={metrics} isLiveApi={true} />
           
           <div className="panel" style={{ marginTop: "24px" }}>
-            <div className="panel-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ display: "flex", gap: "20px" }}>
+            <div className="panel-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: "12px 20px", flexWrap: "wrap", minWidth: 0 }}>
                 <button 
                   onClick={() => setQueueTab("threshold")}
-                  style={{ background: "none", border: "none", borderBottom: queueTab === "threshold" ? "3px solid var(--col-navy)" : "3px solid transparent", fontSize: "20px", fontWeight: 700, paddingBottom: "8px", cursor: "pointer", color: queueTab === "threshold" ? "var(--col-navy)" : "var(--col-text-muted)" }}
+                  style={{ background: "none", border: "none", borderBottom: queueTab === "threshold" ? "3px solid var(--col-navy)" : "3px solid transparent", fontSize: "clamp(15px, 2vw, 20px)", fontWeight: 700, paddingBottom: "8px", cursor: "pointer", color: queueTab === "threshold" ? "var(--col-navy)" : "var(--col-text-muted)", textAlign: "left", overflowWrap: "anywhere" }}
                 >
-                  Threshold Trigger Queue {user.district_display_name ? `â€” ${user.district_display_name}` : ""}
+                  Threshold Trigger Queue {user.district_display_name ? `— ${user.district_display_name}` : ""}
                 </button>
                 <button 
                   onClick={() => setQueueTab("emerging")}
-                  style={{ background: "none", border: "none", borderBottom: queueTab === "emerging" ? "3px solid var(--col-navy)" : "3px solid transparent", fontSize: "20px", fontWeight: 700, paddingBottom: "8px", cursor: "pointer", color: queueTab === "emerging" ? "var(--col-navy)" : "var(--col-text-muted)" }}
+                  style={{ background: "none", border: "none", borderBottom: queueTab === "emerging" ? "3px solid var(--col-navy)" : "3px solid transparent", fontSize: "clamp(15px, 2vw, 20px)", fontWeight: 700, paddingBottom: "8px", cursor: "pointer", color: queueTab === "emerging" ? "var(--col-navy)" : "var(--col-text-muted)", textAlign: "left", overflowWrap: "anywhere" }}
                 >
-                  Emerging Queue {user.district_display_name ? `â€” ${user.district_display_name}` : ""}
+                  Emerging Queue {user.district_display_name ? `— ${user.district_display_name}` : ""}
                 </button>
               </div>
               <span className="panel-badge" style={{ background: "var(--col-red)", color: "#fff" }}>{queueTab === "threshold" ? thresholdQueue.length : emergingQueue.length} Requires Action</span>
@@ -194,7 +194,7 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
                   {displayedQueue.length === 0 ? (
                     <tr>
                       <td colSpan={6} style={{ textAlign: "center", padding: "40px" }}>
-                        <div style={{ fontSize: "24px", marginBottom: "10px" }}>ðŸ“¥</div>
+                        <div style={{ fontSize: "24px", marginBottom: "10px" }}>📥</div>
                         <div style={{ fontWeight: 600, color: "var(--col-navy)" }}>No Pending Demands</div>
                         <div style={{ fontSize: "12px", color: "var(--col-text-muted)" }}>{queueTab === "threshold" ? "All demands that reached the threshold have been dispatched." : "No emerging demands right now."}</div>
                       </td>
@@ -281,7 +281,7 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
               <span className="label-eyebrow">FIELD OFFICER DISPATCH BOARD</span>
               <h2 className="panel-title" style={{ fontSize: "20px" }}>Assign Feasibility Survey for {selectedDemand.id.substring(0, 8)}</h2>
             </div>
-            <button onClick={() => setViewMode("queue")} style={{ background: "none", border: "none", fontSize: "24px", cursor: "pointer", color: "var(--col-text-muted)" }}>Ã—</button>
+            <button aria-label="Close dispatch board" onClick={() => setViewMode("queue")} style={{ background: "none", border: "none", fontSize: "24px", cursor: "pointer", color: "var(--col-text-muted)" }}>×</button>
           </div>
           <div style={{ padding: "20px" }}>
             <div className="dashboard-grid" style={{ marginBottom: "20px" }}>
@@ -289,7 +289,7 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
                 <h4 style={{ margin: "0 0 10px 0", fontSize: "12px", color: "var(--col-text-muted)", textTransform: "uppercase" }}>Demand Details</h4>
                 <div style={{ fontWeight: 600, fontSize: "16px", color: "var(--col-navy)", marginBottom: "8px" }}>{selectedDemand.english_translation || selectedDemand.original_text}</div>
                 <div style={{ fontSize: "13px", color: "#666", marginBottom: "4px" }}>📍 {selectedDemand.address || selectedDemand.district}</div>
-                <div style={{ fontSize: "13px", color: "#666" }}>ðŸ—³ï¸ {selectedDemand.vote_count} Community Votes</div>
+                <div style={{ fontSize: "13px", color: "#666" }}>🗳️ {selectedDemand.vote_count} Community Votes</div>
               </div>
               <div style={{ background: "#f8f9fa", padding: "16px", borderRadius: "8px" }}>
                 <h4 style={{ margin: "0 0 10px 0", fontSize: "12px", color: "var(--col-text-muted)", textTransform: "uppercase" }}>Instructions to Field Officer</h4>
@@ -308,7 +308,7 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
                     officers.map(off => (
                       <button key={off.id} onClick={() => handleAssignFieldOfficer(off.id)} className="btn-outline" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px", textAlign: "left", width: "100%" }}>
                         <span>{off.name}</span>
-                        <span style={{ fontSize: "11px", color: "var(--col-green)" }}>Dispatch â†’</span>
+                        <span style={{ fontSize: "11px", color: "var(--col-green)", whiteSpace: "nowrap", marginLeft: "12px" }}>Dispatch →</span>
                       </button>
                     ))
                   )}
@@ -326,7 +326,7 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
             onClick={() => setViewMode("queue")}
             style={{ background: "none", border: "none", color: "var(--col-navy)", fontSize: "14px", padding: "0 0 20px 0", cursor: "pointer", fontWeight: 600 }}
           >
-            â† Back to Queue
+            ← Back to Queue
           </button>
           
           <div className="dashboard-grid">
@@ -355,7 +355,7 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
               </div>
               <div style={{ padding: "20px" }}>
                 <div style={{ background: "#f8f9fa", border: "1px dashed #ccc", padding: "30px", textAlign: "center", borderRadius: "8px", marginBottom: "20px" }}>
-                  <div style={{ fontSize: "24px", marginBottom: "10px" }}>ðŸ“¸</div>
+                  <div style={{ fontSize: "24px", marginBottom: "10px" }}>📸</div>
                   <div style={{ fontSize: "13px", color: "#666" }}>[Geotagged Photo Evidence Uploaded]</div>
                   <div style={{ fontSize: "11px", color: "var(--col-green)", marginTop: "5px" }}>EXIF GPS Match: Verified (99.8%)</div>
                 </div>
@@ -377,14 +377,14 @@ export const DepartmentOfficerDashboard: React.FC<DepartmentOfficerDashboardProp
                       className="service-card-btn" 
                       style={{ flex: 1, background: "var(--col-green)", justifyContent: "center", padding: "12px", minWidth: "200px" }}
                     >
-                      âœ“ Approve to Policy
+                      ✓ Approve to Policy
                     </button>
                     <button 
                       onClick={() => handleDecision("reject")} 
                       className="service-card-btn" 
                       style={{ flex: 1, background: "var(--col-red)", justifyContent: "center", padding: "12px", minWidth: "120px" }}
                     >
-                      âœ• Reject
+                      × Reject
                     </button>
                   </div>
                   <button 

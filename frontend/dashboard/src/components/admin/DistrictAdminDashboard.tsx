@@ -137,13 +137,13 @@ export const DistrictAdminDashboard: React.FC<{ user: StaffUser }> = ({ user }) 
         <h3 className="editorial-h3">Invite New Staff</h3>
         <form onSubmit={handleInvite} style={{ display: "flex", gap: "12px", marginTop: "16px", flexWrap: "wrap" }}>
           <input name="email" type="email" placeholder="Staff Email Address" required className="form-input" style={{ flex: 1, minWidth: "200px" }} />
-          <select name="role" required className="form-select" style={{ width: "200px" }}>
+          <select name="role" required className="form-select" style={{ flex: "1 1 200px", minWidth: 0 }}>
             <option value="">Select Role</option>
             <option value="policymaker">Policymaker</option>
             <option value="department_officer">Department Officer</option>
             <option value="field_officer">Field Officer</option>
           </select>
-          <select name="department_id" required className="form-select" style={{ width: "200px" }}>
+          <select name="department_id" required className="form-select" style={{ flex: "1 1 200px", minWidth: 0 }}>
             <option value="">Select Department</option>
             <option value="water">Water & Sanitation</option>
             <option value="electricity">Electricity & Power</option>

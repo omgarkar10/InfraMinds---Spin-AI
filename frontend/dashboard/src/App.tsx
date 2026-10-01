@@ -131,6 +131,7 @@ function AppInner() {
           onViewChange={(v) => {
              if (v === "citizen-logout") handleCitizenLogout();
              else if (v === "citizen") navigate("/feed");
+             else if (v === "citizen-login") navigate("/login");
              else if (v === "citizen-raise") navigate("/propose");
              else if (v === "citizen-track") navigate("/track");
              else if (v === "citizen-profile") navigate("/profile");

@@ -647,3 +647,35 @@ Reverted MapContainer from Tailwind className sizing back to inline style={{ hei
 
 **Rationale:**
 React-Leaflet passes style directly to the Leaflet div during L.Map constructor. Tailwind classes via className resolve too late, so Leaflet reads offsetHeight === 0 and never renders tiles.
+
+### Added Geospatial Heatmap to Citizen Feed
+- **Description:** Added a live geospatial heatmap based on demand density and vote velocity to the public feed map.
+- **Files Updated/Added:**
+  - Added frontend/dashboard/src/components/map/HeatmapLayer.tsx: Wrapper for L.heatLayer.
+  - Updated frontend/dashboard/src/components/citizen/CitizenPortalHome.tsx: Imported HeatmapLayer, changed default bounds to Pune, conditionally render standard pins based on zoom level > 14.
+  - Updated package.json: Installed leaflet.heat and @types/leaflet.heat.
+- **Rationale:** Allow citizens to visually see the hotspots of civic issues in their city without cluttering the map with individual pins when zoomed out.
+
+### Fixed Staff Dashboard Formatting and Citizen Feed Heatmap
+- **Description:** Repaired mojibake in staff and policymaker dashboard labels, improved wrapping for dashboard headers, controls, and grid content, and aligned the citizen feed heatmap with the landing page.
+- **Files Updated:**
+  - `frontend/dashboard/src/components/staff/DepartmentOfficerDashboard.tsx`
+  - `frontend/dashboard/src/components/staff/FieldOfficerDashboard.tsx`
+  - `frontend/dashboard/src/components/PolicyDashboard.tsx`
+  - `frontend/dashboard/src/components/admin/DistrictAdminDashboard.tsx`
+  - `frontend/dashboard/src/components/admin/StateAdminDashboard.tsx`
+  - `frontend/dashboard/src/components/admin/PlatformAdminDashboard.tsx`
+  - `frontend/dashboard/src/components/citizen/CitizenPortalHome.tsx`
+  - `frontend/dashboard/src/components/map/HeatmapLayer.tsx`
+  - `frontend/dashboard/src/styles/dashboard.css`
+  - `frontend/dashboard/src/styles/citizen.css`
+  - `niketan-changes.md`
+- **Rationale:** Staff-side labels contained UTF-8 mojibake and rigid layouts could overflow at narrow widths. The feed was reading `lat`/`lng` although the demand API provides `latitude`/`longitude`; feed points now use the landing page's coordinate fields, vote weighting, radius, blur, maximum zoom, and gradient.
+- **Scope:** Frontend-only. Existing routes, auth guards, backend APIs, database schemas, and unrelated user changes were preserved.
+
+### Fixed Landing Page Citizen Sign In Navigation
+- **Description:** Connected the landing page's desktop and mobile Sign In actions to the existing `/login` route.
+- **Files Updated:**
+  - `frontend/dashboard/src/App.tsx`
+  - `niketan-changes.md`
+- **Rationale:** The navbar emitted the `citizen-login` view action, but the landing page handler did not recognize it and fell through to `/`, leaving the button on the landing page.

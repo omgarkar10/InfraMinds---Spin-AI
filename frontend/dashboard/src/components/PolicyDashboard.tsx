@@ -165,8 +165,8 @@ export function PolicyDashboard({ user }: PolicyDashboardProps) {
 
   return (
     <div style={{ paddingTop: "20px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-        <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", flexWrap: "wrap", marginBottom: "24px" }}>
+        <div style={{ minWidth: 0, flex: "1 1 320px" }}>
           <h1 style={{ fontSize: "24px", fontWeight: 700, color: "var(--col-navy)", margin: 0, textTransform: "uppercase" }}>POLICYMAKER DASHBOARD</h1>
           <p style={{ color: "var(--col-text-muted)", fontSize: "14px", display: "flex", alignItems: "center", gap: "8px", marginTop: "4px" }}>
             <span style={{ background: "#e0f2fe", color: "#0369a1", padding: "2px 8px", borderRadius: "4px", fontWeight: 600, fontSize: "12px" }}>
@@ -269,7 +269,7 @@ export function PolicyDashboard({ user }: PolicyDashboardProps) {
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "12px" }}>
                         <div style={{ fontSize: "12px", color: "var(--col-text-muted)", display: "flex", gap: "12px" }}>
                           <span>{item.category}</span>
-                          <span style={{ fontWeight: 600 }}>â¬† {item.votes} votes</span>
+                          <span style={{ fontWeight: 600 }}>↑ {item.votes} votes</span>
                         </div>
                         <button 
                           onClick={() => openEnactModal(item)}
@@ -300,7 +300,7 @@ export function PolicyDashboard({ user }: PolicyDashboardProps) {
               <div>
                 <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--col-navy)", marginBottom: "6px" }}>Allocated Budget (INR)</label>
                 <div style={{ position: "relative" }}>
-                  <span style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--col-text-muted)" }}>â‚¹</span>
+                  <span style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--col-text-muted)" }}>₹</span>
                   <input
                     type="number"
                     value={allocatedBudget}

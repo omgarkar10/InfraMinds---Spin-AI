@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import type { StaffUser } from "../../types";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -193,7 +193,7 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
       {/* Offline Banner */}
       {isOffline && (
         <div style={{ background: "var(--col-orange)", color: "#fff", padding: "10px", textAlign: "center", fontSize: "14px", fontWeight: 600 }}>
-          ⚠️ OFFLINE MODE: Reports will be cached and synced automatically.
+          ⚠️ OFFLINE MODE: Reports will be cached and synced automatically.
         </div>
       )}
 
@@ -203,8 +203,8 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
         {/* Header & Tabs */}
         {viewMode !== "report" && (
           <div style={{ padding: "20px 20px 0 20px", borderBottom: "1px solid #eee" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-              <h2 style={{ fontSize: "20px", margin: 0, color: "var(--col-navy)" }}>Active Field Queue {user.district_display_name ? `Ã¢â‚¬â€ ${user.district_display_name}` : ""}</h2>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap", marginBottom: "16px" }}>
+              <h2 style={{ fontSize: "20px", margin: 0, color: "var(--col-navy)", minWidth: 0, flex: "1 1 240px", overflowWrap: "anywhere" }}>Active Field Queue {user.district_display_name ? `— ${user.district_display_name}` : ""}</h2>
               
               {/* Mobile Only Toggle */}
               <div className="mobile-only">
@@ -212,11 +212,11 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
                   onClick={() => setViewMode(viewMode === "list" ? "map" : "list")}
                   style={{ background: "none", border: "1px solid var(--col-navy)", color: "var(--col-navy)", padding: "6px 12px", borderRadius: "20px", fontSize: "12px", fontWeight: 600 }}
                 >
-                  {viewMode === "list" ? "🗺️ Map View" : "📋 List View"}
+                  {viewMode === "list" ? "🗺️ Map View" : "📋 List View"}
                 </button>
               </div>
             </div>
-            <div style={{ display: "flex", gap: "20px" }}>
+            <div style={{ display: "flex", gap: "4px 20px", flexWrap: "wrap" }}>
               {(["assigned", "progress", "completed"] as const).map(tab => (
                 <button 
                   key={tab}
@@ -281,7 +281,7 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
                         </div>
                         <h3 style={{ fontSize: "16px", margin: "0 0 8px 0", color: "var(--col-navy)" }}>{demand.english_translation || demand.description || demand.original_text}</h3>
                         <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#666", fontSize: "13px" }}>
-                          <span>ðŸ“</span> {demand.location?.address || demand.location?.district || demand.address || "Location provided"}
+                          <span>📍</span> {demand.location?.address || demand.location?.district || demand.address || "Location provided"}
                         </div>
                       </div>
                     ))
@@ -341,7 +341,7 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
                 onClick={() => setViewMode("list")}
                 style={{ background: "none", border: "none", color: "var(--col-text-muted)", fontSize: "14px", padding: "0 0 20px 0", cursor: "pointer" }}
               >
-                Ã¢â€ Â Back to Queue
+                ← Back to Queue
               </button>
               
               <h2 style={{ fontSize: "22px", margin: "0 0 8px 0", color: "var(--col-navy)" }}>Feasibility Study</h2>
@@ -381,7 +381,7 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
                 {/* GPS Capture */}
                 <div>
                   <button type="button" onClick={handleGetLocation} className="btn-outline" style={{ width: "100%", padding: "12px", borderColor: "var(--col-border)" }}>
-                    ðŸ“ {lat ? `Coordinates Logged: ${lat.toFixed(4)}, ${lng?.toFixed(4)}` : "Capture Current GPS Coordinates"}
+                    📍 {lat ? `Coordinates Logged: ${lat.toFixed(4)}, ${lng?.toFixed(4)}` : "Capture Current GPS Coordinates"}
                   </button>
                 </div>
 

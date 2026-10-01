@@ -37,7 +37,7 @@ export const PlatformAdminDashboard: React.FC = () => {
       <div className="form-card" style={{ padding: "20px", marginBottom: "24px" }}>
         <h3 className="editorial-h3">System Health</h3>
         {health ? (
-          <div style={{ marginTop: "16px", background: "#f8fafc", padding: "16px", borderRadius: "8px", display: "flex", gap: "24px" }}>
+          <div style={{ marginTop: "16px", background: "#f8fafc", padding: "16px", borderRadius: "8px", display: "flex", flexWrap: "wrap", gap: "16px 24px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <span style={{ height: "10px", width: "10px", borderRadius: "50%", backgroundColor: health.status === "ok" ? "var(--col-green)" : "var(--col-red)" }}></span>
               <strong>Status:</strong> {health.status}

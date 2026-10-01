@@ -84,9 +84,9 @@ export const StateAdminDashboard: React.FC = () => {
   return (
     <div className="container" style={{ padding: "20px" }}>
       <h1 className="editorial-h2">State Admin Dashboard</h1>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", flexWrap: "wrap", marginBottom: "24px" }}>
         <p style={{ color: "var(--col-text-mid)", margin: 0 }}>Provision and monitor District Administrators across the state.</p>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", minWidth: 0 }}>
           <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--col-navy)" }}>Filter by District:</span>
           <select 
             value={selectedDistrict} 
@@ -104,7 +104,7 @@ export const StateAdminDashboard: React.FC = () => {
 
       <div className="form-card" style={{ padding: "20px", marginBottom: "32px" }}>
         <h3 className="editorial-h3">Provision District Admin</h3>
-        <form onSubmit={handleProvision} style={{ display: "flex", gap: "12px", marginTop: "16px" }}>
+        <form onSubmit={handleProvision} style={{ display: "flex", gap: "12px", marginTop: "16px", flexWrap: "wrap" }}>
           <input 
             type="text" 
             placeholder="District Name (e.g., Pune)" 
@@ -112,7 +112,7 @@ export const StateAdminDashboard: React.FC = () => {
             className="form-input" 
             value={district}
             onChange={e => setDistrict(e.target.value)}
-            style={{ flex: 1 }} 
+            style={{ flex: "1 1 220px", minWidth: 0 }}
           />
           <input 
             type="email" 
@@ -121,7 +121,7 @@ export const StateAdminDashboard: React.FC = () => {
             className="form-input" 
             value={email}
             onChange={e => setEmail(e.target.value)}
-            style={{ flex: 1 }} 
+            style={{ flex: "1 1 220px", minWidth: 0 }}
           />
           <button type="submit" className="service-card-btn service-card-btn-orange" style={{ width: "auto" }} disabled={loading}>
             {loading ? "Provisioning..." : "Provision Admin"}
