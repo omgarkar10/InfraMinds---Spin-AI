@@ -2,6 +2,18 @@
 
 Multilingual AI Public Demand & Community Needs platform for [Code for Communities 2](https://hack2skill.com/event/codeforcommunities2/) hackathon.
 
+## 🚀 Live Deployment
+- **Web App (Citizen & Staff Portals):** [https://niketandoes.me](https://niketandoes.me)
+- **Secure Backend API:** `https://api.niketandoes.me/api`
+
+## ✨ Best of the Site
+- **Dynamic Civic Stepper & Lifecycle Visualization**: Every community demand is tracked across 7 authoritative backend states, mapping perfectly into a 5-stage UI Civic Stepper for ultimate public transparency.
+- **Hierarchical Multi-Tenant RBAC**: Strict role-based isolation mapping from `Platform Admin > State Admin > District Admin > Policymaker > Dept Officer > Field Officer`, ensuring secure, district-scoped data visibility and programmatic credential generation via short-codes.
+- **Multilingual Bhashini Voice Demands**: Submit voice-recorded civic infrastructure demands natively in 23 Scheduled Indian Languages directly through the browser.
+- **In-Page Evidence Lightbox & Geospatial Heatmaps**: Real-time Leaflet heatmaps integrated directly into the Policy Dashboard alongside an immersive evidence lightbox for inspecting geotagged field surveys with soft-EXIF validation.
+- **Automated AI Policy Briefs**: Vertex AI analyzes the highest-voted community demands to auto-generate intelligence briefs and stage them in the Executive Queue for rapid budget approval and enactment.
+- **Frictionless WhatsApp Virality**: Just-In-Time (JIT) citizen voting allows demands to be shared directly via WhatsApp, engaging citizens dynamically.
+
 ## New Features
 - **Public Demand Measurement Platform**: Evolved from grievance reporting to a proactive community voting and infrastructure request ecosystem.
 - **Hierarchical Multi-Tenant RBAC**: Complex role hierarchy (`Platform Admin > State Admin > District Admin > Policymaker > Dept Officer > Field Officer`) ensuring strict district-scoped multi-tenancy.
