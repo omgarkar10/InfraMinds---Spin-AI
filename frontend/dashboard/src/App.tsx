@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { APIProvider } from "@vis.gl/react-google-maps";
 import { LanguageProvider } from "./hooks/useLanguage";
 import { Navbar } from "./components/navigation/Navbar";
-import { StaffNavbar } from "./components/navigation/StaffNavbar";
+
 import { HeroSection } from "./components/landing/HeroSection";
 import { WhySpinSection } from "./components/landing/WhySpinSection";
 import { HowItHelpsSection } from "./components/landing/HowItHelpsSection";
@@ -46,7 +46,7 @@ function AppInner() {
   );
   
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
-  const [googlePrefill, setGooglePrefill] = useState<{ name: string; email: string } | null>(null);
+  const [, setGooglePrefill] = useState<{ name: string; email: string } | null>(null);
 
   /* Citizen Login Success Callback */
   const handleCitizenLoginSuccess = (user: CitizenUser) => {
@@ -94,18 +94,18 @@ function AppInner() {
   };
 
   // Guard Components
-  const RequireCitizenAuth = ({ children }: { children: JSX.Element }) => {
+  const RequireCitizenAuth = ({ children }: { children: React.ReactNode }) => {
     if (!citizenUser.isLoggedIn) {
       return <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname)}`} replace />;
     }
-    return children;
+    return <>{children}</>;
   };
 
-  const RequireStaffAuth = ({ children }: { children: JSX.Element }) => {
+  const RequireStaffAuth = ({ children }: { children: React.ReactNode }) => {
     if (!staffUser.isLoggedIn) {
       return <Navigate to="/staff-login" replace />;
     }
-    return children;
+    return <>{children}</>;
   };
 
   const isLanding = location.pathname === "/";
@@ -153,7 +153,7 @@ function AppInner() {
             <WhySpinSection />
             <HowItHelpsSection />
             <WhatYouCanDemandSection />
-            <FinalCtaSection onViewChange={(v) => navigate(v === 'citizen' ? '/feed' : '/')} />
+            <FinalCtaSection onViewChange={(v) => navigate(v === 'citizen-raise' ? '/propose' : '/feed')} />
             <Footer onViewChange={(v) => navigate(v === 'citizen' ? '/feed' : '/')} />
             <ChatbotWidget />
           </main>
@@ -165,11 +165,11 @@ function AppInner() {
         
         <Route path="/login" element={<CitizenLogin onLoginSuccess={handleCitizenLoginSuccess} targetViewAfterLogin="/feed" onCancel={() => navigate("/")} onSignupClick={() => { setGooglePrefill(null); navigate("/signup"); }} onForgotPasswordClick={() => navigate("/forgot-password")} onSwitchToStaff={() => navigate("/staff-login")} onGoogleNewUser={(prefill) => { setGooglePrefill(prefill); navigate("/signup"); }} />} />
         <Route path="/signup" element={<CitizenSignup onSignupSuccess={handleCitizenLoginSuccess} onLoginClick={() => navigate("/login")} />} />
-        <Route path="/forgot-password" element={<CitizenForgotPassword />} />
-        <Route path="/reset-password" element={<CitizenResetPassword />} />
+        <Route path="/forgot-password" element={<CitizenForgotPassword onBackToLogin={() => navigate("/login")} onResetRequested={() => navigate("/login")} />} />
+        <Route path="/reset-password" element={<CitizenResetPassword phone="" onBackToLogin={() => navigate("/login")} onResetSuccess={() => navigate("/login")} />} />
         
         {/* Protected Citizen Routes */}
-        <Route path="/propose" element={<RequireCitizenAuth><CreateDemandForm user={citizenUser} onNavigate={(view, id) => navigate(id ? `/demand/${id}` : "/feed")} /></RequireCitizenAuth>} />
+        <Route path="/propose" element={<RequireCitizenAuth><CreateDemandForm user={citizenUser} onNavigate={(_, id) => navigate(id ? `/demand/${id}` : "/feed")} /></RequireCitizenAuth>} />
         <Route path="/track" element={<RequireCitizenAuth><TrackDemands user={citizenUser} /></RequireCitizenAuth>} />
         <Route path="/profile" element={<RequireCitizenAuth><CitizenProfile user={citizenUser} onNavigate={(view, id) => { if(view === "citizen-logout") handleCitizenLogout(); else if (view === "citizen-detail" && id) navigate(`/demand/${id}`); else navigate("/feed"); }} /></RequireCitizenAuth>} />
 

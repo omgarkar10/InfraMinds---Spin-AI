@@ -12,7 +12,7 @@ const DEPARTMENT_LABELS: Record<string, string> = {
   "other": "Other / General"
 };
 
-import type { StaffUser } from "../../../types";
+import type { StaffUser } from "../../types";
 
 export const DistrictAdminDashboard: React.FC<{ user: StaffUser }> = ({ user }) => {
   const [staff, setStaff] = useState<any[]>([]);

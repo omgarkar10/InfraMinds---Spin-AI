@@ -169,7 +169,7 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
     if (mapRef.current && filteredDemands.length > 0) {
       const coords = filteredDemands.map(extractCoords).filter(c => c !== null);
       if (coords.length > 0) {
-        const bounds = L.latLngBounds(coords);
+        const bounds = L.latLngBounds(coords as [number, number][]);
         if (bounds.isValid()) {
           mapRef.current.fitBounds(bounds, { padding: [50, 50] });
         }
@@ -242,15 +242,12 @@ export const FieldOfficerDashboard: React.FC<FieldOfficerDashboardProps> = ({ us
 
         {/* View Routing */}
         <div 
-          style={{ flex: 1, position: "relative" }} 
-          {...{ 
-            style: { 
-              flex: 1, 
-              position: "relative",
-              "--mobile-list-display": viewMode === "list" ? "block" : "none",
-              "--mobile-map-display": viewMode === "map" ? "block" : "none"
-            } as React.CSSProperties 
-          }}
+          style={{ 
+            flex: 1, 
+            position: "relative",
+            "--mobile-list-display": viewMode === "list" ? "block" : "none",
+            "--mobile-map-display": viewMode === "map" ? "block" : "none"
+          } as React.CSSProperties}
         >
           
           {/* DESKTOP SPLIT VIEW OR MOBILE LIST/MAP */}

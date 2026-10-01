@@ -615,3 +615,11 @@ esponse was undefined after a network failure and all three API functions (detec
  -   I m p l e m e n t e d   D y n a m i c   S w i t c h   f o r   S t a t e   A d m i n s :   A d d e d   D i s t r i c t   S e l e c t o r   d r o p d o w n   t o   S t a t e A d m i n D a s h b o a r d . t s x ,   i n t r o d u c e d   / a p i / a d m i n / s t a t e / d e m a n d s   e n d p o i n t   i n   F a s t A P I   w i t h   d i s t r i c t   f i l t e r i n g ,   a n d   e n f o r c e d   c r o s s - t e n a n t   a u t h o r i z a t i o n   g a t e   f o r   s t a t e - l e v e l   A P I   a c c e s s . 
  
  
+
+## 2026-10-01: Frontend TypeScript Build Fixes
+- **Description**: Resolved 12 TypeScript compiler errors blocking the Vite production build. Fixed unused imports, incorrect typing for Leaflet LatLng bounds, duplicate CSS style props in React, and strict JSX namespace checks in App.tsx routing elements.
+- **Files Modified**: 
+  - frontend/dashboard/src/App.tsx
+  - frontend/dashboard/src/components/admin/DistrictAdminDashboard.tsx
+  - frontend/dashboard/src/components/staff/FieldOfficerDashboard.tsx
+- **Rationale**: The production build (	sc -b && vite build) enforces strict mode. Fixing these type constraints was required for Firebase Hosting deployment to succeed.
