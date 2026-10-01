@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import os
 import sys
 
@@ -11,7 +11,7 @@ from spin_agents.models import User
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-SHARED_PASSWORD = "securespin26"
+SHARED_PASSWORD = "[REDACTED_SECRET]"
 
 STAFF_ACCOUNTS = [
     ("water.supply", "Water Supply"),

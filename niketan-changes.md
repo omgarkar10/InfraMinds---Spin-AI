@@ -1,4 +1,4 @@
-# Project Fixes and Updates (niketan-changes)
+﻿# Project Fixes and Updates (niketan-changes)
 
 The following changes were made to the project repository to clean up structural issues, remove unneeded files, and align documentation with the actual code implementation.
 
@@ -44,9 +44,9 @@ Removed several unused directories, tests, and redundant package configuration f
   - Replaced "Grievance" / "Complaint" / "Issue" with "Proposal" / "Community Demand" / "Improvement".
   - Replaced action phrases like "File a Complaint" and "Report an Issue" with "Voice a Need" and "Propose an Improvement".
   - Replaced "Ticket Status", "Resolution", "Escalate", and "Severity" with "Demand Status", "Adoption Stage", "Community Support", and "Priority".
-  - Updated form labels and placeholders (e.g., "Describe your issue/incident" ➔ "What improvement does your community need?").
+  - Updated form labels and placeholders (e.g., "Describe your issue/incident" âž” "What improvement does your community need?").
   - Executed these changes programmatically across all citizen and staff dashboard React components (`.tsx` files), preserving TypeScript interfaces and API payload keys (`grievance_id`, `specific_issue`) to ensure backend compatibility.
-  - Re-wrote problem-centric sections on the landing page (`useLanguage.tsx`) into opportunity-centric wording (e.g., "The Problem" ➔ "The Opportunity", "Misaligned infrastructure investment" ➔ "Untapped community potential").
+  - Re-wrote problem-centric sections on the landing page (`useLanguage.tsx`) into opportunity-centric wording (e.g., "The Problem" âž” "The Opportunity", "Misaligned infrastructure investment" âž” "Untapped community potential").
   - Executed a second pass across all components (`CitizenPortalHome.tsx`, `RaiseGrievanceForm.tsx`, `HeroSection.tsx`, etc.) to eliminate residual negative phrasing: updated "Existing Problem" to "Current Need", "Report a Problem" to "Propose an Improvement", "breakdown" to "service gap", and "repair" to "upgrade".
   - Implemented Google Places Autocomplete API in `RaiseGrievanceForm.tsx` using `@vis.gl/react-google-maps` and the `gmp-place-autocomplete` web component to allow native, rich address search for the location field in Step 2.
   - Added prominent "Go Back" buttons to the bottom of the manual intake in `RaiseGrievanceForm`, and at the bottom of the `TrackGrievances` and `GrievanceDetail` screens to improve navigation flow.
@@ -57,10 +57,10 @@ Removed several unused directories, tests, and redundant package configuration f
 - **Backend Setup**: Created `scripts/seed_staff_accounts.py` using `firebase-admin` to provision static staff email/password credentials and custom role/department claims.
 - **Citizen Auth Refactoring**: Modified `frontend/dashboard/src/services/authService.ts` to replace custom REST calls with Firebase Auth (`createUserWithEmailAndPassword`, `signInWithEmailAndPassword`). Used a synthetic email wrapper (`<phone>@citizen.spin.local`) to cleanly support phone+password login flow using Firebase Email Auth.
 - **Staff Auth Refactoring**: Updated `authService.ts` and `StaffLogin.tsx` to remove the mock authentication timer. Staff UI now authentically signs in using standard Email/Password to Firebase, retrieving robust Identity and JWT Custom Claims. Removed the ability to create staff accounts via the frontend interface.
-- **Government Staff Accounts & SHARED_PASSWORD Alignment**: Updated `scripts/seed_staff_accounts.py`, `StaffLogin.tsx`, and `authService.ts` to implement the 12 government departments schema with `@government.gov.in` and `@nic.in` email structure, 4 role tiers (`admin`, `policymaker`, `department officer`, `staff`), and `SHARED_PASSWORD = "SecureSPIN2026!"`. Added preset one-click demo logins for official government roles and fallback verification for offline/demo operation.
+- **Government Staff Accounts & SHARED_PASSWORD Alignment**: Updated `scripts/seed_staff_accounts.py`, `StaffLogin.tsx`, and `authService.ts` to implement the 12 government departments schema with `@government.gov.in` and `@nic.in` email structure, 4 role tiers (`admin`, `policymaker`, `department officer`, `staff`), and `SHARED_PASSWORD = "[REDACTED_SECRET]"`. Added preset one-click demo logins for official government roles and fallback verification for offline/demo operation.
 - **Created `credentials.md`**: Generated a reference document detailing all 38 staff accounts across 12 departments along with shared default passwords and role assignments.
 - **Updated Email Domain to `@gov.in`**: Changed all staff email formats across `backend/scripts/create_admin.py`, `scripts/seed_staff_accounts.py`, `StaffLogin.tsx`, `authService.ts`, and `credentials.md` from `@government.gov.in` to `@gov.in`. Re-ran seeding script to provision all `@gov.in` users in Firebase Auth.
-- **Updated Shared Password to `securespin26`**: Updated `SHARED_PASSWORD` across `backend/scripts/create_admin.py`, `scripts/seed_staff_accounts.py`, `StaffLogin.tsx`, `authService.ts`, and `credentials.md` to `securespin26`. Re-executed seeding script to synchronize all 38 Firebase Auth staff user account passwords.
+- **Updated Shared Password to `[REDACTED_SECRET]`**: Updated `SHARED_PASSWORD` across `backend/scripts/create_admin.py`, `scripts/seed_staff_accounts.py`, `StaffLogin.tsx`, `authService.ts`, and `credentials.md` to `[REDACTED_SECRET]`. Re-executed seeding script to synchronize all 38 Firebase Auth staff user account passwords.
 
 ## 9. Environment & Virtual Environment Standardization
 - **Removed Outdated `.env.example`**: Deleted `backend/.env.example` to remove duplicate and obsolete environment templates (e.g. legacy Twilio vars) that caused developer confusion.
@@ -69,9 +69,9 @@ Removed several unused directories, tests, and redundant package configuration f
 - **Standardized Developer Quick Start Guide**: Updated `README.md` with explicit, reproducible steps for setting up the Python virtual environment (`venv`), installing dependencies, copying environment templates, environment location mapping table, and running dev servers across both backend and frontend.
 
 ## 10. UI Enhancements & Firebase Google Authentication
-- **Fixed Floating Back Button**: Created `BackButton.tsx` component and integrated it into `App.tsx`. Implemented a `historyStack` navigation state in `App.tsx` so users have a persistent, glassmorphism `← Back` button on the top-left corner of every view (except the root landing page) allowing smooth sequential backward navigation.
+- **Fixed Floating Back Button**: Created `BackButton.tsx` component and integrated it into `App.tsx`. Implemented a `historyStack` navigation state in `App.tsx` so users have a persistent, glassmorphism `â† Back` button on the top-left corner of every view (except the root landing page) allowing smooth sequential backward navigation.
 - **Firebase Google Sign-In**: Exported `GoogleAuthProvider` from `src/config/firebase.ts` and created `citizenFirebaseGoogleLogin()` in `authService.ts`. Replaced the previous `window.google` script dependency with native Firebase popup auth. Added the Google Sign-In button to both `CitizenLogin.tsx` and `CitizenSignup.tsx`.
-- **View Password Toggle**: Replaced the standard password `<input>` in `StaffLogin.tsx` with the reusable `PasswordField` component, standardizing the eye toggle (`👁️` / `🙈`) button across both Staff and Citizen authentication portals.
+- **View Password Toggle**: Replaced the standard password `<input>` in `StaffLogin.tsx` with the reusable `PasswordField` component, standardizing the eye toggle (`ðŸ‘ï¸` / `ðŸ™ˆ`) button across both Staff and Citizen authentication portals.
 
 
 
@@ -199,7 +199,7 @@ otranslate class to the SPIN branding logo to prevent AI translation distortion.
 
 
 ### Removed Authentication Backdoor
-- **Description**: Removed the hardcoded fallback login logic from \uthService.ts\ that allowed any user with a \@gov.in\ email to bypass Firebase Authentication using a hardcoded static password (securespin26).
+- **Description**: Removed the hardcoded fallback login logic from \uthService.ts\ that allowed any user with a \@gov.in\ email to bypass Firebase Authentication using a hardcoded static password ([REDACTED_SECRET]).
 - **Files Updated**: frontend/dashboard/src/services/authService.ts`n- **Rationale**: A hardcoded backdoor that bypasses the primary authentication mechanism is a severe security vulnerability, especially for a government site. It resulted in users receiving mock authorization tokens and incorrect default roles if their Firebase Auth failed or cached state was mismatched.
 
 
@@ -426,12 +426,16 @@ Bhashini requires correct serviceIds from its own catalog. The meity-auth endpoi
   - rontend/dashboard/src/components/staff/DepartmentOfficerDashboard.tsx: Rewritten to fetch directly from the live API with accurate metrics.
   - rontend/dashboard/src/components/staff/StaffDashboard.tsx: Cleaned up props.
 - **Rationale**: The UI was purely mock data and lacked the necessary security to isolate demands to the specific logged-in officer's department. The new transactions prevent race conditions during Field Officer assignment.
--   O v e r h a u l e d   F i e l d   O f f i c e r   D a s h b o a r d   U I   t o   u s e   a   r e s p o n s i v e   s p l i t - p a n e   L e a f l e t   m a p   i n s t e a d   o f   G o o g l e   M a p s .  
- -   A d d e d   G E T   / a p i / s t a f f / d e m a n d s / a s s i g n e d   e n d p o i n t   t o   f e t c h   a c t u a l   o f f i c e r   a s s i g n m e n t s .  
- -   U p d a t e d   P O S T   / a p i / s t a f f / i n v e s t i g a t i o n / { i d } / r e p o r t   t o   a c c e p t   m u l t i p a r t   f o r m - d a t a   f o r   c h e c k l i s t   c o n s t r a i n t s .  
+-   O v e r h a u l e d   F i e l d   O f f i c e r   D a s h b o a r d   U I   t o   u s e   a   r e s p o n s i v e   s p l i t - p a n e   L e a f l e t   m a p   i n s t e a d   o f   G o o g l e   M a p s . 
+ 
+ -   A d d e d   G E T   / a p i / s t a f f / d e m a n d s / a s s i g n e d   e n d p o i n t   t o   f e t c h   a c t u a l   o f f i c e r   a s s i g n m e n t s . 
+ 
+ -   U p d a t e d   P O S T   / a p i / s t a f f / i n v e s t i g a t i o n / { i d } / r e p o r t   t o   a c c e p t   m u l t i p a r t   f o r m - d a t a   f o r   c h e c k l i s t   c o n s t r a i n t s . 
+ 
  # #   2 0 2 6 - 0 9 - 3 0 :   W h a t s A p p   W e b h o o k   I m p l e m e n t a t i o n 
  -   * * D e s c r i p t i o n * * :   A d d e d   G E T   a n d   P O S T   / w e b h o o k / w h a t s a p p   e n d p o i n t s   t o   d e m a n d _ r o u t e r . p y   f o r   M e t a   i n t e g r a t i o n ,   a n d   c r e a t e d   w h a t s a p p - w e b h o o k . m d   s e t u p   g u i d e . 
- -   * * F i l e s   M o d i f i e d / C r e a t e d * * :   b a c k e n d / s p i n _ a g e n t s / r o u t e r s / d e m a n d _ r o u t e r . p y ,   w h a t s a p p - w e b h o o k . m d  
+ -   * * F i l e s   M o d i f i e d / C r e a t e d * * :   b a c k e n d / s p i n _ a g e n t s / r o u t e r s / d e m a n d _ r o u t e r . p y ,   w h a t s a p p - w e b h o o k . m d 
+ 
  
  
  # # #   F i x   A b s o l u t e   I m a g e   U R L s   i n   P r o d u c t i o n 
@@ -442,7 +446,8 @@ Bhashini requires correct serviceIds from its own catalog. The meity-auth endpoi
  -   * * D e s c r i p t i o n : * *   U p d a t e d   b a c k e n d   u p l o a d   e n d p o i n t   t o   g e n e r a t e   a   d y n a m i c   b a s e   U R L   b a s e d   o n   t h e   i n c o m i n g   r e q u e s t ,   i n s t e a d   o f   h a r d c o d i n g   \ l o c a l h o s t : 8 0 8 0 \ .   A l s o   a d d e d   l o g i c   i n   t h e   f r o n t e n d   t o   i n t e r c e p t   l e g a c y   \ l o c a l h o s t : 8 0 8 0 \   i m a g e   U R L s   i n   D B   a n d   r e w r i t e   t h e m   u s i n g   t h e   c u r r e n t   d e p l o y e d   h o s t n a m e / A P I   U R L . 
  -   * * R a t i o n a l e : * *   P r e v e n t s   i m a g e s   f r o m   b r e a k i n g   w h e n   t h e   f r o n t e n d   i s   a c c e s s e d   f r o m   a   r e m o t e   d o m a i n   ( l i k e   \ 
  i k e t a n d o e s . m e \ )   w h i l e   t h e   b a c k e n d   r u n s   l o c a l l y   o r   o n   a   d i f f e r e n t   d o m a i n . 
-  
+ 
+ 
  
 
 ### Fix Query Parameter Routing
@@ -507,7 +512,7 @@ ull, the backend crashed while trying to decode a malformed/missing JWT. Switchi
 
 
 
-⌀⌀⌀ 刀攀猀漀氀瘀椀渀最 䘀椀爀攀戀愀猀攀 㔀　　 䔀爀爀漀爀 ⠀䴀愀渀甀愀氀 䄀圀匀 䔀䌀匀 䐀攀瀀氀漀礀洀攀渀琀⤀਀ⴀ ⨀⨀䐀攀猀挀爀椀瀀琀椀漀渀㨀⨀⨀ 䘀椀砀攀搀 瀀攀爀猀椀猀琀攀渀琀 尀㔀　　 䤀渀琀攀爀渀愀氀 匀攀爀瘀攀爀 䔀爀爀漀爀尀 漀渀 尀⼀愀瀀椀⼀愀甀琀栀⼀洀攀尀 愀渀搀 尀⼀愀瀀椀⼀愀甀琀栀⼀猀礀渀挀ⴀ瀀爀漀昀椀氀攀尀 挀愀甀猀攀搀 戀礀 洀椀猀猀椀渀最 䘀椀爀攀戀愀猀攀 挀爀攀搀攀渀琀椀愀氀猀 椀渀 琀栀攀 䔀䌀匀 琀愀猀欀⸀਀ⴀ ⨀⨀䘀椀氀攀猀 甀瀀搀愀琀攀搀㨀⨀⨀ 一漀渀攀 椀渀 挀漀搀攀戀愀猀攀 ⠀漀渀氀礀 最椀琀 挀愀挀栀攀 愀渀搀 甀渀琀爀愀挀欀攀搀 昀椀氀攀猀⤀⸀਀ⴀ ⨀⨀刀愀琀椀漀渀愀氀攀㨀⨀⨀ 吀栀攀 䜀椀琀䠀甀戀 䄀挀琀椀漀渀猀 眀漀爀欀昀氀漀眀 昀愀椀氀攀搀 瀀爀攀瘀椀漀甀猀氀礀Ⰰ 挀愀甀猀椀渀最 䄀圀匀 䔀䌀匀 琀漀 爀漀氀氀戀愀挀欀 琀漀 愀 戀爀漀欀攀渀 吀愀猀欀 䐀攀昀椀渀椀琀椀漀渀 ⠀尀猀瀀椀渀ⴀ愀瀀椀㨀㘀尀⤀ 爀甀渀渀椀渀最 愀渀 漀氀搀 䐀漀挀欀攀爀 椀洀愀最攀 眀椀琀栀漀甀琀 尀猀攀爀瘀椀挀攀ⴀ愀挀挀漀甀渀琀⸀樀猀漀渀尀⸀ 䈀甀椀氀琀 愀渀搀 瀀甀猀栀攀搀 愀 渀攀眀 䐀漀挀欀攀爀 椀洀愀最攀 挀漀渀琀愀椀渀椀渀最 琀栀攀 挀爀攀搀攀渀琀椀愀氀猀 洀愀渀甀愀氀氀礀 昀爀漀洀 琀栀攀 氀漀挀愀氀 洀愀挀栀椀渀攀Ⰰ 搀漀眀渀氀漀愀搀攀搀 琀栀攀 氀愀琀攀猀琀 䄀圀匀 吀愀猀欀 䐀攀昀椀渀椀琀椀漀渀Ⰰ 愀渀搀 昀漀爀挀攀昀甀氀氀礀 甀瀀搀愀琀攀搀 琀栀攀 䔀䌀匀 匀攀爀瘀椀挀攀 ⠀尀猀瀀椀渀ⴀ愀瀀椀ⴀ猀攀爀瘀椀挀攀ⴀ瘀㈀尀⤀ 琀漀 甀猀攀 琀栀攀 挀漀爀爀攀挀琀 吀愀猀欀 䐀攀昀椀渀椀琀椀漀渀 ⠀尀猀瀀椀渀ⴀ愀瀀椀㨀㜀尀⤀⸀਀ⴀ ⨀⨀䌀氀攀愀渀甀瀀猀㨀⨀⨀ 刀攀洀漀瘀攀搀 愀挀挀椀搀攀渀琀愀氀氀礀 琀爀愀挀欀攀搀 尀⸀昀椀爀攀戀愀猀攀⼀尀 挀愀挀栀攀 昀椀氀攀猀 昀爀漀洀 琀栀攀 最椀琀 椀渀搀攀砀 琀漀 愀瘀漀椀搀 挀氀甀琀琀攀爀⸀਀ഀ਀਀
+âŒ€âŒ€âŒ€â€€åˆ€æ”€çŒ€æ¼€æ°€ç˜€æ¤€æ¸€æœ€â€€ä˜€æ¤€çˆ€æ”€æˆ€æ„€çŒ€æ”€â€€ã”€ã€€ã€€â€€ä”€çˆ€çˆ€æ¼€çˆ€â€€â €ä´€æ„€æ¸€ç”€æ„€æ°€â€€ä„€åœ€åŒ€â€€ä”€äŒ€åŒ€â€€ä€æ”€ç€€æ°€æ¼€ç¤€æ´€æ”€æ¸€ç€â¤€à¨€â´€â€€â¨€â¨€ä€æ”€çŒ€æŒ€çˆ€æ¤€ç€€ç€æ¤€æ¼€æ¸€ã¨€â¨€â¨€â€€ä˜€æ¤€ç €æ”€æ€â€€ç€€æ”€çˆ€çŒ€æ¤€çŒ€ç€æ”€æ¸€ç€â€€å°€ã”€ã€€ã€€â€€ä¤€æ¸€ç€æ”€çˆ€æ¸€æ„€æ°€â€€åŒ€æ”€çˆ€ç˜€æ”€çˆ€â€€ä”€çˆ€çˆ€æ¼€çˆ€å°€â€€æ¼€æ¸€â€€å°€â¼€æ„€ç€€æ¤€â¼€æ„€ç”€ç€æ €â¼€æ´€æ”€å°€â€€æ„€æ¸€æ€â€€å°€â¼€æ„€ç€€æ¤€â¼€æ„€ç”€ç€æ €â¼€çŒ€ç¤€æ¸€æŒ€â´€ç€€çˆ€æ¼€æ˜€æ¤€æ°€æ”€å°€â€€æŒ€æ„€ç”€çŒ€æ”€æ€â€€æˆ€ç¤€â€€æ´€æ¤€çŒ€çŒ€æ¤€æ¸€æœ€â€€ä˜€æ¤€çˆ€æ”€æˆ€æ„€çŒ€æ”€â€€æŒ€çˆ€æ”€æ€æ”€æ¸€ç€æ¤€æ„€æ°€çŒ€â€€æ¤€æ¸€â€€ç€æ €æ”€â€€ä”€äŒ€åŒ€â€€ç€æ„€çŒ€æ¬€â¸€à¨€â´€â€€â¨€â¨€ä˜€æ¤€æ°€æ”€çŒ€â€€ç”€ç€€æ€æ„€ç€æ”€æ€ã¨€â¨€â¨€â€€ä¸€æ¼€æ¸€æ”€â€€æ¤€æ¸€â€€æŒ€æ¼€æ€æ”€æˆ€æ„€çŒ€æ”€â€€â €æ¼€æ¸€æ°€ç¤€â€€æœ€æ¤€ç€â€€æŒ€æ„€æŒ€æ €æ”€â€€æ„€æ¸€æ€â€€ç”€æ¸€ç€çˆ€æ„€æŒ€æ¬€æ”€æ€â€€æ˜€æ¤€æ°€æ”€çŒ€â¤€â¸€à¨€â´€â€€â¨€â¨€åˆ€æ„€ç€æ¤€æ¼€æ¸€æ„€æ°€æ”€ã¨€â¨€â¨€â€€å€æ €æ”€â€€äœ€æ¤€ç€ä €ç”€æˆ€â€€ä„€æŒ€ç€æ¤€æ¼€æ¸€çŒ€â€€çœ€æ¼€çˆ€æ¬€æ˜€æ°€æ¼€çœ€â€€æ˜€æ„€æ¤€æ°€æ”€æ€â€€ç€€çˆ€æ”€ç˜€æ¤€æ¼€ç”€çŒ€æ°€ç¤€â°€â€€æŒ€æ„€ç”€çŒ€æ¤€æ¸€æœ€â€€ä„€åœ€åŒ€â€€ä”€äŒ€åŒ€â€€ç€æ¼€â€€çˆ€æ¼€æ°€æ°€æˆ€æ„€æŒ€æ¬€â€€ç€æ¼€â€€æ„€â€€æˆ€çˆ€æ¼€æ¬€æ”€æ¸€â€€å€æ„€çŒ€æ¬€â€€ä€æ”€æ˜€æ¤€æ¸€æ¤€ç€æ¤€æ¼€æ¸€â€€â €å°€çŒ€ç€€æ¤€æ¸€â´€æ„€ç€€æ¤€ã¨€ã˜€å°€â¤€â€€çˆ€ç”€æ¸€æ¸€æ¤€æ¸€æœ€â€€æ„€æ¸€â€€æ¼€æ°€æ€â€€ä€æ¼€æŒ€æ¬€æ”€çˆ€â€€æ¤€æ´€æ„€æœ€æ”€â€€çœ€æ¤€ç€æ €æ¼€ç”€ç€â€€å°€çŒ€æ”€çˆ€ç˜€æ¤€æŒ€æ”€â´€æ„€æŒ€æŒ€æ¼€ç”€æ¸€ç€â¸€æ¨€çŒ€æ¼€æ¸€å°€â¸€â€€äˆ€ç”€æ¤€æ°€ç€â€€æ„€æ¸€æ€â€€ç€€ç”€çŒ€æ €æ”€æ€â€€æ„€â€€æ¸€æ”€çœ€â€€ä€æ¼€æŒ€æ¬€æ”€çˆ€â€€æ¤€æ´€æ„€æœ€æ”€â€€æŒ€æ¼€æ¸€ç€æ„€æ¤€æ¸€æ¤€æ¸€æœ€â€€ç€æ €æ”€â€€æŒ€çˆ€æ”€æ€æ”€æ¸€ç€æ¤€æ„€æ°€çŒ€â€€æ´€æ„€æ¸€ç”€æ„€æ°€æ°€ç¤€â€€æ˜€çˆ€æ¼€æ´€â€€ç€æ €æ”€â€€æ°€æ¼€æŒ€æ„€æ°€â€€æ´€æ„€æŒ€æ €æ¤€æ¸€æ”€â°€â€€æ€æ¼€çœ€æ¸€æ°€æ¼€æ„€æ€æ”€æ€â€€ç€æ €æ”€â€€æ°€æ„€ç€æ”€çŒ€ç€â€€ä„€åœ€åŒ€â€€å€æ„€çŒ€æ¬€â€€ä€æ”€æ˜€æ¤€æ¸€æ¤€ç€æ¤€æ¼€æ¸€â°€â€€æ„€æ¸€æ€â€€æ˜€æ¼€çˆ€æŒ€æ”€æ˜€ç”€æ°€æ°€ç¤€â€€ç”€ç€€æ€æ„€ç€æ”€æ€â€€ç€æ €æ”€â€€ä”€äŒ€åŒ€â€€åŒ€æ”€çˆ€ç˜€æ¤€æŒ€æ”€â€€â €å°€çŒ€ç€€æ¤€æ¸€â´€æ„€ç€€æ¤€â´€çŒ€æ”€çˆ€ç˜€æ¤€æŒ€æ”€â´€ç˜€ãˆ€å°€â¤€â€€ç€æ¼€â€€ç”€çŒ€æ”€â€€ç€æ €æ”€â€€æŒ€æ¼€çˆ€çˆ€æ”€æŒ€ç€â€€å€æ„€çŒ€æ¬€â€€ä€æ”€æ˜€æ¤€æ¸€æ¤€ç€æ¤€æ¼€æ¸€â€€â €å°€çŒ€ç€€æ¤€æ¸€â´€æ„€ç€€æ¤€ã¨€ãœ€å°€â¤€â¸€à¨€â´€â€€â¨€â¨€äŒ€æ°€æ”€æ„€æ¸€ç”€ç€€çŒ€ã¨€â¨€â¨€â€€åˆ€æ”€æ´€æ¼€ç˜€æ”€æ€â€€æ„€æŒ€æŒ€æ¤€æ€æ”€æ¸€ç€æ„€æ°€æ°€ç¤€â€€ç€çˆ€æ„€æŒ€æ¬€æ”€æ€â€€å°€â¸€æ˜€æ¤€çˆ€æ”€æˆ€æ„€çŒ€æ”€â¼€å°€â€€æŒ€æ„€æŒ€æ €æ”€â€€æ˜€æ¤€æ°€æ”€çŒ€â€€æ˜€çˆ€æ¼€æ´€â€€ç€æ €æ”€â€€æœ€æ¤€ç€â€€æ¤€æ¸€æ€æ”€ç €â€€ç€æ¼€â€€æ„€ç˜€æ¼€æ¤€æ€â€€æŒ€æ°€ç”€ç€ç€æ”€çˆ€â¸€à¨€à´€à¨€à¨€
 
 ### Require Language Selection Before Voice Recording
 - **Files updated:**
@@ -533,20 +538,23 @@ ull, the backend crashed while trying to decode a malformed/missing JWT. Switchi
 - **Files updated:**
   - frontend/dashboard/src/services/bhashiniService.ts
   - frontend/dashboard/src/utils/audioConversion.ts
-- **Description:** Completely rewrote bhashiniService.ts. The previous try/catch blocks were malformed — the response.ok check and return were placed OUTSIDE the try block but BEFORE the catch, meaning esponse was undefined after a network failure and all three API functions (detectAndTranslate, translateText, speechToText) were broken. Rewrote audioConversion.ts to first decode at the browser native sample rate, then resample to 16kHz mono via OfflineAudioContext instead of forcing sampleRate in the constructor (which caused decodeAudioData to throw in Chrome/Edge).
+- **Description:** Completely rewrote bhashiniService.ts. The previous try/catch blocks were malformed â€” the response.ok check and return were placed OUTSIDE the try block but BEFORE the catch, meaning 
+esponse was undefined after a network failure and all three API functions (detectAndTranslate, translateText, speechToText) were broken. Rewrote audioConversion.ts to first decode at the browser native sample rate, then resample to 16kHz mono via OfflineAudioContext instead of forcing sampleRate in the constructor (which caused decodeAudioData to throw in Chrome/Edge).
 
 
  # # #   A W S   E C S   C o n f i g u r a t i o n   U p d a t e 
  -   * * D e s c r i p t i o n : * *   A d d e d   \ W H A T S A P P _ V E R I F Y _ T O K E N \   t o   t h e   A W S   E C S   e n v i r o n m e n t   c o n f i g u r a t i o n . 
  -   * * F i l e s   u p d a t e d : * *   N o n e   l o c a l l y   ( A W S   c o n f i g u r a t i o n   o n l y ) . 
  -   * * R a t i o n a l e : * *   C o n f i g u r e d   t h e   W h a t s A p p   v e r i f i c a t i o n   t o k e n   a s   r e q u e s t e d   b y   t h e   u s e r ,   u p d a t i n g   t h e   a c t i v e   T a s k   D e f i n i t i o n   t o   r e v i s i o n   9   a n d   a p p l y i n g   i t   t o   t h e   s e r v i c e . 
-  
+ 
+ 
  
  # # #   A W S   E C S   C o n f i g u r a t i o n   U p d a t e 
  -   * * D e s c r i p t i o n : * *   A d d e d   \ W H A T S A P P _ V E R I F Y _ T O K E N \   t o   t h e   A W S   E C S   e n v i r o n m e n t   c o n f i g u r a t i o n . 
  -   * * F i l e s   u p d a t e d : * *   N o n e   l o c a l l y   ( A W S   c o n f i g u r a t i o n   o n l y ) . 
  -   * * R a t i o n a l e : * *   C o n f i g u r e d   t h e   W h a t s A p p   v e r i f i c a t i o n   t o k e n   a s   r e q u e s t e d   b y   t h e   u s e r ,   u p d a t i n g   t h e   a c t i v e   T a s k   D e f i n i t i o n   t o   r e v i s i o n   9   a n d   a p p l y i n g   i t   t o   t h e   s e r v i c e . 
-  
+ 
+ 
  
  # # #   P h a s e   1   &   2   R e f a c t o r   I m p l e m e n t a t i o n 
  -   * * D e s c r i p t i o n : * *   I m p l e m e n t e d   B a c k e n d   S c h e m a   u p d a t e s ,   R B A C   E x p a n s i o n ,   a n d   F r o n t e n d   R e a c t   R o u t e r   M i g r a t i o n . 
@@ -555,15 +563,22 @@ ull, the backend crashed while trying to decode a malformed/missing JWT. Switchi
      -   \  a c k e n d / s p i n _ a g e n t s / a u t h . p y \ :   R e f a c t o r e d   \ e n h a n c e _ s t a f f _ u s e r \   t o   m a p   t o   c a n o n i c a l   s n a k e _ c a s e   e n u m s   a n d   a d d e d   n e w   r o l e s   t o   \ S T A F F _ R O L E S \ . 
      -   \  a c k e n d / s p i n _ a g e n t s / r o u t e r s / d e m a n d _ r o u t e r . p y \ :   M i g r a t e d   \ / a p i / u p l o a d \   t o   u p l o a d   d i r e c t l y   t o   F i r e b a s e   S t o r a g e   a n d   r e t u r n   t h e   p u b l i c   U R L . 
      -   \  a c k e n d / s p i n _ a g e n t s / s e r v i c e s / d e m a n d _ s e r v i c e . p y \ :   R e f a c t o r e d   \ g e t _ d e m a n d s _ l i s t \   t o   u s e   n a t i v e   F i r e s t o r e   \ o r d e r _ b y \   q u e r y i n g . 
-     -   \  r o n t e n d / d a s h b o a r d / s r c / A p p . t s x \ :   C o m p l e t e l y   r e w r o t e   t h e   A p p   c o m p o n e n t   t o   u s e   \  e a c t - r o u t e r - d o m \   i n s t e a d   o f   c u s t o m   s t a t e - b a s e d   r o u t i n g . 
-     -   \  r o n t e n d / d a s h b o a r d / s r c / c o m p o n e n t s / c i t i z e n / C i t i z e n P o r t a l H o m e . t s x \   &   \ D e m a n d D e t a i l . t s x \ :   U p d a t e d   n a v i g a t i o n   l o g i c   t o   u s e   \ u s e N a v i g a t e \   a n d   \ u s e P a r a m s \   f r o m   \  e a c t - r o u t e r - d o m \ ,   r e t a i n i n g   J I T   V o t i n g   l o g i c   t h a t   p r e s e r v e s   s t a t e   i n   \ l o c a l S t o r a g e \ . 
+     -   \  r o n t e n d / d a s h b o a r d / s r c / A p p . t s x \ :   C o m p l e t e l y   r e w r o t e   t h e   A p p   c o m p o n e n t   t o   u s e   \ 
+ e a c t - r o u t e r - d o m \   i n s t e a d   o f   c u s t o m   s t a t e - b a s e d   r o u t i n g . 
+     -   \  r o n t e n d / d a s h b o a r d / s r c / c o m p o n e n t s / c i t i z e n / C i t i z e n P o r t a l H o m e . t s x \   &   \ D e m a n d D e t a i l . t s x \ :   U p d a t e d   n a v i g a t i o n   l o g i c   t o   u s e   \ u s e N a v i g a t e \   a n d   \ u s e P a r a m s \   f r o m   \ 
+ e a c t - r o u t e r - d o m \ ,   r e t a i n i n g   J I T   V o t i n g   l o g i c   t h a t   p r e s e r v e s   s t a t e   i n   \ l o c a l S t o r a g e \ . 
  -   * * R a t i o n a l e : * *   I m p l e m e n t i n g   P h a s e   1   &   2   o f   t h e   C o m p r e h e n s i v e   S P I N   A r c h i t e c t u r e   &   U I   R e f a c t o r   p l a n .   E n s u r e s   t h e   b a c k e n d   a d h e r e s   t o   s t r i c t   t a x o n o m y   e n u m s ,   s e c u r e l y   h a n d l e s   f i l e   u p l o a d s ,   a n d   s t a n d a r d i z e s   R B A C .   T h e   f r o n t e n d   n o w   h a s   s t a n d a r d   U R L - b a s e d   n a v i g a t i o n ,   f i x i n g   d e e p   l i n k i n g ,   b a c k - b u t t o n   b e h a v i o r ,   a n d   t h e   r o u t i n g   b u g s   w i t h   J I T   v o t i n g . 
-  
- C h a n g e s   m a d e :   P h a s e   3   ( U I / U X )   &   P h a s e   4   ( R B A C )  
+ 
+ 
+ C h a n g e s   m a d e :   P h a s e   3   ( U I / U X )   &   P h a s e   4   ( R B A C ) 
+ 
  -   P h a s e   3   ( U I / U X )   -   U p d a t e d   C i t i z e n P o r t a l H o m e . t s x ,   T r a c k D e m a n d s . t s x ,   a n d   D e m a n d D e t a i l . t s x   t o   a d d   v o t e   p r o g r e s s   b a r s ,   W h a t s A p p   s h a r e   b u t t o n s ,   a n d   s t r i c t   r o u t i n g . 
- -   P h a s e   4   ( R B A C )   -   A d d e d   b a c k e n d   r b a c . p y   a n d   a d m i n _ r o u t e r . p y .   C r e a t e d   f r o n t e n d   A d m i n   D a s h b o a r d s   ( D i s t r i c t ,   S t a t e ,   P l a t f o r m )   a n d   m a p p e d   t o   A p p . t s x  
- -   P h a s e   5   ( O f f i c e r   W o r k s p a c e s )   -   U p d a t e d   S t a f f D a s h b o a r d . t s x   t o   r o u t e   t o   c o r r e c t   d a s h b o a r d   p e r   u s e r . r o l e .   D e p a r t m e n t O f f i c e r D a s h b o a r d . t s x   n o w   f e a t u r e s   a   q u e u e   t a b   d i v i s i o n   ( T h r e s h o l d   v s .   E m e r g i n g   q u e u e   b a s e d   o n   v o t e   c o u n t   &   v e l o c i t y ) ,   a s   w e l l   a s   s p l i t - s c r e e n   r e v i e w s .   F i e l d O f f i c e r D a s h b o a r d . t s x   i s   c o r r e c t l y   c o n f i g u r e d   w i t h   r e s p o n s i v e   s p l i t   m a p   l a y o u t s   a n d   s u r v e y   d r a w e r s .  
- -   P h a s e   6   ( I n d e x e s   &   D e p l o y )   -   C r e a t e d   f i r e s t o r e . i n d e x e s . j s o n   w i t h   c o m p o s i t e   i n d e x e s   f o r   d i s t r i c t s ,   a u t h o r _ u s e r _ i d ,   a n d   a s s i g n e d _ o f f i c e r _ i d   q u e r i e s .   U p d a t e d   S t a f f U s e r   t y p e   d e f i n i t i o n   w i t h   R B A C   f i e l d s .   A w a i t i n g   a p p r o v a l   f o r   E C S   d e p l o y m e n t .  
+ -   P h a s e   4   ( R B A C )   -   A d d e d   b a c k e n d   r b a c . p y   a n d   a d m i n _ r o u t e r . p y .   C r e a t e d   f r o n t e n d   A d m i n   D a s h b o a r d s   ( D i s t r i c t ,   S t a t e ,   P l a t f o r m )   a n d   m a p p e d   t o   A p p . t s x 
+ 
+ -   P h a s e   5   ( O f f i c e r   W o r k s p a c e s )   -   U p d a t e d   S t a f f D a s h b o a r d . t s x   t o   r o u t e   t o   c o r r e c t   d a s h b o a r d   p e r   u s e r . r o l e .   D e p a r t m e n t O f f i c e r D a s h b o a r d . t s x   n o w   f e a t u r e s   a   q u e u e   t a b   d i v i s i o n   ( T h r e s h o l d   v s .   E m e r g i n g   q u e u e   b a s e d   o n   v o t e   c o u n t   &   v e l o c i t y ) ,   a s   w e l l   a s   s p l i t - s c r e e n   r e v i e w s .   F i e l d O f f i c e r D a s h b o a r d . t s x   i s   c o r r e c t l y   c o n f i g u r e d   w i t h   r e s p o n s i v e   s p l i t   m a p   l a y o u t s   a n d   s u r v e y   d r a w e r s . 
+ 
+ -   P h a s e   6   ( I n d e x e s   &   D e p l o y )   -   C r e a t e d   f i r e s t o r e . i n d e x e s . j s o n   w i t h   c o m p o s i t e   i n d e x e s   f o r   d i s t r i c t s ,   a u t h o r _ u s e r _ i d ,   a n d   a s s i g n e d _ o f f i c e r _ i d   q u e r i e s .   U p d a t e d   S t a f f U s e r   t y p e   d e f i n i t i o n   w i t h   R B A C   f i e l d s .   A w a i t i n g   a p p r o v a l   f o r   E C S   d e p l o y m e n t . 
+ 
  
 
 ## September 30, 2026: Fixed Navbar Rendering on Citizen Views
@@ -581,13 +596,22 @@ ull, the backend crashed while trying to decode a malformed/missing JWT. Switchi
 ## September 30, 2026: Refactored District Administrator Dashboard
 - **Description**: Rebuilt the `DistrictAdminDashboard` frontend, stripping out legacy navigation and wiring it into `StaffLayout`. Refactored KPI metrics to pull live data from `GET /api/admin/district/stats`. Hardened the Staff Invitation form to use strict role enums (`policymaker`, `department_officer`, `field_officer`) and exact database canonical department enums (`water`, `electricity`, `roads`, `garbage`, `drainage`, `other`). Rewrote `admin_router.py` to support `POST /api/admin/district/invite`, strictly sandboxing invites to the invoking user's `state_id` and `district_id`. Implemented a toggle suspend action for staff members via `POST /api/admin/district/staff/{uid}/suspend`.
 - **Files Updated**: `DistrictAdminDashboard.tsx`, `admin_router.py`
--   R e f a c t o r e d   D e p a r t m e n t   O f f i c e r   D a s h b o a r d   ( f r o n t e n d   &   b a c k e n d )   t o   i m p l e m e n t   s t r i c t   R B A C   i s o l a t i o n ,   q u e u e   s e g m e n t a t i o n   ( t h r e s h o l d / e m e r g i n g / r e v i e w ) ,   a n d   w i r e   d i s p a t c h   &   r e v i e w   w o r k f l o w s .  
- -   R e f a c t o r e d   F i e l d   O f f i c e r   D a s h b o a r d   ( f r o n t e n d   &   b a c k e n d ) :   I m p l e m e n t e d   r e s p o n s i v e   C S S   m a p   t o g g l e ,   a u t h - b o u n d   q u e u e   e n d p o i n t   ( / f i e l d / t a s k s ) ,   m a p   g e o - c e n t e r i n g ,   f e a s i b i l i t y   s u b m i s s i o n   f l o w ,   a n d   b a c k e n d   a n t i - s p o o f i n g   s e c u r i t y   c h e c k s .  
- -   F i x e d   J W T   v a l i d a t i o n   c l o c k - s k e w   e r r o r   ( T o k e n   u s e d   t o o   e a r l y )   i n   a u t h . p y   b y   a d d i n g   c l o c k _ s k e w _ s e c o n d s = 6 0   t o   F i r e b a s e   v e r i f y _ i d _ t o k e n .  
- -   S u p p r e s s e d   U s e r W a r n i n g   a b o u t   p o s i t i o n a l   f i l t e r s   i n   s t a f f _ r o u t e r . p y   b y   c o n v e r t i n g   t h e m   t o   f i r e s t o r e . F i e l d F i l t e r   k e y w o r d   a r g u m e n t s .  
- -   O v e r h a u l e d   P o l i c y m a k e r   D a s h b o a r d   ( f r o n t e n d   &   b a c k e n d ) :   S t r i p p e d   l e g a c y   g e n e r i c   s l i d e r s .   I m p l e m e n t e d   E x e c u t i v e   P r o j e c t   E x e c u t i o n   Q u e u e ,   l i v e   d y n a m i c   h e a t m a p   s c o p i n g   t o   j u r i s d i c t i o n ,   a n d   b a c k e n d   b u d g e t   e n a c t m e n t   A P I   w i t h   e x e c u t i o n   n o t e s   r e c o r d i n g .  
- -   F i x e d   4 0 3   F o r b i d d e n   e r r o r   f o r   D e p a r t m e n t   O f f i c e r s   o n   s t a f f - d a s h b o a r d .   C o r r e c t e d   S T A F F _ R O L E S   e n u m   m i s m a t c h   ( ' d e p a r t m e n t   o f f i c e r '   t o   ' d e p a r t m e n t _ o f f i c e r ' )   i n   a u t h . p y .  
- -   E x e c u t e d   o n e - o f f   d a t a   m i g r a t i o n   s c r i p t   t o   b a c k f i l l   d i s t r i c t _ i d = ' p u n e '   o n   2 2   l e g a c y   F i r e s t o r e   d o c u m e n t s   t o   a l i g n   w i t h   s t r i c t   R B A C   b a c k e n d   q u e r y   s c h e m a s .  
- -   I m p l e m e n t e d   M u l t i - T e n a n t   J u r i s d i c t i o n   U I   C o n t e x t :   A d d e d   d i s t r i c t   m a p p i n g   i n   a u t h   t o k e n   p a r s i n g ,   i n j e c t e d   d y n a m i c   j u r i s d i c t i o n   b a d g e s   i n   S t a f f N a v b a r ,   u p d a t e d   d a s h b o a r d   h e a d e r s   ( P o l i c y ,   D i s t r i c t   A d m i n ,   D e p a r t m e n t / F i e l d   O f f i c e r )   t o   s t r i c t l y   s u r f a c e   g e o g r a p h i c   s c o p e s ,   a n d   i m p l e m e n t e d   a   H a r d   L o c k   b a r r i e r   i n   S t a f f L a y o u t   t o   b l o c k   o p e r a t i o n a l   s t a f f   l a c k i n g   a n   e x p l i c i t   d i s t r i c t   a s s i g n m e n t .  
- -   I m p l e m e n t e d   D y n a m i c   S w i t c h   f o r   S t a t e   A d m i n s :   A d d e d   D i s t r i c t   S e l e c t o r   d r o p d o w n   t o   S t a t e A d m i n D a s h b o a r d . t s x ,   i n t r o d u c e d   / a p i / a d m i n / s t a t e / d e m a n d s   e n d p o i n t   i n   F a s t A P I   w i t h   d i s t r i c t   f i l t e r i n g ,   a n d   e n f o r c e d   c r o s s - t e n a n t   a u t h o r i z a t i o n   g a t e   f o r   s t a t e - l e v e l   A P I   a c c e s s .  
+-   R e f a c t o r e d   D e p a r t m e n t   O f f i c e r   D a s h b o a r d   ( f r o n t e n d   &   b a c k e n d )   t o   i m p l e m e n t   s t r i c t   R B A C   i s o l a t i o n ,   q u e u e   s e g m e n t a t i o n   ( t h r e s h o l d / e m e r g i n g / r e v i e w ) ,   a n d   w i r e   d i s p a t c h   &   r e v i e w   w o r k f l o w s . 
+ 
+ -   R e f a c t o r e d   F i e l d   O f f i c e r   D a s h b o a r d   ( f r o n t e n d   &   b a c k e n d ) :   I m p l e m e n t e d   r e s p o n s i v e   C S S   m a p   t o g g l e ,   a u t h - b o u n d   q u e u e   e n d p o i n t   ( / f i e l d / t a s k s ) ,   m a p   g e o - c e n t e r i n g ,   f e a s i b i l i t y   s u b m i s s i o n   f l o w ,   a n d   b a c k e n d   a n t i - s p o o f i n g   s e c u r i t y   c h e c k s . 
+ 
+ -   F i x e d   J W T   v a l i d a t i o n   c l o c k - s k e w   e r r o r   ( T o k e n   u s e d   t o o   e a r l y )   i n   a u t h . p y   b y   a d d i n g   c l o c k _ s k e w _ s e c o n d s = 6 0   t o   F i r e b a s e   v e r i f y _ i d _ t o k e n . 
+ 
+ -   S u p p r e s s e d   U s e r W a r n i n g   a b o u t   p o s i t i o n a l   f i l t e r s   i n   s t a f f _ r o u t e r . p y   b y   c o n v e r t i n g   t h e m   t o   f i r e s t o r e . F i e l d F i l t e r   k e y w o r d   a r g u m e n t s . 
+ 
+ -   O v e r h a u l e d   P o l i c y m a k e r   D a s h b o a r d   ( f r o n t e n d   &   b a c k e n d ) :   S t r i p p e d   l e g a c y   g e n e r i c   s l i d e r s .   I m p l e m e n t e d   E x e c u t i v e   P r o j e c t   E x e c u t i o n   Q u e u e ,   l i v e   d y n a m i c   h e a t m a p   s c o p i n g   t o   j u r i s d i c t i o n ,   a n d   b a c k e n d   b u d g e t   e n a c t m e n t   A P I   w i t h   e x e c u t i o n   n o t e s   r e c o r d i n g . 
+ 
+ -   F i x e d   4 0 3   F o r b i d d e n   e r r o r   f o r   D e p a r t m e n t   O f f i c e r s   o n   s t a f f - d a s h b o a r d .   C o r r e c t e d   S T A F F _ R O L E S   e n u m   m i s m a t c h   ( ' d e p a r t m e n t   o f f i c e r '   t o   ' d e p a r t m e n t _ o f f i c e r ' )   i n   a u t h . p y . 
+ 
+ -   E x e c u t e d   o n e - o f f   d a t a   m i g r a t i o n   s c r i p t   t o   b a c k f i l l   d i s t r i c t _ i d = ' p u n e '   o n   2 2   l e g a c y   F i r e s t o r e   d o c u m e n t s   t o   a l i g n   w i t h   s t r i c t   R B A C   b a c k e n d   q u e r y   s c h e m a s . 
+ 
+ -   I m p l e m e n t e d   M u l t i - T e n a n t   J u r i s d i c t i o n   U I   C o n t e x t :   A d d e d   d i s t r i c t   m a p p i n g   i n   a u t h   t o k e n   p a r s i n g ,   i n j e c t e d   d y n a m i c   j u r i s d i c t i o n   b a d g e s   i n   S t a f f N a v b a r ,   u p d a t e d   d a s h b o a r d   h e a d e r s   ( P o l i c y ,   D i s t r i c t   A d m i n ,   D e p a r t m e n t / F i e l d   O f f i c e r )   t o   s t r i c t l y   s u r f a c e   g e o g r a p h i c   s c o p e s ,   a n d   i m p l e m e n t e d   a   H a r d   L o c k   b a r r i e r   i n   S t a f f L a y o u t   t o   b l o c k   o p e r a t i o n a l   s t a f f   l a c k i n g   a n   e x p l i c i t   d i s t r i c t   a s s i g n m e n t . 
+ 
+ -   I m p l e m e n t e d   D y n a m i c   S w i t c h   f o r   S t a t e   A d m i n s :   A d d e d   D i s t r i c t   S e l e c t o r   d r o p d o w n   t o   S t a t e A d m i n D a s h b o a r d . t s x ,   i n t r o d u c e d   / a p i / a d m i n / s t a t e / d e m a n d s   e n d p o i n t   i n   F a s t A P I   w i t h   d i s t r i c t   f i l t e r i n g ,   a n d   e n f o r c e d   c r o s s - t e n a n t   a u t h o r i z a t i o n   g a t e   f o r   s t a t e - l e v e l   A P I   a c c e s s . 
+ 
  

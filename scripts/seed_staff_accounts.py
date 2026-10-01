@@ -1,4 +1,4 @@
-import os
+﻿import os
 import firebase_admin
 from firebase_admin import credentials, auth, firestore
 
@@ -16,7 +16,7 @@ else:
 
 db = firestore.client()
 
-SHARED_PASSWORD = "securespin26"
+SHARED_PASSWORD = "[REDACTED_SECRET]"
 
 STAFF_ACCOUNTS = [
     ("water.supply", "Water Supply"),

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+﻿from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import List, Optional
 from spin_agents.auth import get_current_user
 from spin_agents.models import UserSchema
@@ -7,7 +7,7 @@ import os
 import firebase_admin
 from firebase_admin import firestore
 
-STAFF_DEFAULT_PASSWORD = os.environ.get("STAFF_DEFAULT_PASSWORD", "securespin26")
+STAFF_DEFAULT_PASSWORD = os.environ.get("STAFF_DEFAULT_PASSWORD", "[REDACTED_SECRET]")
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 db = firestore.client()

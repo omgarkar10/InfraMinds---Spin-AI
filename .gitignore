@@ -74,3 +74,6 @@ uploads/
 task-def.json
 .firebase/
 credentials.md
+task-def*.json
+.env.production
+backend/service-account.json
