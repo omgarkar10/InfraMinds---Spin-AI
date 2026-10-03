@@ -1,4 +1,4 @@
-﻿# Project Fixes and Updates (niketan-changes)
+# Project Fixes and Updates (niketan-changes)
 
 The following changes were made to the project repository to clean up structural issues, remove unneeded files, and align documentation with the actual code implementation.
 
@@ -679,3 +679,36 @@ React-Leaflet passes style directly to the Leaflet div during L.Map constructor.
   - `frontend/dashboard/src/App.tsx`
   - `niketan-changes.md`
 - **Rationale:** The navbar emitted the `citizen-login` view action, but the landing page handler did not recognize it and fell through to `/`, leaving the button on the landing page.
+
+### Corrected District Admin Demand Counts
+- **Description:** Scoped district demand statistics by canonical `district_id`, wrote that ID on new demands, and made the legacy backfill canonicalize usable district names without assigning unknown records to Pune.
+- **Files Updated/Added:**
+  - Added `backend/spin_agents/location.py` with the shared district ID normalization rule.
+  - Updated `backend/spin_agents/routers/admin_router.py` to query demand `district_id` and reuse the normalization helper during district admin provisioning.
+  - Updated `backend/spin_agents/services/demand_service.py` to persist `district_id` while retaining the display `district`.
+  - Updated `backend/migrate.py` to fill only missing IDs, preserve existing IDs and document IDs, report records without a usable district, and retain the existing status backfill.
+  - Updated `niketan-changes.md`.
+- **Rationale:** District admin accounts are scoped by canonical district IDs, while stats previously queried the display-name field. New and backfilled demand records now follow the same trimmed lowercase, spaces-to-underscores rule.
+- **Scope:** Backend data/query logic only. No frontend, API response, Firestore schema/index, commit, deployment, or migration execution changes.
+
+## Codebase Quality & Maintainability Audit
+- **Description**: Performed a comprehensive codebase audit to identify dead code, duplicate logic, and tech debt. 
+- **Files/Details**:
+  - Found ~30 dead files including root-level one-off scripts (`fix_encoding.py`, `upload_demands.py`, etc.) and `App.tsx.bak`.
+  - Identified 6 unused frontend components: `HeatMap.tsx`, `VoiceInput.tsx`, `BudgetReallocationPanel.tsx`, `ExecutiveSummaryPanel.tsx`, `adminService.ts`, and `usePolicyData.ts`.
+  - Found 14 orphan landing page sections (never imported) comprising 28 files in `components/landing/`.
+  - Identified redundant code across `HeatmapLayer` (triple implementation), schemas (`data_models.py` vs `models.py`), and CSS (`citizen.css` imported 11 times instead of just once).
+- **Rationale**: Ensure structural integrity by proactively surfacing legacy files, debugging scripts, and unused components so they can be cleaned up in a future sprint without risk to the platform. 
+- **Scope**: Codebase audit and reporting only. Generated an artifact with a prioritized cleanup plan. No code was deleted or modified.
+
+## Codebase Quality & Maintainability Audit Execution (Phase 1)
+- **Description**: Executed Phase 1 (Zero-Risk Deletions) of the codebase audit plan.
+- **Files/Details**:
+  - Deleted ~12 root-level one-off scripts, test scripts, and unused json templates.
+  - Deleted dead frontend components (`HeatMap.tsx`, `VoiceInput.tsx`, `BudgetReallocationPanel.tsx`, `ExecutiveSummaryPanel.tsx`), services (`adminService.ts`), hooks (`usePolicyData.ts`), and utils (`departmentConfig.ts`).
+  - Deleted 14 unused landing page sections.
+  - Deleted `App.tsx.bak` and duplicate `backend/spin_agents/requirements.txt`.
+  - Fixed duplicate `import os` in `backend/spin_agents/api.py`.
+  - Fixed unreachable `platform_admin` OR branch in `frontend/dashboard/src/App.tsx` routing.
+- **Rationale**: Removed legacy files, debugging scripts, and unused components to improve codebase maintainability and remove dead code.
+- **Scope**: File deletions and minor cleanup edits in `App.tsx` and `api.py`.

@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from google.cloud import firestore
 
 from spin_agents.db import get_firestore_db
+from spin_agents.location import canonical_district_id
 from spin_agents.runner import run_pipeline
 from spin_agents.tools.bhashini import bhashini_asr, bhashini_translate
 
@@ -172,6 +173,7 @@ def persist_demand_to_db(demand_id: str, payload: dict, lat: float, lng: float) 
         "original_text": payload.get("original_text", ""),
         "english_translation": payload.get("english_translation", ""),
         "district": payload.get("district"),
+        "district_id": canonical_district_id(payload.get("district")),
         "state": payload.get("state"),
         "address": payload.get("address"),
         "pincode": payload.get("pincode"),

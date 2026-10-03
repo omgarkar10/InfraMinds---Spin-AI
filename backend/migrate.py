@@ -5,6 +5,7 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from spin_agents.db import get_firestore_db
+from spin_agents.location import canonical_district_id
 
 def migrate_demands():
     db = get_firestore_db()
@@ -16,26 +17,29 @@ def migrate_demands():
     docs = db.collection("demands").stream()
     
     updated_count = 0
+    skipped_district_ids = []
     for doc in docs:
         data = doc.to_dict()
         needs_update = False
         updates = {}
         
         # 1. Backfill district_id
-        if "district_id" not in data:
-            district_name = None
+        if not data.get("district_id"):
+            district_candidates = []
             if "location" in data and isinstance(data["location"], dict):
-                district_name = data["location"].get("district")
-            if not district_name:
-                district_name = data.get("district")
-                
-            if district_name:
-                updates["district_id"] = district_name.strip().lower()
+                district_candidates.append(data["location"].get("district"))
+            district_candidates.append(data.get("district"))
+
+            district_id = next(
+                (candidate_id for candidate in district_candidates
+                 if (candidate_id := canonical_district_id(candidate))),
+                None,
+            )
+            if district_id:
+                updates["district_id"] = district_id
                 needs_update = True
             else:
-                # Fallback to "pune" if absolutely unknown, so the demo works
-                updates["district_id"] = "pune"
-                needs_update = True
+                skipped_district_ids.append(doc.id)
                 
         # 2. Backfill status if missing
         if "status" not in data:
@@ -47,7 +51,12 @@ def migrate_demands():
             db.collection("demands").document(doc.id).update(updates)
             updated_count += 1
 
-    print(f"Migration complete. Updated {updated_count} documents.")
+    print(
+        f"Migration complete. Updated {updated_count} documents; "
+        f"skipped district_id for {len(skipped_district_ids)} records with no usable district."
+    )
+    if skipped_district_ids:
+        print(f"Records needing district review: {', '.join(skipped_district_ids)}")
 
 if __name__ == "__main__":
     migrate_demands()

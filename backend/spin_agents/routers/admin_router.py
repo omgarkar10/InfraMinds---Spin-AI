@@ -3,6 +3,7 @@ from typing import List, Optional
 from spin_agents.auth import get_current_user
 from spin_agents.models import UserSchema
 from spin_agents.rbac import has_min_role
+from spin_agents.location import canonical_district_id
 import os
 import firebase_admin
 from firebase_admin import firestore
@@ -107,7 +108,7 @@ async def get_district_stats(user: UserSchema = Depends(require_admin("district_
     if not user.district_id:
         return {"total_demands": 0, "unassigned_surveys": 0, "pending_review": 0, "escalated_policy": 0}
         
-    docs = db.collection("demands").where("district", "==", user.district_id).stream()
+    docs = db.collection("demands").where("district_id", "==", user.district_id).stream()
     
     metrics = {
         "total_demands": 0,
@@ -161,7 +162,7 @@ async def provision_district(payload: dict, user: UserSchema = Depends(require_a
     if not district_name or not email:
         raise HTTPException(status_code=400, detail="Missing district_name or email")
     
-    canonical_district = district_name.strip().lower().replace(" ", "_")
+    canonical_district = canonical_district_id(district_name)
     state_id = user.state_id or "unknown_state"
 
     from firebase_admin import auth

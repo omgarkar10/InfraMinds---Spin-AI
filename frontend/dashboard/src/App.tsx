@@ -73,7 +73,7 @@ function AppInner() {
       navigate("/admin/state", { replace: true });
     } else if (user.role === "platform_admin") {
       navigate("/admin/platform", { replace: true });
-    } else if (user.role === "Policymaker" || user.role === "platform_admin") {
+    } else if (user.role === "Policymaker") {
       navigate("/admin-dashboard", { replace: true });
     } else {
       navigate("/staff-dashboard", { replace: true });
