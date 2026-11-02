@@ -10,8 +10,8 @@ import json
 import logging
 from typing import Any, Dict, Optional
 
-from google.adk.agents import SequentialAgent
-from google.adk.agents.remote_a2a_agent import RemoteA2aAgent
+from spin_agents.agent_types import SequentialAgent
+from spin_agents.agent_types import RemoteA2aAgent
 
 from schemas.data_models import (
     DynamicVerificationOutput,

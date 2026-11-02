@@ -12,8 +12,8 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-from google.adk.agents import SequentialAgent
-from google.adk.agents.remote_a2a_agent import RemoteA2aAgent
+from spin_agents.agent_types import SequentialAgent
+from spin_agents.agent_types import RemoteA2aAgent
 
 from spin_agents.agents.dynamic_verification import (
     dynamic_verification_agent,

@@ -16,7 +16,7 @@ import os
 import sys
 from typing import Any, Dict, Optional
 
-from google.adk.agents import LlmAgent
+from spin_agents.agent_types import LlmAgent
 
 from schemas.data_models import (
     ChannelType,

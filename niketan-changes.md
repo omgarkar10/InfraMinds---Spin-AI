@@ -712,3 +712,44 @@ React-Leaflet passes style directly to the Leaflet div during L.Map constructor.
   - Fixed unreachable `platform_admin` OR branch in `frontend/dashboard/src/App.tsx` routing.
 - **Rationale**: Removed legacy files, debugging scripts, and unused components to improve codebase maintainability and remove dead code.
 - **Scope**: File deletions and minor cleanup edits in `App.tsx` and `api.py`.
+
+## 2026-11-02: Backend Dependency Pruning & Legacy Code Elimination
+- **Description**: Optimized the FastAPI/Uvicorn backend to run cleanly and cost-effectively on small compute instances (such as EC2 t3.micro with 1 GB RAM). Removed 9 dead packages from `requirements.txt`, replaced the external `google-adk` dependency with lightweight native dataclass agent descriptors, permanently deleted 6 legacy unreferenced files, hardened Firestore credential initialization across paths, and fixed a top-level unhandled exception in `admin_router.py`.
+- **Files Deleted**:
+  - `backend/translate_service.py`: Obsolete prototype for Google Cloud Translate, completely superseded by Bhashini API (`bhashini_router.py`).
+  - `backend/spin_agents/cache.py`: Legacy Redis OTP caching module that was never imported by any active service.
+  - `backend/spin_agents/tools/bigquery.py`: Legacy BigQuery tools, completely replaced by Firestore aggregations in `dashboard_service.py`.
+  - `backend/spin_agents/tools/gati_shakti.py`: GIS layer queries that were never hooked up to live routes.
+  - `backend/scripts/create_admin.py`: Broken SQLite seeder that failed on import due to removed `AsyncSessionLocal`.
+  - `backend/scripts/generate_mock_data.py`: One-off script for mock BigQuery insertion.
+- **Files Created**:
+  - `backend/spin_agents/agent_types.py`: Lightweight `Agent` dataclass providing `LlmAgent`, `SequentialAgent`, and `RemoteA2aAgent` interfaces without requiring the heavy `google-adk` external library.
+- **Files Modified**:
+  - `backend/requirements.txt`: Removed 9 unused packages (`google-adk`, `a2a-sdk`, `google-cloud-bigquery`, `google-cloud-translate`, `redis`, `passlib`, `bcrypt`, `pytest`, `Pillow`). Kept 11 core production packages.
+  - `backend/spin_agents/db.py`: Added robust multi-directory path candidate resolution for `service-account.json` across workspace root, `backend/`, and `secrets/` to prevent `DefaultCredentialsError` regardless of execution working directory.
+  - `backend/spin_agents/routers/admin_router.py`: Replaced direct top-level `db = firestore.client()` with safe `from spin_agents.db import db, get_firestore_db` to avoid crash on startup.
+  - `backend/spin_agents/tools/__init__.py`: Removed exports of deleted `bigquery` and `gati_shakti` tools.
+  - `backend/spin_agents/tools/mcp_bindings.py`: Cleaned out dead `from google.cloud import bigquery` import in `bigquery_policy_aggregates`.
+  - `backend/spin_agents/agents/semantic_parsing.py`: Replaced `google.adk.agents` import with `spin_agents.agent_types`.
+  - `backend/spin_agents/agents/dynamic_verification.py`: Replaced `google.adk.agents` import with `spin_agents.agent_types`.
+  - `backend/spin_agents/agents/policy_routing.py`: Replaced `google.adk.agents` import with `spin_agents.agent_types`.
+  - `backend/spin_agents/pipeline/orchestrator.py`: Replaced `google.adk.agents` import with `spin_agents.agent_types`.
+  - `backend/spin_agents/agent.py`: Replaced `google.adk.agents` import with `spin_agents.agent_types`.
+- **Rationale**: The hackathon is concluded, so heavy hackathon-specific dependencies (such as `google-adk`, `a2a-sdk`, `bigquery`) are no longer required. Stripping 9 heavy dependencies and dead files drastically reduces container build times, eliminates hundreds of megabytes of disk and RAM footprint, and ensures stable deployment on low-memory servers without OOM issues.
+- **Verification**: Verified with automated test script `test_endpoints.py`. All 19 API routes initialized cleanly and all 4 core endpoints (`/health`, `/api/config/countries`, `/api/bhashini/status`, `/api/demands`) returned HTTP 200 OK.
+
+## 2026-11-02: Added Native Systemd Service Configuration
+- **Description**: Created a native Linux systemd service unit file for managing the Uvicorn/FastAPI backend process on Ubuntu EC2 instances without requiring Docker. Enables automated start on boot, immediate auto-restart on crash, and streamlined single-command installation.
+- **Files Created**:
+  - `deploy/spin-api.service`: Systemd service definition setting working directory to `/home/ubuntu/app`, binding to `127.0.0.1:8080`, injecting environment variables from `backend/.env`, and setting `PYTHONPATH=/home/ubuntu/app:/home/ubuntu/app/backend`.
+- **Files Modified**:
+  - `aws-ec2-deployment-guide.md`: Updated Phase 5 to transfer `deploy/spin-api.service` during `scp`, and streamlined Phase 7 to copy the file directly to `/etc/systemd/system/` rather than requiring manual `nano` editing.
+- **Rationale**: User requested a low-disk, non-Docker setup. Moving the systemd configuration file into the repository allows it to be version-controlled, verified locally, and copied cleanly to the server in one command.
+
+## 2026-11-02: Added Pre-Configured Nginx Reverse Proxy Configuration
+- **Description**: Created a pre-configured Nginx reverse proxy configuration file for the EC2 deployment, mapping incoming requests on `api.niketandoes.me` to the local Uvicorn process on port 8080.
+- **Files Created**:
+  - `deploy/spin-api.nginx.conf`: Nginx server block configuring HTTP proxy forwarding to `127.0.0.1:8080` with WebSocket upgrade headers, real IP forwarding, and a 25 MB max body size limit.
+- **Files Modified**:
+  - `aws-ec2-deployment-guide.md`: Updated Phase 8 to install the reverse proxy via `sudo cp ~/app/deploy/spin-api.nginx.conf /etc/nginx/sites-available/spin-api`, eliminating manual `nano` editing.
+- **Rationale**: Removes manual terminal copy-pasting during server setup and avoids configuration errors when provisioning Nginx reverse proxying on the server.

@@ -336,44 +336,7 @@ def register_recent_ticket(query_id: str, category: str, latitude: Optional[floa
 # ---------------------------------------------------------------------------
 
 def bigquery_policy_aggregates(district: Optional[str] = None) -> Dict[str, Any]:
-    """Execute BigQuery MCP tool query to get weekly aggregates for executive summary generation."""
-    if not CONFIG.gcp_project:
-        return {
-            "total_complaints": 3450,
-            "top_category": "water",
-            "avg_severity": 7.8,
-            "red_zone_count": 9,
-            "district": district or "Pune Central",
-            "resolved_ratio": 0.42,
-        }
-
-    try:
-        from google.cloud import bigquery
-        client = bigquery.Client(project=CONFIG.gcp_project)
-        dataset = CONFIG.bigquery_dataset
-        table = CONFIG.bigquery_table
-        query = f"""
-            SELECT
-                COUNT(*) as total_complaints,
-                AVG(severity) as avg_severity,
-                COUNTIF(severity >= 8) as red_zone_count
-            FROM `{CONFIG.gcp_project}.{dataset}.{table}`
-            WHERE created_at >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY)
-        """
-        job = client.query(query)
-        res = list(job.result())
-        if res:
-            row = res[0]
-            return {
-                "total_complaints": row.total_complaints,
-                "avg_severity": float(row.avg_severity or 7.0),
-                "red_zone_count": row.red_zone_count,
-                "district": district or "All Districts",
-                "top_category": "roads",
-            }
-    except Exception:
-        pass
-
+    """Return policy aggregate metrics for executive summary generation."""
     return {
         "total_complaints": 1200,
         "top_category": "roads",

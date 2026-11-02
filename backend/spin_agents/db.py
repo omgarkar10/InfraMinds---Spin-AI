@@ -8,14 +8,31 @@ if not firebase_admin._apps:
     cred_path = getattr(CONFIG, 'firebase_credentials_path', None) or os.getenv('FIREBASE_CREDENTIALS_PATH')
     gcred_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
 
-    if cred_path and os.path.exists(cred_path):
-        cred = credentials.Certificate(cred_path)
-        firebase_admin.initialize_app(cred)
-    elif gcred_path and os.path.exists(gcred_path):
-        cred = credentials.Certificate(gcred_path)
+    # Resolve candidate credential file paths across backend dir, root, and secrets
+    backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    workspace_root = os.path.dirname(backend_dir)
+    candidate_paths = [
+        cred_path,
+        gcred_path,
+        os.path.join(backend_dir, gcred_path.lstrip('./').lstrip('.\\')) if gcred_path else None,
+        os.path.join(backend_dir, "service-account.json"),
+        os.path.join(backend_dir, "secrets", "service-account.json"),
+        os.path.join(workspace_root, "secrets", "service-account.json"),
+        os.path.join(workspace_root, "backend", "service-account.json"),
+    ]
+
+    resolved_cred = None
+    for p in candidate_paths:
+        if p and os.path.exists(p):
+            resolved_cred = p
+            os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.abspath(p)
+            break
+
+    if resolved_cred:
+        cred = credentials.Certificate(resolved_cred)
         firebase_admin.initialize_app(cred)
     else:
-        # If GOOGLE_APPLICATION_CREDENTIALS points to a missing file path, remove it from env to prevent google.auth crash
+        # If GOOGLE_APPLICATION_CREDENTIALS points to a missing file path, remove it to prevent crash
         if gcred_path and not os.path.exists(gcred_path):
             os.environ.pop('GOOGLE_APPLICATION_CREDENTIALS', None)
 
@@ -35,4 +52,3 @@ except Exception as err:
 
 def get_firestore_db():
     return db
-

@@ -10,8 +10,9 @@ from firebase_admin import firestore
 
 STAFF_DEFAULT_PASSWORD = os.environ.get("STAFF_DEFAULT_PASSWORD", "[REDACTED_SECRET]")
 
+from spin_agents.db import db, get_firestore_db
+
 router = APIRouter(prefix="/api/admin", tags=["admin"])
-db = firestore.client()
 
 def require_admin(min_tier: str):
     def role_checker(user: UserSchema = Depends(get_current_user)):
